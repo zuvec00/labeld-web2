@@ -1,0 +1,812 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Stepper from "@/components/ticketing/Stepper";
+import Button from "@/components/ui/button";
+import { Plus, Ticket as TicketIcon } from "lucide-react";
+import {
+	listTicketTypes,
+	createTicketType,
+	deleteTicketType,
+} from "@/lib/firebase/queries/ticketTypes";
+import type { TicketTypeDoc } from "@/lib/models/ticketType";
+import { Spinner } from "@/components/ui/spinner";
+
+type Tab = "free" | "paid" | "invite";
+
+const STEPS = [
+	{ key: "details", label: "Details" },
+	// { key: "theme", label: "Theme" },
+	{ key: "tickets", label: "Tickets" },
+	{ key: "merch", label: "Merch", optional: true },
+	{ key: "moments", label: "Moments", optional: true },
+	{ key: "review", label: "Review" },
+];
+
+export default function TicketsStepPage() {
+	const router = useRouter();
+	const { eventId } = useParams<{ eventId: string }>();
+	const eventIdString = eventId as string;
+
+	const [tickets, setTickets] = useState<TicketTypeDoc[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [openKind, setOpenKind] = useState<null | "single" | "group">(null);
+
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			try {
+				const list = await listTicketTypes(eventIdString);
+				if (mounted) setTickets(list);
+			} finally {
+				if (mounted) setLoading(false);
+			}
+		})();
+		return () => {
+			mounted = false;
+		};
+	}, [eventIdString]);
+
+	const hasTickets = tickets.length > 0;
+	const hasActiveTickets = tickets.some((t) => t.isActive);
+
+	return (
+		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-3xl mx-auto">
+			<Stepper steps={STEPS} activeKey="tickets" />
+
+			<div className="mt-6 flex items-center justify-between">
+				<div>
+					<h1 className="font-heading font-semibold text-2xl">
+						Set up your tickets
+					</h1>
+					<p className="text-text-muted mt-1">
+						Create at least one ticket to start selling.
+					</p>
+				</div>
+				<Button
+					variant="primary"
+					text="Add new ticket"
+					leftIcon={<Plus className="w-4 h-4" />}
+					onClick={() => setOpenKind("single")}
+				/>
+			</div>
+
+			{/* Ticket list / empty state */}
+			<div className="mt-6">
+				{hasTickets ? (
+					<div className="grid gap-4">
+						{tickets.map((t) => (
+							<TicketRow
+								key={t.id}
+								t={t}
+								eventId={eventIdString}
+								router={router}
+								onDelete={async () => {
+									await deleteTicketType(eventIdString, t.id);
+									setTickets((prev) => prev.filter((x) => x.id !== t.id));
+								}}
+							/>
+						))}
+					</div>
+				) : (
+					<div className="rounded-2xl bg-surface border border-stroke p-10 text-center">
+						<TicketIcon className="mx-auto w-10 h-10 text-text-muted" />
+						<h3 className="mt-3 font-medium">Let&apos;s create tickets</h3>
+						<p className="text-text-muted text-sm mt-1">
+							You don&apos;t have any tickets yet — it only takes a minute.
+						</p>
+						<Button
+							className="mt-4"
+							variant="primary"
+							text="Add new ticket"
+							leftIcon={<Plus className="w-4 h-4" />}
+							onClick={() => setOpenKind("single")}
+						/>
+					</div>
+				)}
+			</div>
+
+			{/* Footer actions */}
+			<div className="flex justify-between pt-8 mt-10 border-t border-stroke">
+				<Button
+					variant="outline"
+					text="Back"
+					onClick={() => router.push(`/events/${eventIdString}/theme`)}
+				/>
+				<Button
+					variant={hasActiveTickets ? "primary" : "disabled"}
+					disabled={!hasActiveTickets}
+					text="Continue → Merch"
+					onClick={() => router.push(`/events/${eventIdString}/merch`)}
+				/>
+			</div>
+
+			{/* Dialogs */}
+			{openKind === "single" && (
+				<CreateSingleDialog
+					onClose={() => setOpenKind(null)}
+					onSwitchToGroup={() => setOpenKind("group")}
+					onCreate={async (t, setSaving) => {
+						setSaving(true);
+						try {
+							const nextSortOrder =
+								tickets.length > 0
+									? Math.max(...tickets.map((t) => t.sortOrder)) + 10
+									: 10;
+
+							// Filter out undefined values to prevent Firestore errors
+							const cleanTicketData = Object.fromEntries(
+								Object.entries(t).filter(([_, value]) => value !== undefined)
+							);
+
+							const ticketData: Omit<TicketTypeDoc, "id"> = {
+								...cleanTicketData,
+								quantityRemaining: t.quantityTotal,
+								isActive: true,
+								sortOrder: nextSortOrder,
+							} as Omit<TicketTypeDoc, "id">;
+
+							await createTicketType(eventId, ticketData);
+							const newTicket = await listTicketTypes(eventId);
+							setTickets(newTicket);
+							setOpenKind(null);
+						} finally {
+							setSaving(false);
+						}
+					}}
+				/>
+			)}
+			{openKind === "group" && (
+				<CreateGroupDialog
+					onClose={() => setOpenKind(null)}
+					onSwitchToSingle={() => setOpenKind("single")}
+					onCreate={async (t, setSaving) => {
+						setSaving(true);
+						try {
+							const nextSortOrder =
+								tickets.length > 0
+									? Math.max(...tickets.map((t) => t.sortOrder)) + 10
+									: 10;
+
+							// Filter out undefined values to prevent Firestore errors
+							const cleanTicketData = Object.fromEntries(
+								Object.entries(t).filter(([_, value]) => value !== undefined)
+							);
+
+							const ticketData: Omit<TicketTypeDoc, "id"> = {
+								...cleanTicketData,
+								quantityRemaining: t.quantityTotal,
+								isActive: true,
+								sortOrder: nextSortOrder,
+							} as Omit<TicketTypeDoc, "id">;
+
+							await createTicketType(eventId, ticketData);
+							const newTicket = await listTicketTypes(eventId);
+							setTickets(newTicket);
+							setOpenKind(null);
+						} finally {
+							setSaving(false);
+						}
+					}}
+				/>
+			)}
+		</div>
+	);
+}
+
+/* ---------- UI bits ---------- */
+
+function TicketRow({
+	t,
+	onDelete,
+	eventId,
+	router,
+}: {
+	t: TicketTypeDoc;
+	onDelete: () => void;
+	eventId: string | undefined;
+	router: any;
+}) {
+	const kind = t.kind === "single" ? "Single" : `Group x${t.groupSize}`;
+	const stock =
+		t.quantityTotal == null
+			? "Unlimited"
+			: `${t.quantityTotal.toLocaleString()}`;
+
+	const price =
+		t.price != null
+			? `${t.currency ?? "NGN"} ${(t.price / 100).toLocaleString()}`
+			: "Free";
+
+	return (
+		<div className="rounded-2xl bg-surface border border-stroke p-4">
+			<div className="flex items-center justify-between gap-4">
+				<div>
+					<div className="text-sm text-text-muted">{kind}</div>
+					<div className="font-medium">{t.name}</div>
+					{t.description && (
+						<div className="text-sm text-text-muted mt-1 line-clamp-2">
+							{t.description}
+						</div>
+					)}
+					<div className="text-xs text-text-muted mt-2 flex gap-3">
+						<span>Stock: {stock}</span>
+						<span>Price: {price}</span>
+						{t.limits?.perUserMax ? (
+							<span>Limit: {t.limits.perUserMax}/user</span>
+						) : null}
+					</div>
+				</div>
+				<div className="flex gap-2">
+					<Button
+						variant="outline"
+						text="Edit"
+						onClick={() =>
+							router.push(`/events/${eventId}/tickets/${t.id}/edit`)
+						}
+					/>
+					<Button variant="danger" text="Delete" onClick={onDelete} />
+				</div>
+			</div>
+		</div>
+	);
+}
+
+/* ---------- Create Single Ticket Dialog ---------- */
+
+function CreateSingleDialog({
+	onClose,
+	onSwitchToGroup,
+	onCreate,
+}: {
+	onClose: () => void;
+	onSwitchToGroup: () => void;
+	onCreate: (
+		t: Omit<
+			TicketTypeDoc,
+			"id" | "quantityRemaining" | "isActive" | "sortOrder"
+		>,
+		setSaving: (v: boolean) => void
+	) => void;
+}) {
+	const [tab, setTab] = useState<Tab>("free");
+	const [name, setName] = useState("General Admission");
+	const [qtyMode, setQtyMode] = useState<"limited" | "unlimited">("limited");
+	const [quantity, setQuantity] = useState<string>("80");
+	const [price, setPrice] = useState<number>(4000); // NGN
+	const [perUserMax, setPerUserMax] = useState<number>(5);
+	const [desc, setDesc] = useState("");
+	const [transferFee, setTransferFee] = useState(true);
+	const [salesStart, setSalesStart] = useState<string>("");
+	const [salesEnd, setSalesEnd] = useState<string>("");
+	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
+		"general"
+	);
+	const [saving, setSaving] = useState(false);
+
+	const canSave = useMemo(() => {
+		if (!name.trim()) return false;
+		if (qtyMode === "limited" && (!quantity || parseInt(quantity) < 1))
+			return false;
+		if (tab === "paid" && (!price || price < 50)) return false;
+		return true;
+	}, [name, qtyMode, quantity, tab, price]);
+
+	return (
+		<DialogFrame title="Add a new single ticket" onClose={onClose}>
+			{/* tabs */}
+			<div className="inline-flex rounded-xl bg-surface p-1 border border-stroke">
+				{[
+					{ key: "free", label: "Free" },
+					{ key: "paid", label: "Paid" },
+					{ key: "invite", label: "Invite-only" },
+				].map((it) => (
+					<button
+						key={it.key}
+						className={[
+							"px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+							tab === it.key
+								? "bg-white text-bg shadow-sm"
+								: "text-text-muted hover:text-text",
+						].join(" ")}
+						onClick={() => setTab(it.key as Tab)}
+					>
+						{it.label}
+					</button>
+				))}
+			</div>
+
+			<div className="mt-6 flex flex-col gap-6">
+				{/* Basic Info */}
+				<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Ticket name <span className="text-cta">*</span>
+						</label>
+						<input
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="General Admission"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Ticket description
+						</label>
+						<textarea
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+							rows={3}
+							value={desc}
+							onChange={(e) => setDesc(e.target.value)}
+							placeholder="Describe what this ticket includes..."
+						/>
+					</div>
+				</div>
+
+				{/* Quantity & Pricing */}
+				<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Quantity mode <span className="text-cta">*</span>
+							</label>
+							<select
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+								value={qtyMode}
+								onChange={(e) => setQtyMode(e.target.value as any)}
+							>
+								<option value="limited">Limited quantity</option>
+								<option value="unlimited">Unlimited</option>
+							</select>
+						</div>
+
+						{qtyMode === "limited" && (
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Quantity <span className="text-cta">*</span>
+								</label>
+								<input
+									type="number"
+									className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									value={quantity}
+									min={1}
+									onChange={(e) => setQuantity(e.target.value)}
+								/>
+							</div>
+						)}
+					</div>
+
+					{tab === "paid" && (
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Ticket price <span className="text-cta">*</span>
+							</label>
+							<div className="flex gap-2">
+								<div className="w-16 rounded-xl border border-stroke px-4 py-3 text-text bg-surface grid place-items-center">
+									₦
+								</div>
+								<input
+									type="number"
+									className="flex-1 rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									value={price}
+									min={50}
+									onChange={(e) => setPrice(parseInt(e.target.value || "0"))}
+								/>
+							</div>
+						</div>
+					)}
+
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Purchase limit per user
+						</label>
+						<input
+							type="number"
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+							value={perUserMax}
+							min={1}
+							onChange={(e) => setPerUserMax(parseInt(e.target.value || "0"))}
+						/>
+					</div>
+
+					{tab === "paid" && (
+						<div className="flex items-center gap-2">
+							<input
+								id="transfer-fee"
+								type="checkbox"
+								checked={transferFee}
+								onChange={(e) => setTransferFee(e.target.checked)}
+							/>
+							<label htmlFor="transfer-fee" className="text-sm text-text-muted">
+								Transfer fees to guest
+							</label>
+						</div>
+					)}
+
+					{/* Sales Window */}
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Sales start
+							</label>
+							<input
+								type="datetime-local"
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								value={salesStart}
+								onChange={(e) => setSalesStart(e.target.value)}
+							/>
+						</div>
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Sales end
+							</label>
+							<input
+								type="datetime-local"
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								value={salesEnd}
+								onChange={(e) => setSalesEnd(e.target.value)}
+							/>
+						</div>
+					</div>
+
+					{/* Admit Type */}
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Admit type
+						</label>
+						<select
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+							value={admitType}
+							onChange={(e) =>
+								setAdmitType(e.target.value as "general" | "vip" | "backstage")
+							}
+						>
+							<option value="general">General</option>
+							<option value="vip">VIP</option>
+							<option value="backstage">Backstage</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-6 flex items-center justify-between">
+				<Button
+					variant="outline"
+					text="Switch to Group ticket"
+					onClick={onSwitchToGroup}
+				/>
+				<div className="flex gap-2">
+					<Button variant="outline" text="Cancel" onClick={onClose} />
+					<Button
+						variant={canSave ? "primary" : "disabled"}
+						disabled={!canSave || saving}
+						text={saving ? "Saving..." : "Save"}
+						onClick={() =>
+							onCreate(
+								{
+									kind: "single",
+									name,
+									description: desc || undefined,
+									quantityTotal:
+										qtyMode === "limited" ? parseInt(quantity) : null,
+									limits: { perUserMax: perUserMax || undefined },
+									price: tab === "paid" ? price * 100 : undefined, // Convert to kobo
+									currency: tab === "paid" ? "NGN" : undefined,
+									transferFeesToGuest: tab === "paid" ? transferFee : undefined,
+									salesWindow: {
+										startAt: salesStart ? new Date(salesStart) : null,
+										endAt: salesEnd ? new Date(salesEnd) : null,
+									},
+									admitType,
+								},
+								setSaving
+							)
+						}
+					>
+						{saving ? <Spinner size="sm" /> : "Save"}
+					</Button>
+				</div>
+			</div>
+		</DialogFrame>
+	);
+}
+
+/* ---------- Create Group Ticket Dialog ---------- */
+
+function CreateGroupDialog({
+	onClose,
+	onSwitchToSingle,
+	onCreate,
+}: {
+	onClose: () => void;
+	onSwitchToSingle: () => void;
+	onCreate: (
+		t: Omit<
+			TicketTypeDoc,
+			"id" | "quantityRemaining" | "isActive" | "sortOrder"
+		>,
+		setSaving: (v: boolean) => void
+	) => void;
+}) {
+	const [tab, setTab] = useState<Tab>("free");
+	const [name, setName] = useState("Crew (x2)");
+	const [qtyMode, setQtyMode] = useState<"limited" | "unlimited">("limited");
+	const [quantity, setQuantity] = useState<string>("50");
+	const [groupSize, setGroupSize] = useState<number>(2);
+	const [groupPrice, setGroupPrice] = useState<number>(6000);
+	const [desc, setDesc] = useState("");
+	const [salesStart, setSalesStart] = useState<string>("");
+	const [salesEnd, setSalesEnd] = useState<string>("");
+	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
+		"general"
+	);
+	const [saving, setSaving] = useState(false);
+
+	// keep per-ticket computed from group price/size
+	const showPrice = tab === "paid";
+
+	const perTicket = useMemo(() => {
+		if (!groupSize || !groupPrice) return 0;
+		return Math.max(0, Math.floor(groupPrice / groupSize));
+	}, [groupPrice, groupSize]);
+
+	const canSave = useMemo(() => {
+		if (!name.trim()) return false;
+		if (!groupSize || groupSize < 2) return false;
+		if (qtyMode === "limited" && (!quantity || parseInt(quantity) < 1))
+			return false;
+		if (showPrice && (!groupPrice || groupPrice < 100)) return false;
+		return true;
+	}, [name, qtyMode, quantity, showPrice, groupPrice, groupSize]);
+
+	return (
+		<DialogFrame title="Add a new group ticket" onClose={onClose}>
+			<div className="inline-flex rounded-xl bg-surface p-1 border border-stroke">
+				{[
+					{ key: "free", label: "Free" },
+					{ key: "paid", label: "Paid" },
+					{ key: "invite", label: "Invite-only" },
+				].map((it) => (
+					<button
+						key={it.key}
+						className={[
+							"px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+							tab === it.key
+								? "bg-white text-bg shadow-sm"
+								: "text-text-muted hover:text-text",
+						].join(" ")}
+						onClick={() => setTab(it.key as Tab)}
+					>
+						{it.label}
+					</button>
+				))}
+			</div>
+
+			<div className="mt-6 flex flex-col gap-6">
+				{/* Basic Info */}
+				<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Ticket name <span className="text-cta">*</span>
+						</label>
+						<input
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+							value={name}
+							onChange={(e) => setName(e.target.value)}
+							placeholder="Crew (x2)"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Group size <span className="text-cta">*</span>
+						</label>
+						<select
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+							value={groupSize}
+							onChange={(e) => setGroupSize(parseInt(e.target.value || "2"))}
+						>
+							{[...Array(9)].map((_, i) => (
+								<option key={i + 2} value={i + 2}>
+									{i + 2}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Ticket description
+						</label>
+						<textarea
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+							rows={3}
+							value={desc}
+							onChange={(e) => setDesc(e.target.value)}
+							placeholder="Describe what this group ticket includes..."
+						/>
+					</div>
+				</div>
+
+				{/* Quantity & Pricing */}
+				<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Quantity mode <span className="text-cta">*</span>
+							</label>
+							<select
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+								value={qtyMode}
+								onChange={(e) => setQtyMode(e.target.value as any)}
+							>
+								<option value="limited">Limited quantity</option>
+								<option value="unlimited">Unlimited</option>
+							</select>
+						</div>
+
+						{qtyMode === "limited" && (
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Quantity <span className="text-cta">*</span>
+								</label>
+								<input
+									type="number"
+									className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									value={quantity}
+									min={1}
+									onChange={(e) => setQuantity(e.target.value)}
+								/>
+							</div>
+						)}
+					</div>
+
+					{showPrice && (
+						<>
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Group price <span className="text-cta">*</span>
+								</label>
+								<div className="flex gap-2">
+									<div className="w-16 rounded-xl border border-stroke px-4 py-3 text-text bg-surface grid place-items-center">
+										₦
+									</div>
+									<input
+										type="number"
+										className="flex-1 rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+										value={groupPrice}
+										min={100}
+										onChange={(e) =>
+											setGroupPrice(parseInt(e.target.value || "0"))
+										}
+									/>
+								</div>
+							</div>
+
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Price per ticket (auto-calculated)
+								</label>
+								<div className="w-full rounded-xl border border-stroke px-4 py-3 text-text bg-bg">
+									₦ {perTicket.toLocaleString()}
+								</div>
+							</div>
+						</>
+					)}
+
+					{/* Sales Window */}
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Sales start
+							</label>
+							<input
+								type="datetime-local"
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								value={salesStart}
+								onChange={(e) => setSalesStart(e.target.value)}
+							/>
+						</div>
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Sales end
+							</label>
+							<input
+								type="datetime-local"
+								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								value={salesEnd}
+								onChange={(e) => setSalesEnd(e.target.value)}
+							/>
+						</div>
+					</div>
+
+					{/* Admit Type */}
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Admit type
+						</label>
+						<select
+							className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+							value={admitType}
+							onChange={(e) =>
+								setAdmitType(e.target.value as "general" | "vip" | "backstage")
+							}
+						>
+							<option value="general">General</option>
+							<option value="vip">VIP</option>
+							<option value="backstage">Backstage</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div className="mt-6 flex items-center justify-between">
+				<Button
+					variant="outline"
+					text="Switch to Single ticket"
+					onClick={onSwitchToSingle}
+				/>
+				<div className="flex gap-2">
+					<Button variant="outline" text="Cancel" onClick={onClose} />
+					<Button
+						variant={canSave ? "primary" : "disabled"}
+						disabled={!canSave || saving}
+						text={saving ? "Saving..." : "Save"}
+						onClick={() =>
+							onCreate(
+								{
+									kind: "group",
+									name,
+									description: desc || undefined,
+									quantityTotal:
+										qtyMode === "limited" ? parseInt(quantity) : null,
+									groupSize,
+									price: showPrice ? groupPrice * 100 : undefined, // Convert to kobo
+									currency: showPrice ? "NGN" : undefined,
+									salesWindow: {
+										startAt: salesStart ? new Date(salesStart) : null,
+										endAt: salesEnd ? new Date(salesEnd) : null,
+									},
+									admitType,
+								},
+								setSaving
+							)
+						}
+					>
+						{saving ? <Spinner size="sm" /> : "Save"}
+					</Button>
+				</div>
+			</div>
+		</DialogFrame>
+	);
+}
+
+/* ---------- small primitives ---------- */
+
+function DialogFrame({
+	title,
+	children,
+	onClose,
+}: {
+	title: string;
+	children: React.ReactNode;
+	onClose: () => void;
+}) {
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+			<div className="w-full max-w-2xl max-h-[90vh] rounded-2xl bg-surface border border-stroke flex flex-col">
+				<div className="flex items-center justify-between p-6 border-b border-stroke">
+					<h3 className="font-heading font-semibold text-lg">{title}</h3>
+					<button className="text-text-muted hover:text-text" onClick={onClose}>
+						✕
+					</button>
+				</div>
+				<div className="flex-1 overflow-y-auto p-6">{children}</div>
+			</div>
+		</div>
+	);
+}

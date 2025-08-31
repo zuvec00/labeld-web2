@@ -1,0 +1,597 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Button from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import {
+	BarChart3,
+	Calendar,
+	Settings,
+	Ticket as TicketIcon,
+	Package as PackageIcon,
+} from "lucide-react";
+import { countTicketTypes, fetchEventById } from "@/lib/firebase/queries/event";
+import { listTicketTypes } from "@/lib/firebase/queries/ticketTypes";
+import { listMerchForEvent } from "@/lib/firebase/queries/merch";
+import { listMomentsForEvent } from "@/lib/firebase/queries/moment";
+import type { TicketTypeDoc } from "@/lib/models/ticketType";
+import type { MerchItemDoc } from "@/lib/models/merch";
+import type { MomentDoc } from "@/lib/models/moment";
+
+// Decide where “Resume setup” should go based on data you have
+function nextSetupPath(ev: any, ticketCount: number) {
+	// If you later track theme progress, check it here first
+	if (!ticketCount) return `/events/${ev.id}/tickets`;
+	return `/events/${ev.id}/merch`;
+}
+
+type TabKey = "overview" | "tickets" | "merch" | "moments" | "settings";
+
+export default function EventDashboardPage() {
+	const { eventId } = useParams<{ eventId: string }>();
+	const router = useRouter();
+
+	const [loading, setLoading] = useState(true);
+	const [ev, setEv] = useState<any | null>(null);
+	const [ticketCount, setTicketCount] = useState(0);
+	const [tickets, setTickets] = useState<TicketTypeDoc[]>([]);
+	const [merch, setMerch] = useState<MerchItemDoc[]>([]);
+	const [moments, setMoments] = useState<MomentDoc[]>([]);
+	const [tab, setTab] = useState<TabKey>("overview");
+
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			try {
+				const [eventDoc, tix, merchItems, momentsList] = await Promise.all([
+					fetchEventById(eventId),
+					listTicketTypes(eventId),
+					listMerchForEvent(eventId),
+					listMomentsForEvent(eventId),
+				]);
+				if (!mounted) return;
+				setEv(eventDoc);
+				setTickets(tix);
+				setMerch(merchItems);
+				setMoments(momentsList);
+				if (eventDoc) {
+					const n = await countTicketTypes(eventDoc.id);
+					if (!mounted) return;
+					setTicketCount(n);
+				}
+			} finally {
+				if (mounted) setLoading(false);
+			}
+		})();
+		return () => {
+			mounted = false;
+		};
+	}, [eventId]);
+
+	const resumeHref = useMemo(
+		() => (ev ? nextSetupPath(ev, ticketCount) : "#"),
+		[ev, ticketCount]
+	);
+
+	const hasActiveTickets = useMemo(
+		() => tickets.some((t) => t.isActive),
+		[tickets]
+	);
+
+	if (loading) {
+		return (
+			<div className="min-h-dvh grid place-items-center">
+				<Spinner size="lg" />
+			</div>
+		);
+	}
+
+	if (!ev) {
+		return (
+			<div className="min-h-dvh grid place-items-center p-6 text-center">
+				<div>
+					<p className="text-text-muted">Event not found.</p>
+					<div className="mt-4">
+						<Button
+							text="Back to Events"
+							variant="outline"
+							onClick={() => router.push("/events")}
+						/>
+					</div>
+				</div>
+			</div>
+		);
+	}
+
+	const nav = [
+		{ key: "overview", label: "Overview", icon: BarChart3 },
+		{ key: "tickets", label: "Tickets", icon: TicketIcon },
+		{ key: "merch", label: "Merch", icon: PackageIcon },
+		{ key: "moments", label: "Moments", icon: Calendar },
+		{ key: "settings", label: "Settings", icon: Settings },
+	] as const;
+
+	return (
+		<div className="min-h-dvh bg-bg">
+			{/* Cover header */}
+			<div className="relative">
+				<div className="h-120 bg-stroke/20 relative">
+					{ev.coverImageURL && (
+						<img
+							src={ev.coverImageURL}
+							alt={ev.title}
+							className="w-full h-full object-cover"
+						/>
+					)}
+					<div className="absolute inset-0 bg-black/30" />
+				</div>
+
+				<div className="relative px-4 sm:px-6 py-6 max-w-6xl mx-auto">
+					<div className="bg-surface border border-stroke rounded-2xl p-6 -mt-16 relative z-10">
+						<div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+							<div>
+								<div className="flex items-center gap-3">
+									<h1 className="font-heading font-semibold text-2xl">
+										{ev.title || "Untitled Event"}
+									</h1>
+									<span className="text-xs px-2 py-0.5 rounded-full border border-stroke">
+										{ev.status}
+									</span>
+								</div>
+								<p className="text-text-muted mt-1">
+									{new Date(
+										ev.startAt?.toDate ? ev.startAt.toDate() : ev.startAt
+									).toLocaleString()}
+								</p>
+								<p className="text-text-muted text-sm">
+									{ev.venue?.name
+										? `${ev.venue.name}${
+												ev.venue.city ? " • " + ev.venue.city : ""
+										  }`
+										: "Venue TBA"}
+								</p>
+							</div>
+
+							{/* Draft banner → Resume */}
+							{ev.status === "draft" && (
+								<div className="rounded-xl bg-bg border border-stroke p-3 flex items-center gap-3">
+									<span className="text-sm text-text">
+										This event is a draft.
+									</span>
+									<Button
+										variant="primary"
+										text="Resume setup"
+										onClick={() => router.push(resumeHref)}
+									/>
+								</div>
+							)}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			{/* Body */}
+			<div className="px-4 sm:px-6 max-w-6xl mx-auto flex gap-8 pb-12">
+				{/* Left nav */}
+				<nav className="w-60 flex-shrink-0 mt-6">
+					<div className="bg-surface border border-stroke rounded-2xl p-3 sticky top-6">
+						<div className="space-y-1">
+							{nav.map((item) => {
+								const Icon = item.icon;
+								const active = tab === item.key;
+								return (
+									<button
+										key={item.key}
+										onClick={() => setTab(item.key as TabKey)}
+										className={[
+											"w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors",
+											active
+												? "bg-cta text-white"
+												: "text-text-muted hover:text-text hover:bg-stroke/20",
+										].join(" ")}
+									>
+										<Icon className="w-4 h-4" />
+										{item.label}
+									</button>
+								);
+							})}
+						</div>
+					</div>
+				</nav>
+
+				{/* Main */}
+				<main className="flex-1 mt-6 space-y-6">
+					{tab === "overview" && (
+						<div className="space-y-6">
+							{/* Event Summary */}
+							<div className="bg-surface border border-stroke rounded-2xl p-6">
+								<h3 className="font-heading font-semibold mb-4">
+									Event Summary
+								</h3>
+								<div className="flex gap-4">
+									{ev.coverImageURL ? (
+										<img
+											src={ev.coverImageURL}
+											className="w-28 h-28 object-cover rounded-xl border border-stroke"
+											alt=""
+										/>
+									) : (
+										<div className="w-28 h-28 rounded-xl bg-bg border border-stroke" />
+									)}
+									<div className="flex-1">
+										<div className="font-medium">
+											{ev.title || "Untitled Event"}
+										</div>
+										<div className="text-sm text-text-muted mt-1 break-all">
+											URL:{" "}
+											{ev.slug
+												? `https://labeld.app/${ev.slug}`
+												: `https://labeld.app/events/${ev.id}`}
+										</div>
+										<div className="text-sm text-text-muted mt-2">
+											{formatDateTimeRange(ev.startAt, ev.endAt, ev.timezone)}
+										</div>
+										<div className="text-sm text-text-muted mt-1">
+											{formatVenue(ev.venue)}
+										</div>
+									</div>
+								</div>
+								{ev.description ? (
+									<p className="text-sm text-text-muted mt-4 line-clamp-3">
+										{ev.description}
+									</p>
+								) : null}
+							</div>
+
+							{/* Stats Grid */}
+							<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+								<div className="bg-surface border border-stroke rounded-2xl p-6">
+									<h3 className="font-medium">Tickets</h3>
+									<p className="text-sm text-text-muted mt-2">
+										{ticketCount} ticket type(s)
+									</p>
+									<div className="text-xs text-text-muted mt-1">
+										{hasActiveTickets
+											? "Active tickets available"
+											: "No active tickets"}
+									</div>
+								</div>
+
+								<div className="bg-surface border border-stroke rounded-2xl p-6">
+									<h3 className="font-medium">Merch</h3>
+									<p className="text-sm text-text-muted mt-2">
+										{merch.length} item(s)
+									</p>
+									<div className="text-xs text-text-muted mt-1">
+										{merch.length > 0
+											? "Merchandise available"
+											: "No merch added"}
+									</div>
+								</div>
+
+								<div className="bg-surface border border-stroke rounded-2xl p-6">
+									<h3 className="font-medium">Moments</h3>
+									<p className="text-sm text-text-muted mt-2">
+										{moments.length} moment(s)
+									</p>
+									<div className="text-xs text-text-muted mt-1">
+										{moments.length > 0 ? "Content shared" : "No moments yet"}
+									</div>
+								</div>
+							</div>
+
+							{/* Quick Actions */}
+							<div className="bg-surface border border-stroke rounded-2xl p-6">
+								<h3 className="font-medium mb-4">Quick Actions</h3>
+								<div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+									<Button
+										variant="outline"
+										text="Edit details"
+										onClick={() => router.push(`/events/${ev.id}/details`)}
+									/>
+									<Button
+										variant="outline"
+										text="Manage tickets"
+										onClick={() => router.push(`/events/${ev.id}/tickets`)}
+									/>
+									<Button
+										variant="outline"
+										text="Manage merch"
+										onClick={() => router.push(`/events/${ev.id}/merch`)}
+									/>
+									<Button
+										variant="outline"
+										text="Add moments"
+										onClick={() => router.push(`/events/${ev.id}/moments`)}
+									/>
+								</div>
+							</div>
+
+							{/* Event Status */}
+							<div className="bg-surface border border-stroke rounded-2xl p-6">
+								<h3 className="font-medium mb-4">Event Status</h3>
+								<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+									<div>
+										<div className="text-sm font-medium">Status</div>
+										<div className="text-sm text-text-muted mt-1">
+											{ev.status === "draft" ? "Draft" : "Published"}
+										</div>
+									</div>
+									<div>
+										<div className="text-sm font-medium">Visibility</div>
+										<div className="text-sm text-text-muted mt-1">
+											{ev.visibility === "public" ? "Public" : "Unlisted"}
+										</div>
+									</div>
+									<div>
+										<div className="text-sm font-medium">Timezone</div>
+										<div className="text-sm text-text-muted mt-1">
+											{ev.timezone || "Not set"}
+										</div>
+									</div>
+									<div>
+										<div className="text-sm font-medium">Capacity</div>
+										<div className="text-sm text-text-muted mt-1">
+											{ev.capacityMode === "unlimited"
+												? "Unlimited"
+												: `${ev.capacityTotal || 0} people`}
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{tab === "tickets" && (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<div className="flex items-center justify-between mb-4">
+								<h2 className="font-heading font-semibold text-xl">Tickets</h2>
+								<Button
+									variant="primary"
+									text="Create ticket"
+									onClick={() => router.push(`/events/${ev.id}/tickets`)}
+								/>
+							</div>
+							{tickets.length ? (
+								<div className="space-y-3">
+									{tickets.map((t) => (
+										<div
+											key={t.id}
+											className="flex items-center justify-between gap-4 p-4 rounded-xl border border-stroke"
+										>
+											<div>
+												<div className="font-medium">{t.name}</div>
+												{t.description && (
+													<div className="text-sm text-text-muted mt-1 line-clamp-2">
+														{t.description}
+													</div>
+												)}
+												<div className="text-xs text-text-muted mt-2 flex gap-3">
+													<span>
+														{t.kind === "single"
+															? "Single"
+															: `Group x${t.groupSize}`}
+													</span>
+													<span>
+														{t.price != null
+															? `${t.currency ?? "NGN"} ${(
+																	t.price / 100
+															  ).toLocaleString()}`
+															: "Free"}
+													</span>
+													<span>
+														{t.quantityTotal == null
+															? "Unlimited"
+															: `${t.quantityRemaining ?? 0}/${
+																	t.quantityTotal
+															  } left`}
+													</span>
+													<span
+														className={
+															t.isActive ? "text-green-600" : "text-red-600"
+														}
+													>
+														{t.isActive ? "Active" : "Inactive"}
+													</span>
+												</div>
+											</div>
+											<div className="flex gap-2">
+												<Button
+													variant="outline"
+													text="Edit"
+													onClick={() =>
+														router.push(`/events/${ev.id}/tickets/${t.id}/edit`)
+													}
+												/>
+											</div>
+										</div>
+									))}
+								</div>
+							) : (
+								<div className="text-center py-8">
+									<TicketIcon className="mx-auto w-12 h-12 text-text-muted mb-3" />
+									<p className="text-text-muted">No tickets created yet</p>
+									<Button
+										className="mt-3"
+										variant="primary"
+										text="Create your first ticket"
+										onClick={() => router.push(`/events/${ev.id}/tickets`)}
+									/>
+								</div>
+							)}
+						</div>
+					)}
+
+					{tab === "merch" && (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<div className="flex items-center justify-between mb-4">
+								<h2 className="font-heading font-semibold text-xl">
+									Merchandise
+								</h2>
+								<Button
+									variant="primary"
+									text="Add merch"
+									onClick={() => router.push(`/events/${ev.id}/merch`)}
+								/>
+							</div>
+							{merch.length ? (
+								<div className="space-y-3">
+									{merch.map((m) => (
+										<div
+											key={m.id}
+											className="flex items-center gap-4 p-4 rounded-xl border border-stroke"
+										>
+											{m.images?.[0]?.url ? (
+												<img
+													src={m.images[0].url}
+													className="w-16 h-16 object-cover rounded-lg border border-stroke"
+													alt=""
+												/>
+											) : (
+												<div className="w-16 h-16 rounded-lg bg-bg border border-stroke" />
+											)}
+											<div className="flex-1">
+												<div className="font-medium">{m.name}</div>
+												<div className="text-sm text-text-muted mt-1">
+													{m.currency} {(m.priceMinor / 100).toLocaleString()}
+												</div>
+												<div className="text-xs text-text-muted mt-1">
+													{m.stockTotal == null
+														? "Unlimited"
+														: `${m.stockRemaining ?? 0}/${m.stockTotal} left`}
+												</div>
+												{m.sizeOptions?.length && (
+													<div className="text-xs text-text-muted mt-1">
+														Sizes: {m.sizeOptions.join(", ")}
+													</div>
+												)}
+											</div>
+											<div className="flex gap-2">
+												<Button variant="outline" text="Edit" />
+											</div>
+										</div>
+									))}
+								</div>
+							) : (
+								<div className="text-center py-8">
+									<PackageIcon className="mx-auto w-12 h-12 text-text-muted mb-3" />
+									<p className="text-text-muted">No merchandise added yet</p>
+									<Button
+										className="mt-3"
+										variant="primary"
+										text="Add your first item"
+										onClick={() => router.push(`/events/${ev.id}/merch`)}
+									/>
+								</div>
+							)}
+						</div>
+					)}
+
+					{tab === "moments" && (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<div className="flex items-center justify-between mb-4">
+								<h2 className="font-heading font-semibold text-xl">Moments</h2>
+								<Button
+									variant="primary"
+									text="Add moment"
+									onClick={() => router.push(`/events/${ev.id}/moments`)}
+								/>
+							</div>
+							{moments.length ? (
+								<div className="grid grid-cols-3 gap-3">
+									{moments.slice(0, 6).map((m) => (
+										<div
+											key={m.id}
+											className="aspect-square rounded-lg overflow-hidden border border-stroke bg-bg"
+										>
+											{m.type === "image" && m.mediaURL && (
+												<img
+													src={m.mediaURL}
+													className="w-full h-full object-cover"
+													alt=""
+												/>
+											)}
+											{m.type === "video" && (
+												<div className="w-full h-full grid place-items-center text-xs text-text-muted">
+													Video
+												</div>
+											)}
+											{m.type === "text" && (
+												<div className="p-2 text-xs line-clamp-3">{m.text}</div>
+											)}
+										</div>
+									))}
+									{moments.length > 6 && (
+										<div className="aspect-square rounded-lg border border-stroke bg-bg grid place-items-center text-xs text-text-muted">
+											+{moments.length - 6} more
+										</div>
+									)}
+								</div>
+							) : (
+								<div className="text-center py-8">
+									<Calendar className="mx-auto w-12 h-12 text-text-muted mb-3" />
+									<p className="text-text-muted">No moments shared yet</p>
+									<Button
+										className="mt-3"
+										variant="primary"
+										text="Share your first moment"
+										onClick={() => router.push(`/events/${ev.id}/moments`)}
+									/>
+								</div>
+							)}
+						</div>
+					)}
+
+					{tab === "settings" && (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<h2 className="font-heading font-semibold text-xl mb-2">
+								Settings
+							</h2>
+							<p className="text-text-muted">
+								Publish / cancel, organizer roles, etc.
+							</p>
+						</div>
+					)}
+				</main>
+			</div>
+		</div>
+	);
+}
+
+/* ---------- Helpers ---------- */
+
+function formatDateTimeRange(
+	start?: string | Date,
+	end?: string | Date,
+	tz?: string
+) {
+	if (!start || !end) return "Date & time not set";
+	try {
+		const s = new Date(start);
+		const e = new Date(end);
+		const fmt: Intl.DateTimeFormatOptions = {
+			weekday: "short",
+			year: "numeric",
+			month: "short",
+			day: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+			timeZone: tz || Intl.DateTimeFormat().resolvedOptions().timeZone,
+		};
+		return `${new Intl.DateTimeFormat(undefined, fmt).format(
+			s
+		)} → ${new Intl.DateTimeFormat(undefined, fmt).format(e)} (${
+			tz || "local"
+		})`;
+	} catch {
+		return "Date & time not set";
+	}
+}
+
+function formatVenue(v?: any) {
+	if (!v) return "Venue not set";
+	const bits = [v.name, v.address, v.city, v.state, v.country].filter(Boolean);
+	return bits.length ? bits.join(", ") : "Venue not set";
+}
