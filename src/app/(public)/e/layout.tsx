@@ -48,21 +48,15 @@ export default function EventsLayout({
 			{children}
 
 			{/* Footer */}
-			<footer className="border-t border-gray-800 mt-16">
+			<footer className="border-t border-gray-800 mt-16 bg-cta text-text">
 				<div className="container mx-auto px-10 sm:px-10 lg:px-10 py-6">
 					<div className="flex flex-col md:flex-row items-center justify-between">
-						<div className="text-gray-400 font-manrope">© Labeld 2025</div>
+						<div className=" font-manrope">© Labeld 2025</div>
 						<div className="flex items-center space-x-6 mt-4 md:mt-0">
-							<a
-								href="#"
-								className="text-gray-400 hover:text-[#C6FF00] transition-colors"
-							>
+							<a href="#" className=" hover:text-[#C6FF00] transition-colors">
 								<Instagram className="h-5 w-5" />
 							</a>
-							<a
-								href="#"
-								className="text-gray-400 hover:text-[#C6FF00] transition-colors"
-							>
+							<a href="#" className=" hover:text-[#C6FF00] transition-colors">
 								<svg
 									className="h-5 w-5"
 									fill="currentColor"

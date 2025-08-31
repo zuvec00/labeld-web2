@@ -8,11 +8,13 @@ import { Search } from "lucide-react";
 import EventCard from "@/components/discover/EventCard";
 import MomentCard from "@/components/discover/MomentCard";
 import MerchCard from "@/components/discover/MerchCard";
+import DropContentCard from "@/components/discover/DropContentCard";
 import Button2, { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { fetchPublishedEvents } from "@/lib/firebase/queries/event";
 import { fetchPublicMoments } from "@/lib/firebase/queries/moment";
 import { fetchPublicMerch } from "@/lib/firebase/queries/merch";
+import { fetchPublicDropContent } from "@/lib/firebase/queries/dropContent";
 import { Spinner } from "@/components/ui/spinner";
 import {
 	getAuth,
@@ -29,6 +31,7 @@ export default function DiscoverPage() {
 	const [events, setEvents] = useState<any[]>([]);
 	const [moments, setMoments] = useState<any[]>([]);
 	const [merch, setMerch] = useState<any[]>([]);
+	const [dropContent, setDropContent] = useState<any[]>([]);
 	const router = useRouter();
 	const auth = getAuth();
 
@@ -55,15 +58,18 @@ export default function DiscoverPage() {
 		async function fetchData() {
 			try {
 				setLoading(true);
-				const [eventsData, momentsData, merchData] = await Promise.all([
-					fetchPublishedEvents(),
-					fetchPublicMoments(),
-					fetchPublicMerch(),
-				]);
+				const [eventsData, momentsData, merchData, dropContentData] =
+					await Promise.all([
+						fetchPublishedEvents(),
+						fetchPublicMoments(),
+						fetchPublicMerch(),
+						fetchPublicDropContent(),
+					]);
 
 				setEvents(eventsData);
 				setMoments(momentsData);
 				setMerch(merchData);
+				setDropContent(dropContentData);
 			} catch (error) {
 				console.error("Error fetching data:", error);
 			} finally {
@@ -328,6 +334,54 @@ export default function DiscoverPage() {
 					{moments.slice(0, 5).map((moment) => (
 						<div key={moment.id} className="flex-shrink-0 w-80">
 							<MomentCard moment={moment} />
+						</div>
+					))}
+				</div>
+			</section>
+
+			{/* Curated Section: Sneak Peek from Radar */}
+			<section className="mb-16 bg-surface/30 rounded-3xl p-8 border border-stroke/50">
+				<div className="flex items-center justify-between mb-6">
+					<div>
+						<div className="flex items-center gap-2">
+							<span>
+								<img src="/labeld_logo.png" alt="Radar" className="w-12 h-12" />
+							</span>
+							<h2 className="text-2xl font-heading font-bold text-text mb-2">
+								Labeld Radar
+							</h2>
+						</div>
+						<p className="text-text-muted font-manrope">
+							Curated straight from the Labeld app.
+						</p>
+					</div>
+					<a
+						href="https://apps.apple.com/ng/app/labeld/id6748664223"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="text-md text-cta underline inline-flex items-center gap-1 hover:text-accent transition-colors"
+					>
+						Download Labeld App
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							fill="none"
+							viewBox="0 0 20 20"
+							className="w-4 h-4 ml-1"
+						>
+							<path
+								stroke="currentColor"
+								strokeWidth="1.5"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+								d="M7.5 12.5L12.5 7.5M12.5 7.5H8.5M12.5 7.5V11.5"
+							/>
+						</svg>
+					</a>
+				</div>
+				<div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+					{dropContent.slice(0, 5).map((content) => (
+						<div key={content.id} className="flex-shrink-0 w-80">
+							<DropContentCard dropContent={content} />
 						</div>
 					))}
 				</div>

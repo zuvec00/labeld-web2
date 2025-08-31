@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Calendar, Clock, MapPin } from "lucide-react";
 import { fetchEventById } from "@/lib/firebase/queries/event";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,6 +23,7 @@ import MerchCard from "@/components/discover/MerchCard";
 
 export default function EventDetailPage() {
 	const params = useParams();
+	const router = useRouter();
 	const [loading, setLoading] = useState(true);
 	const [authLoading, setAuthLoading] = useState(true);
 	const [user, setUser] = useState<User | null>(null);
@@ -204,8 +205,7 @@ export default function EventDetailPage() {
 					<button
 						className="w-full bg-cta hover:bg-cta/90 text-white font-heading font-bold py-4 px-8 rounded-xl text-lg transition-all duration-300 hover:shadow-glow"
 						onClick={() => {
-							// TODO: Implement ticket purchase logic or navigation
-							console.log("Get a Ticket button clicked");
+							router.push(`/buy/${eventId}/tickets`);
 						}}
 					>
 						Get a Ticket
@@ -319,6 +319,23 @@ export default function EventDetailPage() {
 									))}
 								</div>
 							)}
+						</div>
+
+						<hr className="mb-6 border-t border-stroke" />
+						{/* Event Description Section */}
+						<div className=" rounded-2xl bg-surface border border-stroke p-6">
+							<h3 className="text-lg font-heading font-semibold mb-4 text-text">
+								About this event
+							</h3>
+							<div className="text-text-muted font-manrope leading-relaxed">
+								{event.description ? (
+									<p>{event.description}</p>
+								) : (
+									<p className="text-text-muted italic">
+										No description available for this event.
+									</p>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
