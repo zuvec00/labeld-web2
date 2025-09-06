@@ -11,6 +11,7 @@ import {
 	Settings,
 	Ticket as TicketIcon,
 	Package as PackageIcon,
+	QrCode,
 } from "lucide-react";
 import { countTicketTypes, fetchEventById } from "@/lib/firebase/queries/event";
 import { listTicketTypes } from "@/lib/firebase/queries/ticketTypes";
@@ -185,19 +186,39 @@ export default function EventDashboardPage() {
 								</p>
 							</div>
 
-							{/* Draft banner → Resume */}
-							{ev.status === "draft" && (
-								<div className="rounded-xl bg-bg border border-stroke p-3 flex items-center gap-3">
-									<span className="text-sm text-text">
-										This event is a draft.
-									</span>
+							{/* Action Buttons */}
+							<div className="flex items-center gap-3">
+								{/* Scanner Button - Always visible for published events or if user has scanner role */}
+								{(ev.status === "published" ||
+									myRoles?.includes("scanner") ||
+									myRoles?.includes("manager") ||
+									myRoles?.includes("owner")) && (
 									<Button
 										variant="primary"
-										text="Resume setup"
-										onClick={() => router.push(resumeHref)}
-									/>
-								</div>
-							)}
+										leftIcon={<QrCode className="w-6 h-6" />}
+										text="Scan Tickets"
+										onClick={() => router.push(`/scan?eventId=${ev.id}`)}
+										className="flex items-center gap-2"
+									>
+										<QrCode className="w-4 h-4" />
+										Scan Tickets
+									</Button>
+								)}
+
+								{/* Draft banner → Resume */}
+								{ev.status === "draft" && (
+									<div className="rounded-xl bg-bg border border-stroke p-3 flex items-center gap-3">
+										<span className="text-sm text-text">
+											This event is a draft.
+										</span>
+										<Button
+											variant="outline"
+											text="Resume setup"
+											onClick={() => router.push(resumeHref)}
+										/>
+									</div>
+								)}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -338,6 +359,24 @@ export default function EventDashboardPage() {
 										onClick={() => router.push(`/events/${ev.id}/moments`)}
 									/>
 								</div>
+
+								{/* Scanner Action - Prominent for published events */}
+								{(ev.status === "published" ||
+									myRoles?.includes("scanner") ||
+									myRoles?.includes("manager") ||
+									myRoles?.includes("owner")) && (
+									<div className="mt-4 pt-4 border-t border-stroke">
+										<Button
+											variant="primary"
+											text="Scan Event Tickets"
+											onClick={() => router.push(`/scan?eventId=${ev.id}`)}
+											className="flex items-center gap-2 w-full justify-center"
+										>
+											<QrCode className="w-4 h-4" />
+											Scan Event Tickets
+										</Button>
+									</div>
+								)}
 							</div>
 
 							{/* Event Status */}
@@ -379,11 +418,28 @@ export default function EventDashboardPage() {
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<div className="flex items-center justify-between mb-4">
 								<h2 className="font-heading font-semibold text-xl">Tickets</h2>
-								<Button
-									variant="primary"
-									text="Create ticket"
-									onClick={() => router.push(`/events/${ev.id}/tickets`)}
-								/>
+								<div className="flex items-center gap-2">
+									{/* Scanner Button - Show if event is published or user has scanner permissions */}
+									{(ev.status === "published" ||
+										myRoles?.includes("scanner") ||
+										myRoles?.includes("manager") ||
+										myRoles?.includes("owner")) && (
+										<Button
+											variant="outline"
+											text="Scan Tickets"
+											onClick={() => router.push(`/scan?eventId=${ev.id}`)}
+											className="flex items-center gap-2"
+										>
+											<QrCode className="w-4 h-4" />
+											Scan Tickets
+										</Button>
+									)}
+									<Button
+										variant="primary"
+										text="Create ticket"
+										onClick={() => router.push(`/events/${ev.id}/tickets`)}
+									/>
+								</div>
 							</div>
 							{tickets.length ? (
 								<div className="space-y-3">

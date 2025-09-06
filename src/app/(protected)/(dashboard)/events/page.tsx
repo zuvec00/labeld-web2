@@ -6,7 +6,12 @@ import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
 import Button from "@/components/ui/button";
-import { listMyEventsLite } from "@/lib/firebase/queries/event"; // implement below
+import { QrCode } from "lucide-react";
+import { listMyEventsLite } from "@/lib/firebase/queries/event";
+import {
+	getMultipleEventTicketStats,
+	type TicketStats,
+} from "@/lib/firebase/queries/attendeeTickets";
 
 type TabKey = "all" | "published" | "drafts" | "ended";
 const TABS: { key: TabKey; label: string }[] = [
@@ -24,6 +29,9 @@ export default function EventsIndexPage() {
 	const [loading, setLoading] = useState(true);
 	const [err, setErr] = useState<string | null>(null);
 	const [events, setEvents] = useState<any[]>([]);
+	const [ticketStats, setTicketStats] = useState<Record<string, TicketStats>>(
+		{}
+	);
 
 	useEffect(() => {
 		let mounted = true;
@@ -31,9 +39,20 @@ export default function EventsIndexPage() {
 			try {
 				const uid = auth.currentUser?.uid;
 				if (!uid) return router.push("/");
-				const data = await listMyEventsLite(uid); // returns minimal list
+
+				// Load events first
+				const data = await listMyEventsLite(uid);
 				if (!mounted) return;
 				setEvents(data);
+
+				// Load ticket stats for all events
+				if (data.length > 0) {
+					const eventIds = data.map((event) => event.id);
+					const stats = await getMultipleEventTicketStats(eventIds);
+					if (!mounted) return;
+					setTicketStats(stats);
+				}
+
 				setErr(null);
 			} catch (e: any) {
 				if (!mounted) return;
@@ -101,6 +120,8 @@ export default function EventsIndexPage() {
 					<EventCard
 						key={ev.id}
 						ev={ev}
+						ticketStats={ticketStats[ev.id]}
+						router={router}
 						onOpen={() => router.push(`/events/${ev.id}`)}
 					/>
 				))}
@@ -114,7 +135,17 @@ export default function EventsIndexPage() {
 	);
 }
 
-function EventCard({ ev, onOpen }: { ev: any; onOpen: () => void }) {
+function EventCard({
+	ev,
+	ticketStats,
+	router,
+	onOpen,
+}: {
+	ev: any;
+	ticketStats?: TicketStats;
+	router: any;
+	onOpen: () => void;
+}) {
 	const startedLabel = (() => {
 		try {
 			const d = ev.startAt?.toDate ? ev.startAt.toDate() : new Date(ev.startAt);
@@ -143,16 +174,48 @@ function EventCard({ ev, onOpen }: { ev: any; onOpen: () => void }) {
 				<h3 className="mt-2 font-medium">{ev.title || "Untitled"}</h3>
 				<p className="text-xs text-text-muted mt-1">{startedLabel}</p>
 
-				<div className="mt-4 flex items-center justify-between">
-					<div className="text-sm text-text-muted inline-flex items-center gap-1">
-						<span>🎟️</span> {ev.sold ?? 0}{" "}
-						<span className="ml-1">Tickets sold</span>
+				<div className="mt-4 space-y-2">
+					{/* Ticket Statistics */}
+					<div className="flex items-center justify-between text-sm">
+						<div className="flex items-center gap-1 text-text-muted">
+							<span>🎟️</span>
+							<span>{ticketStats?.totalTickets ?? 0} sold</span>
+						</div>
+						{ticketStats?.checkedInTickets !== undefined &&
+							ticketStats.checkedInTickets > 0 && (
+								<div className="flex items-center gap-1 text-green-500">
+									<span>✅</span>
+									<span>{ticketStats.checkedInTickets} checked in</span>
+								</div>
+							)}
 					</div>
-					<div className="flex items-center gap-2">
-						<button title="Open" onClick={onOpen} className="text-sm underline">
-							Open
-						</button>
-						{/* copy / delete icons can go here */}
+
+					{/* Action Buttons */}
+					<div className="flex items-center justify-between">
+						<div className="text-xs text-text-muted">
+							{ticketStats?.activeTickets ?? 0} active tickets
+						</div>
+						<div className="flex items-center gap-2">
+							<button
+								title="Scan Tickets"
+								onClick={(e) => {
+									e.stopPropagation();
+									router.push(`/scan?eventId=${ev.id}`);
+								}}
+								className="flex items-center gap-1 px-2 py-1 bg-accent text-bg rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors"
+							>
+								<QrCode className="w-3 h-3" />
+								Scan
+							</button>
+							<button
+								title="Open"
+								onClick={onOpen}
+								className="text-sm underline"
+							>
+								Open
+							</button>
+							{/* copy / delete icons can go here */}
+						</div>
 					</div>
 				</div>
 			</div>
