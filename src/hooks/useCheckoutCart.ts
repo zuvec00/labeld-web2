@@ -13,6 +13,7 @@ export type CartItem =
       qty: number; 
       groupSize?: number;
       admitType?: AdmitType;
+      transferFeesToGuest?: boolean;
     }
   | { 
       _type: "merch"; 
@@ -28,12 +29,14 @@ export type CartItem =
 type CartState = {
   eventId: string | null;
   items: CartItem[];
-  contact?: { email?: string; phone?: string };
+  contact?: { firstName?: string; lastName?: string; email?: string; phone?: string };
+  termsAccepted?: boolean;
   setEventId: (id: string) => void;
   addItem: (item: CartItem) => void;
   updateQty: (key: { _type: "ticket" | "merch"; id: string; variantKey?: string }, qty: number) => void;
   removeItem: (key: { _type: "ticket" | "merch"; id: string; variantKey?: string }) => void;
-  setContact: (contact: { email?: string; phone?: string }) => void;
+  setContact: (contact: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
+  setTermsAccepted: (accepted: boolean) => void;
   clear: () => void;
 };
 
@@ -68,22 +71,51 @@ const patchQty = (
   variantKey: string | undefined, 
   qty: number
 ): CartItem[] => {
-  return items.map(item => {
-    if (item._type !== _type) return item;
-    
-    if (_type === "ticket" && item.ticketTypeId === id) {
-      return { ...item, qty };
-    }
-    
-    if (_type === "merch" && item.merchItemId === id) {
-      const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
-      if (itemVariantKey === (variantKey || "")) {
-        return { ...item, qty };
+  // If qty is 0, remove the item
+  if (qty === 0) {
+    return items.filter(item => {
+      if (item._type !== _type) return true;
+      
+      if (_type === "ticket" && "ticketTypeId" in item && item.ticketTypeId === id) {
+        return false;
       }
+      
+      if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
+        const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
+        return itemVariantKey !== (variantKey || "");
+      }
+      
+      return true;
+    });
+  }
+
+  // Check if item exists
+  const existingItemIndex = items.findIndex(item => {
+    if (item._type !== _type) return false;
+    
+    if (_type === "ticket" && "ticketTypeId" in item && item.ticketTypeId === id) {
+      return true;
     }
     
-    return item;
-  }).filter(item => item.qty > 0);
+    if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
+      const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
+      return itemVariantKey === (variantKey || "");
+    }
+    
+    return false;
+  });
+
+  if (existingItemIndex >= 0) {
+    // Update existing item
+    const updatedItems = [...items];
+    updatedItems[existingItemIndex] = { ...updatedItems[existingItemIndex], qty };
+    return updatedItems;
+  } else {
+    // This shouldn't happen for tickets since we need the ticket data
+    // For merch, we'd need to fetch the merch data to create a new item
+    console.warn("Cannot update quantity for non-existent item");
+    return items;
+  }
 };
 
 const removeLine = (
@@ -95,11 +127,11 @@ const removeLine = (
   return items.filter(item => {
     if (item._type !== _type) return true;
     
-    if (_type === "ticket" && item.ticketTypeId === id) {
+    if (_type === "ticket" && "ticketTypeId" in item && item.ticketTypeId === id) {
       return false;
     }
     
-    if (_type === "merch" && item.merchItemId === id) {
+    if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
       const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
       return itemVariantKey !== (variantKey || "");
     }
@@ -131,10 +163,13 @@ export const useCheckoutCart = create<CartState>()(
       
       setContact: (contact) => set({ contact }),
       
+      setTermsAccepted: (termsAccepted) => set({ termsAccepted }),
+      
       clear: () => set({ 
         items: [], 
         eventId: null, 
-        contact: undefined 
+        contact: undefined,
+        termsAccepted: undefined
       }),
     }),
     {

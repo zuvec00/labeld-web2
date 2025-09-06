@@ -11,6 +11,15 @@ interface LineItemRowProps {
 export default function LineItemRow({ item, onRemove }: LineItemRowProps) {
 	const subtotal = item.unitPriceMinor * item.qty;
 
+	// Calculate transferable fee if applicable
+	// TODO: Move fee calculation to backend/server to prevent tampering
+	const transferableFee =
+		item._type === "ticket" && item.transferFeesToGuest
+			? Math.round(subtotal * 0.06) + 10000 // 6% + ₦100
+			: 0;
+
+	const totalForItem = subtotal + transferableFee;
+
 	return (
 		<div className="flex items-center justify-between py-2">
 			<div className="flex-1 min-w-0">
@@ -38,7 +47,7 @@ export default function LineItemRow({ item, onRemove }: LineItemRowProps) {
 
 			<div className="flex items-center gap-2 ml-4">
 				<span className="text-sm font-medium text-text">
-					{formatCurrency(subtotal, item.currency)}
+					{formatCurrency(totalForItem, item.currency)}
 				</span>
 				{onRemove && (
 					<button

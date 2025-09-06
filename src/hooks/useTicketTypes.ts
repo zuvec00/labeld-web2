@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { collection, query, where, orderBy, getDocs, getFirestore } from "firebase/firestore";
 import { AdmitType } from "./useCheckoutCart";
 
 export type TicketTypeDoc = {
@@ -19,82 +20,59 @@ export type TicketTypeDoc = {
   transferFeesToGuest?: boolean;
 };
 
-// Mock data
-const mockTicketTypes: TicketTypeDoc[] = [
-  {
-    id: "ticket-1",
-    name: "Nolly Solo Star",
-    description: "This gives you access to the trivia night",
-    price: 7000, // ₦70.00
-    currency: "NGN",
-    quantityTotal: 100,
-    quantityRemaining: 45,
-    admitType: "general",
-    isActive: true,
-    sortOrder: 1,
-    kind: "single",
-  },
-  {
-    id: "ticket-2",
-    name: "Early Bird: Nolly Solo Star",
-    description: "Access to the trivia night only.",
-    price: 6000, // ₦60.00
-    currency: "NGN",
-    quantityTotal: 50,
-    quantityRemaining: 0, // Sold out
-    admitType: "general",
-    isActive: true,
-    sortOrder: 2,
-    kind: "single",
-  },
-  {
-    id: "ticket-3",
-    name: "Early Bird: Nolly Crew",
-    description: "The more the merrier, the more you save! This ticket admit 6 people and makes you a complete squad for the night",
-    price: 32000, // ₦320.00
-    currency: "NGN",
-    quantityTotal: 20,
-    quantityRemaining: 0, // Sold out
-    admitType: "general",
-    isActive: true,
-    sortOrder: 3,
-    kind: "group",
-    groupSize: 6,
-  },
-  {
-    id: "ticket-4",
-    name: "Nolly Crew",
-    description: "The more the merrier, the more you save! This ticket admit 6 people and makes you a complete squad for the night",
-    price: 36000, // ₦360.00
-    currency: "NGN",
-    quantityTotal: 30,
-    quantityRemaining: 12,
-    admitType: "general",
-    isActive: true,
-    sortOrder: 4,
-    kind: "group",
-    groupSize: 6,
-  },
-];
-
 export function useTicketTypes(eventId: string) {
   const [ticketTypes, setTicketTypes] = useState<TicketTypeDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
     const fetchTicketTypes = async () => {
+      if (!eventId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setError(null);
+
+        const db = getFirestore();
+        const ticketTypesRef = collection(db, "events", eventId, "ticketTypes");
         
-        // Filter active ticket types
-        const activeTypes = mockTicketTypes.filter(ticket => ticket.isActive);
-        setTicketTypes(activeTypes);
+        // Query for active ticket types, ordered by sortOrder
+        const q = query(
+          ticketTypesRef,
+          where("isActive", "==", true),
+          orderBy("sortOrder", "asc")
+        );
+
+        const querySnapshot = await getDocs(q);
+        
+        const fetchedTicketTypes: TicketTypeDoc[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            name: data.name || "",
+            description: data.description || "",
+            price: data.price || 0,
+            currency: data.currency || "NGN",
+            quantityTotal: data.quantityTotal || null,
+            quantityRemaining: data.quantityRemaining || null,
+            salesWindow: data.salesWindow || null,
+            admitType: data.admitType || "general",
+            limits: data.limits || {},
+            isActive: data.isActive || false,
+            sortOrder: data.sortOrder || 0,
+            kind: data.kind || "single",
+            groupSize: data.groupSize || null,
+            transferFeesToGuest: data.transferFeesToGuest || false,
+          };
+        });
+
+        setTicketTypes(fetchedTicketTypes);
       } catch (err) {
-        setError("Failed to fetch ticket types");
+        console.error("Error fetching ticket types:", err);
+        setError("Failed to fetch ticket types. Please try again.");
       } finally {
         setLoading(false);
       }

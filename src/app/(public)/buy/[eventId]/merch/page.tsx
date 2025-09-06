@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useMerchForEvent } from "@/hooks/useMerchForEvent";
 import { useCheckoutCart } from "@/hooks/useCheckoutCart";
@@ -14,7 +14,7 @@ export default function MerchPage() {
 	const eventId = params.eventId as string;
 	const { merchItems, loading, error } = useMerchForEvent(eventId);
 	const { items } = useCheckoutCart();
-
+	const router = useRouter();
 	// Check if user has tickets
 	const hasTickets = useMemo(() => {
 		return items.some((item) => item._type === "ticket" && item.qty > 0);
@@ -35,7 +35,12 @@ export default function MerchPage() {
 		return (
 			<div>
 				<div className="flex items-center gap-3 mb-6">
-					<button className="text-text-muted hover:text-text transition-colors">
+					<button
+						type="button"
+						className="text-text-muted hover:text-text transition-colors"
+						onClick={() => router.back()}
+						aria-label="Go back"
+					>
 						<ArrowLeft className="w-5 h-5" />
 					</button>
 					<h1 className="text-2xl font-heading font-bold">Event Merch</h1>
@@ -56,7 +61,12 @@ export default function MerchPage() {
 		<div>
 			{/* Header */}
 			<div className="flex items-center gap-3 mb-6">
-				<button className="text-text-muted hover:text-text transition-colors">
+				<button
+					type="button"
+					className="text-text-muted hover:text-text transition-colors active:scale-90 focus:scale-95 focus:outline-none"
+					onClick={() => router.back()}
+					aria-label="Go back"
+				>
 					<ArrowLeft className="w-5 h-5" />
 				</button>
 				<h1 className="text-2xl font-heading font-bold">Event Merch</h1>

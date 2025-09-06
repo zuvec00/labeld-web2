@@ -19,6 +19,9 @@ import { listMomentsForEvent } from "@/lib/firebase/queries/moment";
 import type { TicketTypeDoc } from "@/lib/models/ticketType";
 import type { MerchItemDoc } from "@/lib/models/merch";
 import type { MomentDoc } from "@/lib/models/moment";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { OrganizersPanel } from "@/components/events/OrganizersPanel";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 // Decide where “Resume setup” should go based on data you have
 function nextSetupPath(ev: any, ticketCount: number) {
@@ -32,6 +35,7 @@ type TabKey = "overview" | "tickets" | "merch" | "moments" | "settings";
 export default function EventDashboardPage() {
 	const { eventId } = useParams<{ eventId: string }>();
 	const router = useRouter();
+	const { user } = useAuth();
 
 	const [loading, setLoading] = useState(true);
 	const [ev, setEv] = useState<any | null>(null);
@@ -40,6 +44,7 @@ export default function EventDashboardPage() {
 	const [merch, setMerch] = useState<MerchItemDoc[]>([]);
 	const [moments, setMoments] = useState<MomentDoc[]>([]);
 	const [tab, setTab] = useState<TabKey>("overview");
+	const [myRoles, setMyRoles] = useState<string[] | undefined>(undefined);
 
 	useEffect(() => {
 		let mounted = true;
@@ -69,6 +74,32 @@ export default function EventDashboardPage() {
 			mounted = false;
 		};
 	}, [eventId]);
+
+	// Fetch current user's roles for this event
+	useEffect(() => {
+		let mounted = true;
+		(async () => {
+			try {
+				const db = getFirestore();
+				if (user?.uid && eventId) {
+					const ref = doc(db, `events/${eventId}/organizers/${user.uid}`);
+					const snapshot = await getDoc(ref);
+					if (!mounted) return;
+					setMyRoles(
+						(snapshot.exists() ? snapshot.data()?.roles ?? [] : []) as string[]
+					);
+				} else {
+					setMyRoles([]);
+				}
+			} catch (err) {
+				console.error("Failed to fetch user roles:", err);
+				setMyRoles([]);
+			}
+		})();
+		return () => {
+			mounted = false;
+		};
+	}, [user?.uid, eventId]);
 
 	const resumeHref = useMemo(
 		() => (ev ? nextSetupPath(ev, ticketCount) : "#"),
@@ -545,13 +576,21 @@ export default function EventDashboardPage() {
 					)}
 
 					{tab === "settings" && (
-						<div className="bg-surface border border-stroke rounded-2xl p-6">
-							<h2 className="font-heading font-semibold text-xl mb-2">
-								Settings
-							</h2>
-							<p className="text-text-muted">
-								Publish / cancel, organizer roles, etc.
-							</p>
+						<div className="space-y-6">
+							<div className="bg-surface border border-stroke rounded-2xl p-6">
+								<h2 className="font-heading font-semibold text-xl mb-2">
+									Settings
+								</h2>
+								<p className="text-text-muted">
+									Publish / cancel, organizer roles, etc.
+								</p>
+							</div>
+
+							<OrganizersPanel
+								eventId={ev.id}
+								currentUserId={user?.uid}
+								currentUserRoles={myRoles as any}
+							/>
 						</div>
 					)}
 				</main>

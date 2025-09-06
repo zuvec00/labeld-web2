@@ -26,25 +26,35 @@ export function calcTotals(items: CartItem[]): Totals {
   }
 
   const currency = items[0]?.currency ?? "NGN";
-  const itemsSubtotalMinor = items.reduce((sum, item) => sum + (item.unitPriceMinor * item.qty), 0);
   
-  // Platform fee: 5%
-  const platformFeeMinor = Math.round(itemsSubtotalMinor * 0.05);
+  // Calculate subtotal and track which items have transferFeesToGuest
+  let itemsSubtotalMinor = 0;
+  let transferableFeesMinor = 0;
   
-  // Payment fee: 1.5%
-  const paymentFeeMinor = Math.round(itemsSubtotalMinor * 0.015);
+  items.forEach(item => {
+    const itemSubtotal = item.unitPriceMinor * item.qty;
+    itemsSubtotalMinor += itemSubtotal;
+    
+    // TODO: Move fee calculation to backend/server to prevent tampering
+    // If transferFeesToGuest is true, add Labeld's fee (6% + ₦100) to the item subtotal
+    if (item._type === "ticket" && item.transferFeesToGuest) {
+      const percentageFee = Math.round(itemSubtotal * 0.06); // 6%
+      const flatFee = 10000; // ₦100 in minor units
+      const totalFeeForItem = percentageFee + flatFee;
+      transferableFeesMinor += totalFeeForItem;
+    }
+  });
   
-  const feesMinor = platformFeeMinor + paymentFeeMinor;
-  const totalMinor = itemsSubtotalMinor + feesMinor;
+  const totalMinor = itemsSubtotalMinor + transferableFeesMinor;
 
   return {
     currency,
-    itemsSubtotalMinor,
-    feesMinor,
+    itemsSubtotalMinor: itemsSubtotalMinor + transferableFeesMinor, // Include transferable fees in subtotal
+    feesMinor: 0, // No separate fees shown when transferFeesToGuest is true
     totalMinor,
     breakdown: {
-      platformFeeMinor,
-      paymentFeeMinor,
+      platformFeeMinor: 0, // Not shown separately
+      paymentFeeMinor: transferableFeesMinor, // Only for internal tracking
     },
   };
 }

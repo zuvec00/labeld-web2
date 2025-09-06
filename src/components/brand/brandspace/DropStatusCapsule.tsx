@@ -68,6 +68,8 @@ export default function DropStatusCapsule({
 		return null;
 	}
 
+	console.log(daysDiff);
+
 	return (
 		<span
 			className={[

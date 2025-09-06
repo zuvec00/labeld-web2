@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useTicketTypes } from "@/hooks/useTicketTypes";
 import { useCheckoutCart } from "@/hooks/useCheckoutCart";
+import { useExitConfirmation } from "@/hooks/useExitConfirmation";
 import TicketList from "@/components/checkout/TicketList";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -12,7 +13,8 @@ export default function TicketsPage() {
 	const params = useParams();
 	const eventId = params.eventId as string;
 	const { ticketTypes, loading, error } = useTicketTypes(eventId);
-	const { setEventId, items } = useCheckoutCart();
+	const { setEventId } = useCheckoutCart();
+	const { handleBackButton } = useExitConfirmation(eventId);
 
 	// Set event ID in cart when component mounts
 	useEffect(() => {
@@ -33,7 +35,10 @@ export default function TicketsPage() {
 		<div>
 			{/* Header */}
 			<div className="flex items-center gap-3 mb-6">
-				<button className="text-text-muted hover:text-text transition-colors">
+				<button
+					onClick={handleBackButton}
+					className="text-text-muted hover:text-text transition-colors"
+				>
 					<ArrowLeft className="w-5 h-5" />
 				</button>
 				<h1 className="text-2xl font-heading font-bold">Choose Tickets</h1>

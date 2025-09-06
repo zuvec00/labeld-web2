@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { collection, query, where, orderBy, getDocs, getFirestore } from "firebase/firestore";
 
 export type MerchItemDoc = {
   id: string;
@@ -18,80 +19,61 @@ export type MerchItemDoc = {
   updatedAt?: any;
 };
 
-// Mock data
-const mockMerchItems: MerchItemDoc[] = [
-  {
-    id: "merch-1",
-    eventId: "event-1",
-    brandId: "brand-1",
-    name: "Nolly Trivia T-Shirt",
-    images: [
-      { url: "https://via.placeholder.com/300x400/2A2A2A/FFFFFF?text=T-Shirt", alt: "Nolly Trivia T-Shirt" }
-    ],
-    priceMinor: 5000, // ₦50.00
-    currency: "NGN",
-    stockTotal: 100,
-    stockRemaining: 75,
-    sizeOptions: ["S", "M", "L", "XL"],
-    colorOptions: ["Black", "White"],
-    isActive: true,
-    visibility: "public",
-  },
-  {
-    id: "merch-2",
-    eventId: "event-1",
-    brandId: "brand-1",
-    name: "Event Hoodie",
-    images: [
-      { url: "https://via.placeholder.com/300x400/2A2A2A/FFFFFF?text=Hoodie", alt: "Event Hoodie" }
-    ],
-    priceMinor: 12000, // ₦120.00
-    currency: "NGN",
-    stockTotal: 50,
-    stockRemaining: 30,
-    sizeOptions: ["M", "L", "XL"],
-    colorOptions: ["Gray", "Navy"],
-    isActive: true,
-    visibility: "public",
-  },
-  {
-    id: "merch-3",
-    eventId: "event-1",
-    brandId: "brand-1",
-    name: "Event Cap",
-    images: [
-      { url: "https://via.placeholder.com/300x400/2A2A2A/FFFFFF?text=Cap", alt: "Event Cap" }
-    ],
-    priceMinor: 2500, // ₦25.00
-    currency: "NGN",
-    stockTotal: 200,
-    stockRemaining: 150,
-    colorOptions: ["Black", "White", "Red"],
-    isActive: true,
-    visibility: "public",
-  },
-];
-
 export function useMerchForEvent(eventId: string) {
   const [merchItems, setMerchItems] = useState<MerchItemDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate API call
     const fetchMerch = async () => {
+      if (!eventId) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        // TODO: Replace with actual API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setError(null);
+
+        const db = getFirestore();
+        const merchRef = collection(db, "merchItems");
         
-        // Filter merch for this event
-        const eventMerch = mockMerchItems.filter(
-          item => item.eventId === eventId && item.isActive && item.visibility === "public"
+        // Query for active merch items for this event
+        const q = query(
+          merchRef,
+          where("eventId", "==", eventId),
+          where("isActive", "==", true),
+          where("visibility", "==", "public"),
+          orderBy("createdAt", "desc")
         );
-        setMerchItems(eventMerch);
+
+        const querySnapshot = await getDocs(q);
+        
+        const fetchedMerchItems: MerchItemDoc[] = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            eventId: data.eventId || null,
+            brandId: data.brandId || "",
+            name: data.name || "",
+            images: data.images || [],
+            priceMinor: data.priceMinor || 0,
+            currency: data.currency || "NGN",
+            stockTotal: data.stockTotal || null,
+            stockRemaining: data.stockRemaining || null,
+            sizeOptions: data.sizeOptions || [],
+            colorOptions: data.colorOptions || [],
+            isActive: data.isActive || false,
+            visibility: data.visibility || "hidden",
+            createdAt: data.createdAt || null,
+            updatedAt: data.updatedAt || null,
+          };
+        });
+
+        setMerchItems(fetchedMerchItems);
       } catch (err) {
-        setError("Failed to fetch merch items");
+        console.error("Error fetching merch items:", err);
+        setError("Failed to fetch merch items. Please try again.");
       } finally {
         setLoading(false);
       }

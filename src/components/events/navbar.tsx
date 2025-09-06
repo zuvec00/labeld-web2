@@ -15,7 +15,11 @@ export default function EventsNavbar() {
 			<div className="container mx-auto px-10 sm:px-10 lg:px-10 py-2">
 				<div className="flex items-center justify-between h-16">
 					{/* Logo */}
-					<div className="flex items-center">
+					<Link
+						href="/e/discover"
+						className="flex items-center cursor-pointer select-none"
+						prefetch={false}
+					>
 						{/* <img
 								src="/labeld_logo.png"
 								alt="Labeld Logo"
@@ -24,7 +28,7 @@ export default function EventsNavbar() {
 						<span className="ml-2 text-2xl font-bold font-heading text-cta">
 							LABELD
 						</span>
-					</div>
+					</Link>
 
 					{/* Navigation */}
 					<nav className="hidden md:flex items-center space-x-8 text-[16px]">

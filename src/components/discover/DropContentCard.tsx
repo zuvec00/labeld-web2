@@ -50,7 +50,7 @@ export default function DropContentCard({
 
 	const handleClick = () => {
 		// Navigate to the drop content detail page
-		router.push(`/brand-space/feed/${dropContent.id}`);
+		// router.push(`/brand-space/feed/${dropContent.id}`);
 	};
 
 	return (

@@ -14,13 +14,71 @@ export default function TicketList({
 	ticketTypes,
 	loading = false,
 }: TicketListProps) {
-	const { updateQty } = useCheckoutCart();
+	const { updateQty, items } = useCheckoutCart();
 
 	const handleQtyChange = (ticketTypeId: string, qty: number) => {
 		const ticketType = ticketTypes.find((t) => t.id === ticketTypeId);
 		if (!ticketType) return;
 
-		updateQty({ _type: "ticket", id: ticketTypeId }, qty);
+		// If qty is 0, remove the item from cart
+		if (qty === 0) {
+			updateQty({ _type: "ticket", id: ticketTypeId }, 0);
+			return;
+		}
+
+		// Check perUserMax limit
+		const perUserMax = ticketType.limits?.perUserMax;
+		if (perUserMax && qty > perUserMax) {
+			console.warn(
+				`Cannot select more than ${perUserMax} tickets for ${ticketType.name}`
+			);
+			return;
+		}
+
+		// Check stock limit
+		if (
+			ticketType.quantityRemaining !== null &&
+			qty > ticketType.quantityRemaining
+		) {
+			console.warn(
+				`Cannot select more than ${ticketType.quantityRemaining} tickets for ${ticketType.name}`
+			);
+			return;
+		}
+
+		// Check if item already exists in cart
+		const existingItem = items.find(
+			(item) => item._type === "ticket" && item.ticketTypeId === ticketTypeId
+		);
+
+		if (existingItem) {
+			// Update existing item
+			updateQty({ _type: "ticket", id: ticketTypeId }, qty);
+		} else {
+			// Add new item to cart
+			const newItem = {
+				_type: "ticket" as const,
+				ticketTypeId: ticketType.id,
+				name: ticketType.name,
+				unitPriceMinor: ticketType.price || 0,
+				currency: ticketType.currency || "NGN",
+				qty: qty,
+				groupSize: ticketType.groupSize,
+				admitType: ticketType.admitType,
+				transferFeesToGuest: ticketType.transferFeesToGuest,
+			};
+			// Use addItem for new items
+			const { addItem } = useCheckoutCart.getState();
+			addItem(newItem);
+		}
+	};
+
+	// Get current cart quantity for a ticket type
+	const getCurrentQty = (ticketTypeId: string) => {
+		const cartItem = items.find(
+			(item) => item._type === "ticket" && item.ticketTypeId === ticketTypeId
+		);
+		return cartItem?.qty || 0;
 	};
 
 	if (loading) {
@@ -84,13 +142,20 @@ export default function TicketList({
 								{/* Price */}
 								{ticketType.price && (
 									<p className="text-sm text-text-muted">
-										{formatCurrency(ticketType.price, ticketType.currency)}{" "}
-										includes{" "}
-										{formatCurrency(
-											ticketType.price * 0.064,
-											ticketType.currency
-										)}{" "}
-										fee
+										<span className="text-cta font-bold text-md">
+											{formatCurrency(ticketType.price, ticketType.currency)}
+										</span>
+										{ticketType.transferFeesToGuest && (
+											<>
+												{" "}
+												includes{" "}
+												{formatCurrency(
+													Math.round(ticketType.price * 0.06) + 10000, // 6% + ₦100
+													ticketType.currency
+												)}{" "}
+												Fee
+											</>
+										)}
 									</p>
 								)}
 
@@ -100,6 +165,13 @@ export default function TicketList({
 										{isSoldOut
 											? "Sold out"
 											: `${ticketType.quantityRemaining} remaining`}
+									</p>
+								)}
+
+								{/* Per User Limit Info */}
+								{ticketType.limits?.perUserMax && (
+									<p className="text-xs text-text mt-1">
+										Max {ticketType.limits.perUserMax} per person
 									</p>
 								)}
 							</div>
@@ -112,9 +184,12 @@ export default function TicketList({
 									</span>
 								) : (
 									<QtySelector
-										value={0} // TODO: Get current cart quantity
+										value={getCurrentQty(ticketType.id)}
 										onChange={(qty) => handleQtyChange(ticketType.id, qty)}
-										max={ticketType.quantityRemaining || undefined}
+										max={Math.min(
+											ticketType.quantityRemaining || Infinity,
+											ticketType.limits?.perUserMax || Infinity
+										)}
 										disabled={isSoldOut}
 									/>
 								)}

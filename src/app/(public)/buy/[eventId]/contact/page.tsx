@@ -55,6 +55,17 @@ export default function ContactPage() {
 		if (errors[field]) {
 			setErrors((prev) => ({ ...prev, [field]: "" }));
 		}
+
+		// Save to cart as user types for real-time validation
+		const updatedContact = {
+			firstName: formData.firstName,
+			lastName: formData.lastName,
+			email: formData.email,
+			phone: formData.phone,
+			// Update the current field
+			[field]: value,
+		};
+		setContact(updatedContact);
 	};
 
 	const validateForm = () => {
@@ -98,6 +109,8 @@ export default function ContactPage() {
 
 			// Save contact info to cart
 			setContact({
+				firstName: formData.firstName,
+				lastName: formData.lastName,
 				email: formData.email,
 				phone: formData.phone,
 			});
@@ -124,7 +137,12 @@ export default function ContactPage() {
 		<div>
 			{/* Header */}
 			<div className="flex items-center gap-3 mb-6">
-				<button className="text-text-muted hover:text-text transition-colors">
+				<button
+					type="button"
+					className="text-text-muted hover:text-text transition-colors"
+					onClick={() => router.back()}
+					aria-label="Go back"
+				>
 					<ArrowLeft className="w-5 h-5" />
 				</button>
 				<h1 className="text-2xl font-heading font-bold">Contact Information</h1>
@@ -134,9 +152,7 @@ export default function ContactPage() {
 			<div className="bg-accent/10 border border-accent/20 rounded-lg p-4 mb-6">
 				<p className="text-sm text-text">
 					We&apos;ve reserved your ticket. Please complete checkout within{" "}
-					<span className="font-semibold text-accent">
-						{formatTime(timeLeft)}
-					</span>{" "}
+					<span className="font-semibold text-cta">{formatTime(timeLeft)}</span>{" "}
 					to secure your tickets.
 				</p>
 			</div>
@@ -144,51 +160,54 @@ export default function ContactPage() {
 			{/* Contact Form */}
 			<div className="bg-surface rounded-2xl border border-stroke p-6">
 				<div className="space-y-4">
-					{/* First Name */}
-					<div>
-						<label className="block text-sm font-medium text-text mb-2">
-							First name <span className="text-accent">*</span>
-						</label>
-						<Input
-							type="text"
-							placeholder="First name"
-							value={formData.firstName}
-							onChange={(e) => handleInputChange("firstName", e.target.value)}
-							className={errors.firstName ? "border-red-500" : ""}
-						/>
-						{errors.firstName && (
-							<p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
-						)}
-					</div>
+					{/* Name Fields */}
+					<div className="grid grid-cols-2 gap-4">
+						{/* First Name */}
+						<div>
+							<label className="block text-sm font-medium text-text mb-2">
+								First name <span className="text-cta">*</span>
+							</label>
+							<Input
+								type="text"
+								placeholder="First name"
+								value={formData.firstName}
+								onChange={(e) => handleInputChange("firstName", e.target.value)}
+								className={errors.firstName ? "border-red-500" : "bg-surface"}
+							/>
+							{errors.firstName && (
+								<p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+							)}
+						</div>
 
-					{/* Last Name */}
-					<div>
-						<label className="block text-sm font-medium text-text mb-2">
-							Last name <span className="text-accent">*</span>
-						</label>
-						<Input
-							type="text"
-							placeholder="Last name"
-							value={formData.lastName}
-							onChange={(e) => handleInputChange("lastName", e.target.value)}
-							className={errors.lastName ? "border-red-500" : ""}
-						/>
-						{errors.lastName && (
-							<p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
-						)}
+						{/* Last Name */}
+						<div>
+							<label className="block text-sm font-medium text-text mb-2">
+								Last name <span className="text-cta">*</span>
+							</label>
+							<Input
+								type="text"
+								placeholder="Last name"
+								value={formData.lastName}
+								onChange={(e) => handleInputChange("lastName", e.target.value)}
+								className={errors.lastName ? "border-red-500" : "bg-surface"}
+							/>
+							{errors.lastName && (
+								<p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+							)}
+						</div>
 					</div>
 
 					{/* Email */}
 					<div>
 						<label className="block text-sm font-medium text-text mb-2">
-							Email address <span className="text-accent">*</span>
+							Email address <span className="text-cta">*</span>
 						</label>
 						<Input
 							type="email"
 							placeholder="Email address"
 							value={formData.email}
 							onChange={(e) => handleInputChange("email", e.target.value)}
-							className={errors.email ? "border-red-500" : ""}
+							className={errors.email ? "border-red-500" : "bg-surface"}
 						/>
 						{errors.email && (
 							<p className="text-red-500 text-xs mt-1">{errors.email}</p>
@@ -198,7 +217,7 @@ export default function ContactPage() {
 					{/* Confirm Email */}
 					<div>
 						<label className="block text-sm font-medium text-text mb-2">
-							Confirm email address <span className="text-accent">*</span>
+							Confirm email address <span className="text-cta">*</span>
 						</label>
 						<Input
 							type="email"
@@ -207,7 +226,7 @@ export default function ContactPage() {
 							onChange={(e) =>
 								handleInputChange("confirmEmail", e.target.value)
 							}
-							className={errors.confirmEmail ? "border-red-500" : ""}
+							className={errors.confirmEmail ? "border-red-500" : "bg-surface"}
 						/>
 						{errors.confirmEmail && (
 							<p className="text-red-500 text-xs mt-1">{errors.confirmEmail}</p>
@@ -217,14 +236,14 @@ export default function ContactPage() {
 					{/* Phone */}
 					<div>
 						<label className="block text-sm font-medium text-text mb-2">
-							Phone number <span className="text-accent">*</span>
+							Phone number <span className="text-cta">*</span>
 						</label>
 						<div className="flex">
 							<div className="flex-shrink-0">
-								<select className="h-10 px-3 bg-surface border border-stroke border-r-0 rounded-l-lg text-sm text-text">
+								<select className="h-13 px-3 bg-surface border border-stroke border-r-0 rounded-l-lg text-sm text-text">
 									<option value="+234">+234</option>
-									<option value="+1">+1</option>
-									<option value="+44">+44</option>
+									{/* <option value="+1">+1</option>
+									<option value="+44">+44</option> */}
 								</select>
 							</div>
 							<Input
@@ -233,7 +252,7 @@ export default function ContactPage() {
 								value={formData.phone}
 								onChange={(e) => handleInputChange("phone", e.target.value)}
 								className={`flex-1 rounded-l-none ${
-									errors.phone ? "border-red-500" : ""
+									errors.phone ? "border-red-500" : "bg-surface"
 								}`}
 							/>
 						</div>
