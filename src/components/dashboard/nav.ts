@@ -19,7 +19,8 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
   {
     title: "Monetization",
     items: [
-      { label: "Wallet", href: "/wallet", badge: 'soon' },
+      { label: "Orders", href: "/orders" },
+      { label: "Wallet", href: "/wallet" },
       { label: "Events", href: "/events", badge: 'soon' },
     ],
   },
