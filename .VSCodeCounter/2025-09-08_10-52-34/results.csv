@@ -1,0 +1,179 @@
+"filename", "language", "TypeScript", "JSON", "TypeScript JSX", "CSS", "comment", "blank", "total"
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/collection/[id]/edit/page.tsx", "TypeScript JSX", 0, 0, 626, 0, 13, 46, 685
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/collection/[id]/page.tsx", "TypeScript JSX", 0, 0, 270, 0, 16, 25, 311
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/collection/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/drop-content/[id]/edit/page.tsx", "TypeScript JSX", 0, 0, 278, 0, 14, 30, 322
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/feed/[id]/page.tsx", "TypeScript JSX", 0, 0, 122, 0, 10, 13, 145
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/page.tsx", "TypeScript JSX", 0, 0, 115, 0, 5, 12, 132
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/piece/[id]/edit/page.tsx", "TypeScript JSX", 0, 0, 778, 0, 19, 69, 866
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/piece/[id]/page.tsx", "TypeScript JSX", 0, 0, 142, 0, 6, 15, 163
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/brand-space/profile/edit/page.tsx", "TypeScript JSX", 0, 0, 532, 0, 23, 43, 598
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/collections/new/page.tsx", "TypeScript JSX", 0, 0, 509, 0, 14, 34, 557
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/collections/page.tsx", "TypeScript JSX", 0, 0, 4, 0, 0, 2, 6
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/dashboard/page.tsx", "TypeScript JSX", 0, 0, 63, 0, 5, 6, 74
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/details/page.tsx", "TypeScript JSX", 0, 0, 596, 0, 45, 56, 697
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/merch/[merchId]/edit/page.tsx", "TypeScript JSX", 0, 0, 415, 0, 16, 28, 459
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/merch/page.tsx", "TypeScript JSX", 0, 0, 478, 0, 13, 36, 527
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/moments/page.tsx", "TypeScript JSX", 0, 0, 324, 0, 16, 25, 365
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/page.tsx", "TypeScript JSX", 0, 0, 642, 0, 18, 33, 693
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/review/page.tsx", "TypeScript JSX", 0, 0, 433, 0, 14, 32, 479
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/tickets/[ticketId]/edit/page.tsx", "TypeScript JSX", 0, 0, 435, 0, 19, 36, 490
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/[eventId]/tickets/page.tsx", "TypeScript JSX", 0, 0, 748, 0, 40, 59, 847
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/create/details/page.tsx", "TypeScript JSX", 0, 0, 501, 0, 41, 41, 583
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/create/merch/page.tsx", "TypeScript JSX", 0, 0, 467, 0, 13, 36, 516
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/create/tickets/page.tsx", "TypeScript JSX", 0, 0, 737, 0, 21, 55, 813
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/events/page.tsx", "TypeScript JSX", 0, 0, 198, 0, 8, 19, 225
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/layout.tsx", "TypeScript JSX", 0, 0, 26, 0, 6, 5, 37
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/pieces/new/page.tsx", "TypeScript JSX", 0, 0, 734, 0, 30, 44, 808
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/pieces/page.tsx", "TypeScript JSX", 0, 0, 16, 0, 1, 5, 22
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/radar/new/page.tsx", "TypeScript JSX", 0, 0, 284, 0, 24, 34, 342
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/radar/page.tsx", "TypeScript JSX", 0, 0, 16, 0, 1, 7, 24
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/settings/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/staff/scan/page.tsx", "TypeScript JSX", 0, 0, 120, 0, 0, 15, 135
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/tickets/page.tsx", "TypeScript JSX", 0, 0, 173, 0, 0, 13, 186
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/(dashboard)/wallet/page.tsx", "TypeScript JSX", 0, 0, 123, 0, 11, 16, 150
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/layout.tsx", "TypeScript JSX", 0, 0, 9, 0, 0, 3, 12
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(protected)/scan/page.tsx", "TypeScript JSX", 0, 0, 205, 0, 16, 31, 252
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/contact/page.tsx", "TypeScript JSX", 0, 0, 216, 0, 27, 30, 273
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/layout.tsx", "TypeScript JSX", 0, 0, 63, 0, 7, 10, 80
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/merch/page.tsx", "TypeScript JSX", 0, 0, 74, 0, 4, 8, 86
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/pay/page.tsx", "TypeScript JSX", 0, 0, 91, 0, 6, 10, 107
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/success/page.tsx", "TypeScript JSX", 0, 0, 489, 0, 19, 44, 552
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/buy/[eventId]/tickets/page.tsx", "TypeScript JSX", 0, 0, 48, 0, 3, 7, 58
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/[slug]/page.tsx", "TypeScript JSX", 0, 0, 291, 0, 29, 26, 346
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/all-events/page.tsx", "TypeScript JSX", 0, 0, 78, 0, 15, 10, 103
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/all-merch/page.tsx", "TypeScript JSX", 0, 0, 78, 0, 6, 9, 93
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/all-moments/page.tsx", "TypeScript JSX", 0, 0, 76, 0, 6, 9, 91
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/discover/page.tsx", "TypeScript JSX", 0, 0, 466, 0, 18, 22, 506
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/e/layout.tsx", "TypeScript JSX", 0, 0, 61, 0, 6, 8, 75
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/(public)/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/auth/AuthContext.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/brand/setup/finish/page.tsx", "TypeScript JSX", 0, 0, 138, 0, 10, 19, 167
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/brand/setup/page.tsx", "TypeScript JSX", 0, 0, 107, 0, 10, 12, 129
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/event-landing-page/page.tsx", "TypeScript JSX", 0, 0, 127, 0, 20, 13, 160
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/globals.css", "CSS", 0, 0, 0, 61, 15, 14, 90
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/hooks/use-toast.ts", "TypeScript", 159, 0, 0, 0, 2, 31, 192
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/layout.tsx", "TypeScript JSX", 0, 0, 31, 0, 0, 4, 35
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/marketing/auth/AuthFom.tsx", "TypeScript JSX", 0, 0, 400, 0, 52, 53, 505
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/marketing/onboarding/page.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/marketing/page.tsx", "TypeScript JSX", 0, 0, 4, 0, 0, 2, 6
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/page.tsx", "TypeScript JSX", 0, 0, 4, 0, 0, 2, 6
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/app/user/setup/page.tsx", "TypeScript JSX", 0, 0, 4, 0, 0, 2, 6
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/LaunchHero.tsx", "TypeScript JSX", 0, 0, 96, 0, 5, 11, 112
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/PreviewHero.tsx", "TypeScript JSX", 0, 0, 49, 0, 0, 6, 55
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/BrandFeedCard.tsx", "TypeScript JSX", 0, 0, 68, 0, 4, 6, 78
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/BrandSpaceView.tsx", "TypeScript JSX", 0, 0, 67, 0, 3, 9, 79
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/CoverAndLogo.tsx", "TypeScript JSX", 0, 0, 35, 0, 3, 6, 44
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/DropStatusCapsule.tsx", "TypeScript JSX", 0, 0, 79, 0, 1, 8, 88
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/Header.tsx", "TypeScript JSX", 0, 0, 109, 0, 4, 9, 122
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/HeatGlow.tsx", "TypeScript JSX", 0, 0, 80, 0, 4, 10, 94
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/Radar/RadarTab.tsx", "TypeScript JSX", 0, 0, 127, 0, 3, 13, 143
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/Tabs.tsx", "TypeScript JSX", 0, 0, 51, 0, 3, 7, 61
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/collections/CollectionTab.tsx", "TypeScript JSX", 0, 0, 356, 0, 39, 33, 428
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/brandspace/pieces/PiecesTab.tsx", "TypeScript JSX", 0, 0, 161, 0, 3, 14, 178
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/forms/BrandIdentity.tsx", "TypeScript JSX", 0, 0, 84, 0, 3, 8, 95
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/forms/BrandLocation.tsx", "TypeScript JSX", 0, 0, 81, 0, 4, 9, 94
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/forms/BrandStory.tsx", "TypeScript JSX", 0, 0, 90, 0, 0, 9, 99
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/brand/forms/BrandVisuals.tsx", "TypeScript JSX", 0, 0, 65, 0, 3, 7, 75
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/EmptyState.tsx", "TypeScript JSX", 0, 0, 57, 0, 0, 11, 68
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/LineItemRow.tsx", "TypeScript JSX", 0, 0, 66, 0, 2, 8, 76
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/MerchList.tsx", "TypeScript JSX", 0, 0, 273, 0, 15, 24, 312
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/QtySelector.tsx", "TypeScript JSX", 0, 0, 52, 0, 0, 8, 60
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/RightSummary.tsx", "TypeScript JSX", 0, 0, 357, 0, 22, 39, 418
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/Stepper.tsx", "TypeScript JSX", 0, 0, 65, 0, 3, 10, 78
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/checkout/TicketList.tsx", "TypeScript JSX", 0, 0, 171, 0, 14, 19, 204
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/Card.tsx", "TypeScript JSX", 0, 0, 25, 0, 1, 1, 27
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/ComingSoon.tsx", "TypeScript JSX", 0, 0, 22, 0, 1, 2, 25
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/Shell.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/SideBar.tsx", "TypeScript JSX", 0, 0, 75, 0, 3, 6, 84
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/Topbar.tsx", "TypeScript JSX", 0, 0, 46, 0, 2, 4, 52
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/charts/EngagementStack.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/charts/FollowerArea.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/charts/RevenueLine.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/kpis/KpiCard.tsx", "TypeScript JSX", 0, 0, 18, 0, 0, 2, 20
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/nav.ts", "TypeScript", 32, 0, 0, 0, 0, 2, 34
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/tables/RecentOrdersTable.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/tables/TopContent.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/dashboard/tables/TopPieces.tsx", "TypeScript JSX", 0, 0, 0, 0, 0, 1, 1
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/discover/DropContentCard.tsx", "TypeScript JSX", 0, 0, 117, 0, 9, 12, 138
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/discover/EventCard.tsx", "TypeScript JSX", 0, 0, 102, 0, 3, 10, 115
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/discover/MerchCard.tsx", "TypeScript JSX", 0, 0, 125, 0, 5, 15, 145
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/discover/MomentCard.tsx", "TypeScript JSX", 0, 0, 130, 0, 18, 13, 161
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/events/OrganizersPanel.tsx", "TypeScript JSX", 0, 0, 398, 0, 11, 38, 447
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/events/TicketQR.tsx", "TypeScript JSX", 0, 0, 36, 0, 0, 6, 42
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/events/navbar.tsx", "TypeScript JSX", 0, 0, 76, 0, 28, 6, 110
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/marketing/OnboardingHero.tsx", "TypeScript JSX", 0, 0, 40, 0, 4, 6, 50
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/moments/MomentRow.tsx", "TypeScript JSX", 0, 0, 88, 0, 5, 8, 101
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/scanner/CameraScanner.tsx", "TypeScript JSX", 0, 0, 312, 0, 29, 48, 389
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/scanner/ManualEntryModal.tsx", "TypeScript JSX", 0, 0, 178, 0, 10, 21, 209
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/scanner/ScanResult.tsx", "TypeScript JSX", 0, 0, 99, 0, 9, 17, 125
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/scanner/ScannerHUD.tsx", "TypeScript JSX", 0, 0, 130, 0, 6, 13, 149
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ticketing/Stepper.tsx", "TypeScript JSX", 0, 0, 58, 0, 1, 2, 61
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/Card.tsx", "TypeScript JSX", 0, 0, 30, 0, 0, 1, 31
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/EventStatusCapsule.tsx", "TypeScript JSX", 0, 0, 72, 0, 8, 8, 88
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/andrioid_apple.tsx", "TypeScript JSX", 0, 0, 55, 0, 5, 2, 62
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/button.tsx", "TypeScript JSX", 0, 0, 155, 0, 2, 12, 169
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/input.tsx", "TypeScript JSX", 0, 0, 15, 0, 0, 1, 16
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/spinner.tsx", "TypeScript JSX", 0, 0, 29, 0, 0, 4, 33
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/textlabel.tsx", "TypeScript JSX", 0, 0, 18, 0, 0, 1, 19
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/toast.tsx", "TypeScript JSX", 0, 0, 118, 0, 0, 13, 131
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/upload-image.tsx", "TypeScript JSX", 0, 0, 176, 0, 23, 17, 216
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/ui/upload-multiple-image.tsx", "TypeScript JSX", 0, 0, 139, 0, 7, 17, 163
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/user/ProfileForm.tsx", "TypeScript JSX", 0, 0, 95, 0, 6, 10, 111
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/user/ProfileSetupSplit.tsx", "TypeScript JSX", 0, 0, 109, 0, 10, 17, 136
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/BalanceHeader.tsx", "TypeScript JSX", 0, 0, 69, 0, 7, 7, 83
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/BankAccountBanner.tsx", "TypeScript JSX", 0, 0, 102, 0, 4, 6, 112
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/EarningsOverview.tsx", "TypeScript JSX", 0, 0, 107, 0, 8, 7, 122
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/FiltersBar.tsx", "TypeScript JSX", 0, 0, 90, 0, 5, 5, 100
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/HelpPanel.tsx", "TypeScript JSX", 0, 0, 84, 0, 1, 8, 93
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/LedgerTable.tsx", "TypeScript JSX", 0, 0, 267, 0, 35, 17, 319
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/components/wallet/PayoutsTable.tsx", "TypeScript JSX", 0, 0, 136, 0, 4, 7, 147
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/data/countries_and_states.json", "JSON", 0, 20142, 0, 0, 0, 0, 20142
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useCheckoutCart.ts", "TypeScript", 158, 0, 0, 0, 6, 28, 192
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useExitConfirmation.ts", "TypeScript", 50, 0, 0, 0, 1, 8, 59
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useMerchForEvent.ts", "TypeScript", 74, 0, 0, 0, 1, 12, 87
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useScanner.ts", "TypeScript", 197, 0, 0, 0, 13, 34, 244
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useTicketTypes.ts", "TypeScript", 73, 0, 0, 0, 1, 12, 86
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/hooks/useWallet.ts", "TypeScript", 77, 0, 0, 0, 1, 11, 89
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/auth/AuthContext.tsx", "TypeScript JSX", 0, 0, 119, 0, 7, 18, 144
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/checkout/calc.ts", "TypeScript", 56, 0, 0, 0, 4, 12, 72
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/constants/location.ts", "TypeScript", 3, 0, 0, 0, 8, 0, 11
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/constants/ticketingTypes.ts", "TypeScript", 9, 0, 0, 0, 0, 2, 11
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/download.ts", "TypeScript", 12, 0, 0, 0, 0, 1, 13
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/callables/brand.ts", "TypeScript", 28, 0, 0, 0, 1, 4, 33
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/callables/dropContent.ts", "TypeScript", 19, 0, 0, 0, 2, 3, 24
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/callables/organizers.ts", "TypeScript", 34, 0, 0, 0, 1, 8, 43
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/callables/scanner.ts", "TypeScript", 71, 0, 0, 0, 12, 8, 91
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/callables/users.ts", "TypeScript", 83, 0, 0, 0, 7, 9, 99
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/firebaseConfig.ts", "TypeScript", 19, 0, 0, 0, 1, 6, 26
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/attendeeTickets.ts", "TypeScript", 61, 0, 0, 0, 15, 10, 86
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/brandspace.ts", "TypeScript", 117, 0, 0, 0, 0, 18, 135
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/collection.ts", "TypeScript", 97, 0, 0, 0, 16, 9, 122
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/dropContent.ts", "TypeScript", 54, 0, 0, 0, 3, 6, 63
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/event.ts", "TypeScript", 67, 0, 0, 0, 21, 8, 96
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/merch.ts", "TypeScript", 56, 0, 0, 0, 2, 9, 67
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/moment.ts", "TypeScript", 27, 0, 0, 0, 1, 6, 34
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/product.ts", "TypeScript", 122, 0, 0, 0, 4, 16, 142
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/ticketTypes.ts", "TypeScript", 29, 0, 0, 0, 1, 5, 35
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/firebase/queries/wallet.ts", "TypeScript", 215, 0, 0, 0, 25, 26, 266
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/format.ts", "TypeScript", 8, 0, 0, 0, 2, 2, 12
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/idempotency.ts", "TypeScript", 33, 0, 0, 0, 19, 6, 58
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/attendeeTicket.ts", "TypeScript", 19, 0, 0, 0, 0, 1, 20
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/brand.ts", "TypeScript", 19, 0, 0, 0, 1, 8, 28
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/event.schema.ts", "TypeScript", 23, 0, 0, 0, 1, 2, 26
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/event.ts", "TypeScript", 19, 0, 0, 0, 1, 2, 22
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/merch.ts", "TypeScript", 19, 0, 0, 0, 1, 2, 22
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/moment.ts", "TypeScript", 15, 0, 0, 0, 1, 2, 18
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/radar_feed.ts", "TypeScript", 90, 0, 0, 0, 5, 12, 107
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/ticketType.ts", "TypeScript", 18, 0, 0, 0, 1, 2, 21
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/models/user.ts", "TypeScript", 20, 0, 0, 0, 9, 7, 36
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/payment/paystack.ts", "TypeScript", 283, 0, 0, 0, 17, 43, 343
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/storage/upload.ts", "TypeScript", 33, 0, 0, 0, 2, 8, 43
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/stores/brandOnboard.ts", "TypeScript", 161, 0, 0, 0, 25, 16, 202
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/utils.ts", "TypeScript", 19, 0, 0, 0, 1, 5, 25
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/validation/username.ts", "TypeScript", 6, 0, 0, 0, 1, 1, 8
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/lib/wallet/mock.ts", "TypeScript", 338, 0, 0, 0, 12, 13, 363
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/types/jsqr.d.ts", "TypeScript", 20, 0, 0, 0, 0, 3, 23
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/types/ticketing.ts", "TypeScript", 20, 0, 0, 0, 1, 1, 22
+"/Users/jeffreybenson/Documents/labeld/dev/brand-web-dashboard/labeld-web/src/types/wallet.ts", "TypeScript", 64, 0, 0, 0, 5, 10, 79
+"Total", "-", 3226, 20142, 20664, 61, 1400, 2392, 47885
