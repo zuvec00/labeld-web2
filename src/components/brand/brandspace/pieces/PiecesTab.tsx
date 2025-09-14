@@ -22,8 +22,10 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 		setErr(null);
 		try {
 			const list = await getProductListForBrand(brandId);
+			console.log("PiecesTab: Loaded pieces:", list.length, list);
 			setPieces(list);
 		} catch (e: any) {
+			console.error("PiecesTab: Error loading pieces:", e);
 			setErr(e?.message ?? "Failed to load pieces.");
 		} finally {
 			setLoading(false);
@@ -75,9 +77,27 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 	}
 
 	if (!pieces.length) {
+		console.log(
+			"PiecesTab: Showing empty state, pieces.length:",
+			pieces.length
+		);
 		return (
-			<div className="min-h-[40vh] grid place-items-center px-6 text-center">
-				<img src="/empty/2.png" alt="" className="w-40 opacity-80 mb-3" />
+			<div className="px-4 sm:px-6 py-16 text-center">
+				<div className="flex justify-end mb-8">
+					<Button
+						text="Drop a Piece"
+						variant="cta"
+						onClick={() => {
+							console.log("Drop a Piece button clicked");
+							router.push("/pieces/new");
+						}}
+					/>
+				</div>
+				<img
+					src="/images/empty-radar.png"
+					alt=""
+					className="mx-auto mb-4 opacity-80 max-w-[220px]"
+				/>
 				<p className="text-text-muted">
 					Add your pieces so people can see and shop your products.
 				</p>
@@ -85,13 +105,17 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 		);
 	}
 
+	console.log("PiecesTab: Showing pieces grid, pieces.length:", pieces.length);
 	return (
 		<div className="px-3 sm:px-4">
 			<div className="flex justify-end mb-8">
 				<Button
 					text="Drop a Piece"
 					variant="cta"
-					onClick={() => router.push("/pieces/new")}
+					onClick={() => {
+						console.log("Drop a Piece button clicked (from grid view)");
+						router.push("/pieces/new");
+					}}
 				/>
 			</div>
 

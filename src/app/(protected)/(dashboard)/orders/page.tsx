@@ -139,6 +139,7 @@ export default function OrdersPage() {
 				order={selectedOrder}
 				isOpen={isDrawerOpen}
 				onClose={handleCloseDrawer}
+				onUpdate={refresh}
 			/>
 
 			{/* Store Orders Coming Soon */}

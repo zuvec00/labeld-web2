@@ -17,21 +17,15 @@ import { db } from "@/lib/firebase/firebaseConfig";
 import {
   OrderDoc,
   VendorLineStatusDoc,
+  VendorLineStatus,
   EventLite,
   VendorScope,
   OrderWithVendorStatus,
+  FulfillmentLine,
+  FulfillmentStatus,
+  LineItem,
 } from "@/types/orders";
 
-// Parse Firestore timestamp to number
-function toMillis(ts: any): number {
-  if (ts && ts.toMillis) {
-    return ts.toMillis();
-  }
-  if (typeof ts === "number") {
-    return ts;
-  }
-  return Date.now();
-}
 
 // Parse OrderDoc from Firestore
 function parseOrderDoc(doc: QueryDocumentSnapshot): OrderDoc {
@@ -46,6 +40,7 @@ function parseOrderDoc(doc: QueryDocumentSnapshot): OrderDoc {
       currency: data.amount?.currency || "NGN",
       itemsSubtotalMinor: data.amount?.itemsSubtotalMinor || 0,
       feesMinor: data.amount?.feesMinor || 0,
+      shippingMinor: data.amount?.shippingMinor || 0,
       totalMinor: data.amount?.totalMinor || 0,
     },
     fees: data.fees || undefined,
@@ -80,6 +75,33 @@ function parseEventLite(doc: DocumentSnapshot): EventLite | null {
     id: doc.id,
     title: data?.title || undefined,
     createdBy: data?.createdBy || undefined,
+  };
+}
+
+// Parse FulfillmentLine from Firestore
+function parseFulfillmentLine(doc: QueryDocumentSnapshot): FulfillmentLine {
+  const data = doc.data();
+
+  // 1) Pick a single truthy status (server top-level OR old nested field)
+  const status: FulfillmentStatus =
+    data.status ?? data.shipping?.status ?? "unfulfilled";
+
+  // 2) Mirror into shipping.status so existing UI that reads nested keeps working
+  const shipping = data.shipping
+    ? { ...data.shipping, status: data.shipping?.status ?? status }
+    : undefined;
+
+  return {
+    lineKey: data.lineKey || doc.id,
+    qtyOrdered: data.qtyOrdered ?? 0,
+    qtyFulfilled: data.qtyFulfilled ?? 0,
+    notes: data.notes || undefined,
+    vendorId: data.vendorId || "",
+    shipping,
+    // keep top-level for new UI; optional in type (see types change below)
+    status,
+    createdAt: data.createdAt,
+    updatedAt: data.updatedAt,
   };
 }
 
@@ -163,12 +185,55 @@ export async function getOrdersInDateRange(
   }
 }
 
+// Get fulfillment lines for orders
+export async function getFulfillmentLines(
+  orderIds: string[]
+): Promise<Record<string, Record<string, FulfillmentLine>>> {
+  try {
+    console.log("getFulfillmentLines: Called with orderIds:", orderIds);
+    const fulfillmentMap: Record<string, Record<string, FulfillmentLine>> = {};
+
+    // Fetch fulfillment lines for each order
+    const promises = orderIds.map(async (orderId) => {
+      try {
+        console.log(`getFulfillmentLines: Fetching for order ${orderId}`);
+        const fulfillmentQuery = query(
+          collection(db, "orders", orderId, "fulfillmentLines")
+        );
+        const fulfillmentSnapshot = await getDocs(fulfillmentQuery);
+        
+        console.log(`getFulfillmentLines: Found ${fulfillmentSnapshot.docs.length} docs for order ${orderId}`);
+        
+        const orderFulfillmentLines: Record<string, FulfillmentLine> = {};
+        fulfillmentSnapshot.docs.forEach((doc) => {
+          const data = parseFulfillmentLine(doc);
+          console.log(`getFulfillmentLines: Parsed fulfillment line:`, data);
+          orderFulfillmentLines[data.lineKey] = data;
+        });
+        
+        fulfillmentMap[orderId] = orderFulfillmentLines;
+        console.log(`getFulfillmentLines: Final fulfillment lines for order ${orderId}:`, orderFulfillmentLines);
+      } catch (error) {
+        console.error(`Error getting fulfillment lines for order ${orderId}:`, error);
+        fulfillmentMap[orderId] = {};
+      }
+    });
+
+    await Promise.all(promises);
+    console.log("getFulfillmentLines: Final result:", fulfillmentMap);
+    return fulfillmentMap;
+  } catch (error) {
+    console.error("Error getting fulfillment lines:", error);
+    return {};
+  }
+}
+
 // Get vendor line statuses for orders
 export async function getVendorLineStatuses(
   orderIds: string[]
-): Promise<Record<string, Record<string, string>>> {
+): Promise<Record<string, Record<string, VendorLineStatus>>> {
   try {
-    const statusMap: Record<string, Record<string, string>> = {};
+    const statusMap: Record<string, Record<string, VendorLineStatus>> = {};
 
     // Fetch vendor line statuses for each order
     const promises = orderIds.map(async (orderId) => {
@@ -178,7 +243,7 @@ export async function getVendorLineStatuses(
         );
         const statusSnapshot = await getDocs(statusQuery);
         
-        const orderStatuses: Record<string, string> = {};
+        const orderStatuses: Record<string, VendorLineStatus> = {};
         statusSnapshot.docs.forEach((doc) => {
           const data = parseVendorLineStatusDoc(doc);
           orderStatuses[data.lineKey] = data.status;
@@ -240,7 +305,7 @@ export function filterOrdersByVendorScope(
       const isOrganizerOrder = vendorScope.eventIds.has(order.eventId);
       
       // Filter line items for brand orders
-      let visibleLineItems: any[] = [];
+      let visibleLineItems: LineItem[] = [];
       let visibilityReason: "organizer" | "brand" | "both" | undefined;
 
       if (isOrganizerOrder) {
@@ -290,6 +355,10 @@ export async function getOrderWithVendorStatus(
     // Get vendor line statuses
     const vendorLineStatuses = await getVendorLineStatuses([orderId]);
     orderWithStatus.vendorLineStatuses = vendorLineStatuses[orderId] || {};
+
+    // Get fulfillment lines
+    const fulfillmentLines = await getFulfillmentLines([orderId]);
+    orderWithStatus.fulfillmentLines = fulfillmentLines[orderId] || {};
 
     // Get event details
     const event = await getEventDetails(order.eventId);

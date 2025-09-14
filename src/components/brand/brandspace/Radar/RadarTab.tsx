@@ -37,12 +37,13 @@ export default function RadarTab({
 			try {
 				setLoading(true);
 				const data = await fetchBrandContents(brandId);
+				console.log("RadarTab: Loaded items:", data.length, data);
 				if (!mounted) return;
 				setItems(data);
 				setErr(null);
 			} catch (e) {
 				if (!mounted) return;
-				console.error(e);
+				console.error("RadarTab: Error loading items:", e);
 				setErr((e as string) ?? "Failed to load feed");
 			} finally {
 				if (mounted) setLoading(false);
@@ -97,8 +98,26 @@ export default function RadarTab({
 	}
 
 	if (items.length === 0) {
+		console.log(
+			"RadarTab: Showing empty state, items.length:",
+			items.length,
+			"isBrand:",
+			isBrand
+		);
 		return (
 			<div className="px-4 sm:px-6 py-16 text-center">
+				{isBrand && (
+					<div className="flex justify-end mb-8">
+						<Button
+							text="Drop a Moment"
+							variant="primary"
+							onClick={() => {
+								console.log("Drop a Moment button clicked (empty state)");
+								router.push("/radar/new");
+							}}
+						/>
+					</div>
+				)}
 				<img
 					src="/images/empty-radar.png"
 					alt=""
@@ -107,12 +126,18 @@ export default function RadarTab({
 				<p className="text-text-muted">
 					{isBrand
 						? "Drop your next content here and keep your audience in the loop."
-						: "No Radar content yet. Check back later for this brand’s latest drops."}
+						: "No Radar content yet. Check back later for this brand's latest drops."}
 				</p>
 			</div>
 		);
 	}
 
+	console.log(
+		"RadarTab: Showing items grid, items.length:",
+		items.length,
+		"isBrand:",
+		isBrand
+	);
 	return (
 		<div className="px-4 sm:px-6">
 			{isBrand && (
@@ -120,7 +145,10 @@ export default function RadarTab({
 					<Button
 						text="Drop a Moment"
 						variant="primary"
-						onClick={() => router.push("/radar/new")}
+						onClick={() => {
+							console.log("Drop a Moment button clicked (from grid view)");
+							router.push("/radar/new");
+						}}
 					/>
 				</div>
 			)}

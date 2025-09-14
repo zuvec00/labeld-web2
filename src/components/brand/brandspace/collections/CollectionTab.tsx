@@ -164,7 +164,7 @@ export default function CollectionsTab() {
 					return;
 				}
 				const list = await getCollectionListForBrand(uid);
-				console.log(list[0]);
+				console.log("CollectionTab: Loaded collections:", list.length, list);
 				if (!mounted) return;
 				// normalize dates
 				const normalized = (list as any[]).map((raw) => {
@@ -176,6 +176,7 @@ export default function CollectionsTab() {
 				setIsBrandView(true);
 			} catch (e: any) {
 				if (!mounted) return;
+				console.error("CollectionTab: Error loading collections:", e);
 				setErr(e?.message ?? "Failed to load collections");
 			} finally {
 				if (mounted) setLoading(false);
@@ -222,24 +223,44 @@ export default function CollectionsTab() {
 	}
 
 	if (!collections.length) {
+		console.log(
+			"CollectionTab: Showing empty state, collections.length:",
+			collections.length,
+			"isBrandView:",
+			isBrandView
+		);
 		return (
-			<div className="min-h-dvh grid place-items-center px-4">
-				<div className="text-center">
-					<img
-						src="/empty-illustrations/collection.png"
-						alt=""
-						className="mx-auto mb-4 h-28 opacity-80"
+			<div className="px-4 sm:px-6 py-16 text-center">
+				<div className="flex justify-end mb-8">
+					<Button
+						text="Drop a Collection"
+						variant="calmAccent2"
+						onClick={() => {
+							console.log("Drop a Collection button clicked (empty state)");
+							router.push("/collections/new");
+						}}
 					/>
-					<p className="text-text-muted">
-						{isBrandView
-							? "Create your first collection and bring all your drops together."
-							: "No collections here yet. This brand hasn’t set any up."}
-					</p>
 				</div>
+				<img
+					src="/images/empty-radar.png"
+					alt=""
+					className="mx-auto mb-4 opacity-80 max-w-[220px]"
+				/>
+				<p className="text-text-muted">
+					{isBrandView
+						? "Create your first collection and bring all your drops together."
+						: "No collections here yet. This brand hasn't set any up."}
+				</p>
 			</div>
 		);
 	}
 
+	console.log(
+		"CollectionTab: Showing collections grid, collections.length:",
+		collections.length,
+		"isBrandView:",
+		isBrandView
+	);
 	return (
 		<div className="px-4 sm:px-6 py-6">
 			{err && (
@@ -251,7 +272,10 @@ export default function CollectionsTab() {
 				<Button
 					text="Drop a Collection"
 					variant="calmAccent2"
-					onClick={() => router.push("/collections/new")}
+					onClick={() => {
+						console.log("Drop a Collection button clicked (from grid view)");
+						router.push("/collections/new");
+					}}
 				/>
 			</div>
 			{/* 👇 responsive grid: 1 col (mobile), 2 cols (md), 3 cols (xl) */}
@@ -379,7 +403,7 @@ function CollectionCard({
 								className="overflow-hidden rounded-xl border border-stroke"
 							>
 								<img
-									src={src}
+									src={src ?? ""}
 									alt=""
 									loading="lazy"
 									draggable={false}

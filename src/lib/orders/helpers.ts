@@ -1,6 +1,6 @@
 // lib/orders/helpers.ts
 import { Timestamp } from "firebase/firestore";
-import { LineItem, VendorLineStatus } from "@/types/orders";
+import { LineItem, VendorLineStatus, FulfillmentStatus, FulfillmentAggregateStatus, FulfillmentLine } from "@/types/orders";
 
 // Currency formatting
 export function formatNaira(minor: number): string {
@@ -216,8 +216,99 @@ export function getVendorStatusLabel(status: VendorLineStatus): string {
   }
 }
 
+// Fulfillment status helpers
+export function getFulfillmentStatusColor(status: FulfillmentStatus): string {
+  switch (status) {
+    case "fulfilled":
+      return "text-accent bg-accent/10 border-accent/20";
+    case "shipped":
+      return "text-calm-1 bg-calm-1/10 border-calm-1/20";
+    case "delivered":
+      return "text-accent bg-accent/10 border-accent/20";
+    case "unfulfilled":
+      return "text-edit bg-edit/10 border-edit/20";
+    case "cancelled":
+      return "text-alert bg-alert/10 border-alert/20";
+    default:
+      return "text-text-muted bg-stroke border-stroke";
+  }
+}
+
+export function getFulfillmentStatusLabel(status: FulfillmentStatus): string {
+  switch (status) {
+    case "fulfilled":
+      return "Fulfilled";
+    case "shipped":
+      return "Shipped";
+    case "delivered":
+      return "Delivered";
+    case "unfulfilled":
+      return "Unfulfilled";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
+export function getFulfillmentAggregateStatusColor(status: FulfillmentAggregateStatus): string {
+  switch (status) {
+    case "fulfilled":
+      return "text-green-600 bg-green-100 border-green-200";
+    case "shipped":
+      return "text-blue-600 bg-blue-100 border-blue-200";
+    case "delivered":
+      return "text-green-600 bg-green-100 border-green-200";
+    case "unfulfilled":
+      return "text-yellow-600 bg-yellow-100 border-yellow-200";
+    case "partial":
+      return "text-orange-600 bg-orange-100 border-orange-200";
+    default:
+      return "text-text-muted bg-stroke border-stroke";
+  }
+}
+
+export function getFulfillmentAggregateStatusLabel(status: FulfillmentAggregateStatus): string {
+  switch (status) {
+    case "fulfilled":
+      return "Fulfilled";
+    case "shipped":
+      return "Shipped";
+    case "delivered":
+      return "Delivered";
+    case "unfulfilled":
+      return "Unfulfilled";
+    case "partial":
+      return "Partial";
+    default:
+      return status;
+  }
+}
+
+export function calculateFulfillmentAggregateStatus(
+  fulfillmentStatuses: Record<string, FulfillmentStatus>,
+  vendorOwnedLineKeys: string[]
+): FulfillmentAggregateStatus {
+  if (vendorOwnedLineKeys.length === 0) {
+    return "fulfilled"; // No vendor-owned lines means nothing to fulfill
+  }
+
+  const statuses = vendorOwnedLineKeys.map(lineKey => fulfillmentStatuses[lineKey] || "unfulfilled");
+  
+  const hasUnfulfilled = statuses.some(status => status === "unfulfilled");
+  const hasFulfilled = statuses.some(status => ["fulfilled", "shipped", "delivered"].includes(status));
+  
+  if (hasUnfulfilled && hasFulfilled) {
+    return "partial";
+  } else if (hasUnfulfilled) {
+    return "unfulfilled";
+  } else {
+    return "fulfilled";
+  }
+}
+
 // Search helpers
-export function matchesSearch(order: any, searchTerm: string): boolean {
+export function matchesSearch(order: { id?: string; deliverTo?: { email?: string } }, searchTerm: string): boolean {
   if (!searchTerm.trim()) return true;
   
   const term = searchTerm.toLowerCase();
@@ -236,4 +327,9 @@ export function paginate<T>(items: T[], page: number, pageSize: number): T[] {
 
 export function getTotalPages(totalItems: number, pageSize: number): number {
   return Math.ceil(totalItems / pageSize);
+}
+
+// Fulfillment line status helper
+export function getLineFulfillmentStatus(line: FulfillmentLine): FulfillmentStatus {
+  return line.status ?? line.shipping?.status ?? "unfulfilled";
 }

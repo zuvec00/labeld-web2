@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_SECTIONS } from "./nav";
-import Image from "next/image";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
+import GatedNavItem from "@/components/GatedNavItem";
 
 export default function Sidebar() {
 	const pathname = usePathname();
@@ -43,20 +43,42 @@ export default function Sidebar() {
 								const active =
 									pathname === item.href ||
 									pathname?.startsWith(item.href + "/");
+
+								// If item has a feature gate, use GatedNavItem
+								if (item.feature) {
+									return (
+										<li key={item.href}>
+											<GatedNavItem
+												feature={item.feature}
+												href={item.href}
+												label={item.label}
+												icon={item.icon}
+												badge={item.badge}
+												className={active ? "bg-cta text-text" : ""}
+											/>
+										</li>
+									);
+								}
+
+								// Regular navigation item
 								return (
 									<li key={item.href}>
 										<Link
 											href={item.href}
+											prefetch={true}
 											className={[
-												"flex items-center justify-between gap-2 px-3 py-2 rounded-xl transition",
+												"flex items-center gap-3 px-3 py-2 rounded-xl transition-colors group",
 												active
 													? "bg-cta text-text"
-													: "text-text-muted hover:text-text hover:bg-surface",
+													: "text-text hover:text-accent hover:bg-surface/50",
 											].join(" ")}
 										>
+											<div className="group-hover:text-accent transition-colors">
+												{item.icon}
+											</div>
 											<span className="font-medium">{item.label}</span>
 											{item.badge && (
-												<span className="text-[10px] px-2 py-0.5 rounded-full bg-surface border border-stroke">
+												<span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-surface border border-stroke">
 													{item.badge}
 												</span>
 											)}

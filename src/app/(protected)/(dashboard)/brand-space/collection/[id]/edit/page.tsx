@@ -39,7 +39,7 @@ function asDate(v: any): Date | null {
 }
 
 function baseField() {
-	return "w-full rounded-xl border border-stroke bg-surface px-3 py-2 outline-none focus:border-accent";
+	return "w-full rounded-xl bg-cta border border-stroke bg-surface px-3 py-2 outline-none focus:border-accent";
 }
 
 export default function EditCollectionPage() {

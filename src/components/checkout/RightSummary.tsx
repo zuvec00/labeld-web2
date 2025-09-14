@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
-import { useCheckoutCart } from "@/hooks/useCheckoutCart";
+import { useCheckoutCart, CartItem } from "@/hooks/useCheckoutCart";
 import { formatCurrency } from "@/lib/checkout/calc";
 import LineItemRow from "./LineItemRow";
 import { Info } from "lucide-react";
@@ -10,14 +10,17 @@ import { fetchEventById } from "@/lib/firebase/queries/event";
 import {
 	paystackService,
 	type TotalsWithLabeldFee,
-	type FinalizeOrderPayload,
 	type PaymentMetadata,
 } from "@/lib/payment/paystack";
-import { generateCheckoutIdempotencyKey } from "@/lib/idempotency";
+// import { generateCheckoutIdempotencyKey } from "@/lib/idempotency"; // No longer needed
 import { auth } from "@/lib/firebase/firebaseConfig";
+import {
+	shippingService,
+	type VendorShippingInfo,
+} from "@/lib/shipping/shippingService";
 
 // Helper function to safely map cart items to finalize line items
-function toFinalizeLine(item: any) {
+function toFinalizeLine(item: CartItem) {
 	if (item._type === "ticket" && item.ticketTypeId) {
 		return {
 			_type: "ticket" as const,
@@ -30,10 +33,73 @@ function toFinalizeLine(item: any) {
 			_type: "merch" as const,
 			merchItemId: item.merchItemId,
 			qty: item.qty,
-			variantKey: item.variantKey,
+			size: item.size ?? undefined,
+			color: item.color ?? undefined,
 		};
 	}
 	throw new Error("Cart item missing required id");
+}
+
+// Helper function to compute shipping fees for all vendors
+async function computeShippingFees(
+	items: CartItem[],
+	shippingAddress?: { state: string; city?: string }
+): Promise<number> {
+	if (!shippingAddress?.state) return 0;
+
+	// Group merch items by vendorId
+	const vendorItems = new Map<string, CartItem[]>();
+	for (const item of items) {
+		if (item._type === "merch" && item.brandId) {
+			if (!vendorItems.has(item.brandId)) {
+				vendorItems.set(item.brandId, []);
+			}
+			vendorItems.get(item.brandId)!.push(item);
+		}
+	}
+
+	if (vendorItems.size === 0) return 0;
+
+	// Get quotes for each vendor
+	const vendors = Array.from(vendorItems.entries()).map(
+		([vendorId, items]) => ({
+			vendorId,
+			items,
+		})
+	);
+
+	const vendorsWithQuotes = await shippingService.quoteShippingForAllVendors(
+		vendors,
+		shippingAddress.state,
+		shippingAddress.city
+	);
+
+	return shippingService.calculateTotalShippingFee(vendorsWithQuotes);
+}
+
+// Helper function to build stable idempotency key
+function buildIdempotencyKey(
+	eventId: string,
+	email: string,
+	lineItems: Array<{
+		_type: "ticket" | "merch";
+		ticketTypeId?: string;
+		merchItemId?: string;
+		qty: number;
+		size?: string;
+		color?: string;
+	}>
+): string {
+	const canonicalItems = lineItems
+		.slice()
+		.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+
+	return [
+		eventId,
+		email.toLowerCase(),
+		JSON.stringify(canonicalItems),
+		Math.floor(Date.now() / 1000).toString(), // 1-second precision timestamp
+	].join(":");
 }
 
 interface RightSummaryProps {
@@ -43,7 +109,7 @@ interface RightSummaryProps {
 export default function RightSummary({ eventId }: RightSummaryProps) {
 	const pathname = usePathname();
 	const router = useRouter();
-	const { items, removeItem, contact, termsAccepted, clear } =
+	const { items, removeItem, contact, shipping, termsAccepted, clear } =
 		useCheckoutCart();
 	const [eventName, setEventName] = useState<string>("");
 	const [loading, setLoading] = useState(true);
@@ -59,10 +125,23 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 		lines: [],
 	});
 	const [finalizing, setFinalizing] = useState(false);
+	const [vendorShipping, setVendorShipping] = useState<VendorShippingInfo[]>(
+		[]
+	);
+	const [shippingFees, setShippingFees] = useState(0);
+
+	// Debug log when shipping fees change
+	useEffect(() => {
+		console.log("🚚 RightSummary: Shipping fees state changed", {
+			shippingFees,
+		});
+	}, [shippingFees]);
 
 	const hasTickets = items.some(
 		(item) => item._type === "ticket" && item.qty > 0
 	);
+
+	const hasMerch = items.some((item) => item._type === "merch" && item.qty > 0);
 
 	// Payment handlers
 	const handlePaymentSuccess = useCallback(
@@ -76,41 +155,86 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 				// Determine order type
 				const hasTickets = items.some((item) => item._type === "ticket");
 				const hasMerch = items.some((item) => item._type === "merch");
-				const orderType: "tickets" | "merch" | "mixed" =
-					hasTickets && hasMerch ? "mixed" : hasTickets ? "tickets" : "merch";
+
+				// Log order type for debugging
+				console.log(
+					"Order type:",
+					hasTickets && hasMerch ? "mixed" : hasTickets ? "tickets" : "merch"
+				);
 
 				// Build line items for finalizeOrder using helper function
 				const lineItems = items.map(toFinalizeLine);
 
+				// Compute shipping fees for the final order
+				const shippingFeeMinor =
+					hasMerch && shipping?.address?.state
+						? await computeShippingFees(items, {
+								state: shipping.address.state,
+								city: shipping.address.city,
+						  })
+						: 0;
+
+				console.log("💰 Final shipping fee:", shippingFeeMinor);
+
 				// Generate stable idempotency key for this checkout attempt
-				const idempotencyKey = generateCheckoutIdempotencyKey(
+				const idempotencyKey = buildIdempotencyKey(
 					eventId,
 					contact?.email || "",
-					items
+					lineItems
 				);
 
+				// Prepare shipping info for finalizeOrder
+				const shippingInfo =
+					hasMerch && shipping
+						? {
+								method: shipping.method,
+								address:
+									shipping.method === "delivery"
+										? {
+												name: shipping.address?.name,
+												phone: shipping.address?.phone,
+												address: shipping.address?.address,
+												city: shipping.address?.city,
+												state: shipping.address?.state,
+												postalCode: shipping.address?.postalCode,
+										  }
+										: undefined,
+						  }
+						: undefined;
+
 				// Finalize order using the exact totals shown to user
-				const orderId = await paystackService.finalizeOrder({
-					idempotencyKey,
-					eventId,
-					buyerUserId: auth.currentUser?.uid || null, // Guest user for now
-					deliverTo: {
-						email: contact?.email || "",
-						phone: contact?.phone,
+				const orderId = await paystackService.finalizeOrder(
+					{
+						idempotencyKey,
+						eventId,
+						buyerUserId: auth.currentUser?.uid || null, // Guest user for now
+						deliverTo: {
+							email: contact?.email || "",
+							phone: contact?.phone,
+						},
+						provider: "paystack",
+						providerRef: {
+							initRef: response.reference,
+							verifyRef: response.reference,
+						},
+						lineItems,
+						clientTotals: {
+							currency: totals.currency,
+							itemsSubtotalMinor: totals.itemsSubtotalMinor,
+							feesMinor: totals.buyerFeesMinor, // Use buyer fees
+							totalMinor:
+								totals.itemsSubtotalMinor +
+								totals.buyerFeesMinor +
+								shippingFeeMinor,
+							shippingFeeMinor, // NEW: Include shipping fee
+						},
 					},
-					provider: "paystack",
-					providerRef: {
-						initRef: response.reference,
-						verifyRef: response.reference,
-					},
-					lineItems,
-					clientTotals: {
-						currency: totals.currency,
-						itemsSubtotalMinor: totals.itemsSubtotalMinor,
-						feesMinor: totals.buyerFeesMinor, // Use buyer fees
-						totalMinor: totals.totalDueMinor, // Items + buyer fees
-					},
-				});
+					items,
+					shippingInfo
+				);
+
+				// Fulfillment lines are now created automatically in finalizeOrder
+				console.log("Vendor shipping info:", vendorShipping);
 
 				// Clear cart and redirect to success
 				clear();
@@ -125,7 +249,17 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 				setFinalizing(false);
 			}
 		},
-		[eventId, items, totals, contact, clear, router, finalizing]
+		[
+			eventId,
+			items,
+			totals,
+			contact,
+			clear,
+			router,
+			finalizing,
+			shipping,
+			vendorShipping,
+		]
 	);
 
 	const handlePaymentClose = useCallback(() => {
@@ -184,6 +318,85 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 		calculateTotals();
 	}, [items]);
 
+	// Calculate shipping quotes when items or shipping address changes
+	useEffect(() => {
+		const calculateShipping = async () => {
+			console.log("🚚 RightSummary: Starting shipping calculation", {
+				hasMerch,
+				shipping,
+				itemsCount: items.length,
+				merchItems: items.filter((item) => item._type === "merch"),
+			});
+
+			if (hasMerch && shipping) {
+				try {
+					const vendors = shippingService.getVendorsFromCart(items);
+					console.log("🚚 RightSummary: Found vendors", { vendors });
+
+					// For pickup orders, shipping fee is 0
+					if (shipping.method === "pickup") {
+						console.log(
+							"🚚 RightSummary: Pickup method selected - setting fee to 0"
+						);
+						setVendorShipping(vendors);
+						setShippingFees(0);
+						return;
+					}
+
+					// For delivery orders, calculate shipping fees based on address
+					if (shipping.method === "delivery" && shipping.address?.state) {
+						console.log("🚚 RightSummary: Delivery method with address", {
+							state: shipping.address.state,
+							city: shipping.address.city,
+							fullAddress: shipping.address,
+						});
+
+						const vendorsWithQuotes =
+							await shippingService.quoteShippingForAllVendors(
+								vendors,
+								shipping.address.state,
+								shipping.address.city
+							);
+
+						console.log("🚚 RightSummary: Got vendor quotes", {
+							vendorsWithQuotes,
+						});
+
+						setVendorShipping(vendorsWithQuotes);
+						const totalShippingFee =
+							shippingService.calculateTotalShippingFee(vendorsWithQuotes);
+
+						console.log("🚚 RightSummary: Calculated total shipping fee", {
+							totalShippingFee,
+						});
+						setShippingFees(totalShippingFee);
+					} else {
+						// Delivery method selected but no address yet
+						console.log("🚚 RightSummary: Delivery method but no address", {
+							method: shipping.method,
+							hasState: !!shipping.address?.state,
+							address: shipping.address,
+						});
+						setVendorShipping(vendors);
+						setShippingFees(0);
+					}
+				} catch (error) {
+					console.error("🚚 RightSummary: Error calculating shipping:", error);
+					setShippingFees(0);
+				}
+			} else {
+				console.log("🚚 RightSummary: No merch or shipping - clearing fees", {
+					hasMerch,
+					hasShipping: !!shipping,
+				});
+				setVendorShipping([]);
+				setShippingFees(0);
+			}
+		};
+
+		calculateShipping();
+	}, [items, shipping, hasMerch]);
+
 	const getCurrentStep = () => {
 		if (pathname.includes("/tickets")) return "tickets";
 		if (pathname.includes("/merch")) return "merch";
@@ -235,12 +448,53 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 		if (step === "contact") {
 			// Check if required contact fields are filled
 			const hasRequiredContact = contact?.email && contact?.phone;
+
+			// If merch is in cart, also check shipping info
+			if (hasMerch) {
+				const hasRequiredShipping =
+					shipping?.method &&
+					(shipping.method === "pickup" ||
+						(shipping.method === "delivery" &&
+							shipping.address?.name &&
+							shipping.address?.phone &&
+							shipping.address?.address &&
+							shipping.address?.city &&
+							shipping.address?.state));
+				return !hasRequiredContact || !hasRequiredShipping;
+			}
+
 			return !hasRequiredContact;
 		}
 		if (step === "pay") {
 			// On payment step, check if terms are accepted and contact info is filled
 			const hasRequiredContact = contact?.email && contact?.phone;
 			const hasAcceptedTerms = termsAccepted === true;
+
+			// If merch is in cart, also check shipping info
+			if (hasMerch) {
+				const hasRequiredShipping =
+					shipping?.method &&
+					(shipping.method === "pickup" ||
+						(shipping.method === "delivery" &&
+							shipping.address?.name &&
+							shipping.address?.phone &&
+							shipping.address?.address &&
+							shipping.address?.city &&
+							shipping.address?.state));
+
+				// Debug logging
+				console.log("Payment validation:", {
+					hasRequiredContact,
+					hasAcceptedTerms,
+					hasRequiredShipping,
+					hasMerch,
+					shipping,
+					contact,
+				});
+
+				return !hasRequiredContact || !hasAcceptedTerms || !hasRequiredShipping;
+			}
+
 			return !hasRequiredContact || !hasAcceptedTerms;
 		}
 		return false;
@@ -280,7 +534,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 
 				// Initialize Paystack payment
 				await paystackService.initializePayment(
-					totals.totalDueMinor, // Convert from minor units (kobo) to major units (naira)
+					totals.itemsSubtotalMinor + totals.buyerFeesMinor + shippingFees, // Include shipping fees
 					contact.email,
 					metadata,
 					handlePaymentSuccess,
@@ -373,6 +627,40 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 					</div>
 				)}
 
+				{/* Shipping Fees - Show if merch is in cart */}
+				{hasMerch && (
+					<div className="border-t border-stroke pt-4 mb-4">
+						<div className="flex items-center justify-between text-sm mb-2">
+							<div className="flex items-center gap-1 group relative">
+								<span className="text-text-muted">Shipping</span>
+								<Info className="w-3 h-3 text-text-muted cursor-help" />
+								{/* Tooltip */}
+								<div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-surface border border-stroke rounded-lg text-xs text-text-muted whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-10">
+									{shipping?.method === "pickup"
+										? "Pickup orders have no shipping fee"
+										: "Shipping fees calculated based on your location"}
+								</div>
+							</div>
+							<span className="text-text-muted">
+								{(() => {
+									const displayValue =
+										shippingFees > 0
+											? formatCurrency(shippingFees, totals.currency)
+											: shipping?.method === "pickup"
+											? "Free (Pickup)"
+											: "Calculating...";
+									console.log("🚚 RightSummary: Shipping display value", {
+										shippingFees,
+										shippingMethod: shipping?.method,
+										displayValue,
+									});
+									return displayValue;
+								})()}
+							</span>
+						</div>
+					</div>
+				)}
+
 				{/* Discount Message */}
 				<div className="bg-surface/50 rounded-lg p-3 mb-4">
 					<p className="text-xs text-text-muted">
@@ -385,10 +673,27 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 					<div className="flex items-center justify-between">
 						<span className="text-lg font-heading font-semibold">Total</span>
 						<span className="text-lg font-heading font-semibold">
-							{formatCurrency(totals.totalDueMinor, totals.currency)}
+							{formatCurrency(
+								totals.itemsSubtotalMinor +
+									totals.buyerFeesMinor +
+									shippingFees,
+								totals.currency
+							)}
 						</span>
 					</div>
 				</div>
+
+				{/* Debug Info - Remove this in production */}
+				{process.env.NODE_ENV === "development" && (
+					<div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mb-4">
+						<p className="text-xs text-yellow-600 font-mono">
+							Debug: Contact: {JSON.stringify(contact)} | Shipping:{" "}
+							{JSON.stringify(shipping)} | Terms:{" "}
+							{termsAccepted ? "accepted" : "not accepted"} | Step:{" "}
+							{getCurrentStep()} | Disabled: {isCtaDisabled() ? "yes" : "no"}
+						</p>
+					</div>
+				)}
 
 				{/* Error Display */}
 				{error && (

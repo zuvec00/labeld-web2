@@ -1,9 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // types/orders.ts
 export type Currency = "NGN";
 export type AdmitType = "general" | "vip" | "backstage";
 export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";
 export type PaymentProvider = "paystack" | "flutterwave";
 export type VendorLineStatus = "processing" | "ready" | "completed" | "cancelled";
+export type FulfillmentStatus = "unfulfilled" | "fulfilled" | "shipped" | "delivered" | "cancelled";
+export type FulfillmentAggregateStatus = "fulfilled" | "shipped" | "delivered" | "unfulfilled" | "partial";
 
 export interface TicketLineItem {
   _type: "ticket";
@@ -42,6 +45,7 @@ export interface OrderDoc {
     currency: Currency;
     itemsSubtotalMinor: number;
     feesMinor: number;
+    shippingMinor?: number;
     totalMinor: number;
   };
   fees?: {
@@ -50,7 +54,19 @@ export interface OrderDoc {
   };
   provider: PaymentProvider | null;
   providerRef?: { initRef?: string; verifyRef?: string };
-  deliverTo?: { email?: string; phone?: string };
+  deliverTo?: { name?: string; email?: string; phone?: string };
+  shipping?: {
+    method: "delivery" | "pickup";
+    address?: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+    };
+    pickupAddress?: string;
+  };
   hasTickets: boolean;
   ticketQtyByType?: Record<string, number>;
   createdAt: any; // Firestore Timestamp
@@ -84,6 +100,7 @@ export interface OrderFilters {
   statuses: OrderStatus[];
   types: ("ticket" | "merch")[];
   sources: ("event" | "store")[];
+  fulfillmentStatuses: FulfillmentAggregateStatus[];
   search: string;
 }
 
@@ -94,8 +111,57 @@ export interface VendorScope {
   isBrand: boolean;
 }
 
+export interface FulfillmentLine {
+  lineKey: string;
+  qtyOrdered: number;
+  qtyFulfilled: number;
+  notes?: string;
+
+  // Top-level status (server's canonical field)
+  status?: FulfillmentStatus;
+
+  // Shipping payload (UI often reads nested status)
+  shipping?: {
+    method: "delivery" | "pickup";
+    status?: FulfillmentStatus; // optional: normalized by parser
+    feeMinor?: number;
+    trackingNumber?: string;
+    carrier?: string;
+    address?: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+    };
+    pickupAddress?: string;
+  };
+
+  vendorId: string;
+  createdAt: any;
+  updatedAt: any;
+}
+
+export interface TimelineEvent {
+  type: "order_created" | "payment_captured" | "fulfillment_marked" | "note" | "refund";
+  actor: string; // "system" | "vendor:{vendorId}" | "user:{uid}"
+  message: string;
+  meta?: {
+    lineKey?: string;
+    status?: FulfillmentStatus;
+    qtyFulfilled?: number;
+    trackingNumber?: string;
+    carrier?: string;
+  };
+  at: any; // Firestore timestamp
+}
+
 export interface OrderWithVendorStatus extends OrderDoc {
   vendorLineStatuses?: Record<string, VendorLineStatus>;
+  fulfillmentStatuses?: Record<string, FulfillmentStatus>;
+  fulfillmentAggregateStatus?: FulfillmentAggregateStatus;
+  fulfillmentLines?: Record<string, FulfillmentLine>;
   eventTitle?: string;
   visibleLineItems?: LineItem[];
   visibilityReason?: "organizer" | "brand" | "both";

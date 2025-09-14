@@ -2,7 +2,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { OrderFilters, OrderStatus } from "@/types/orders";
+import {
+	OrderFilters,
+	OrderStatus,
+	FulfillmentAggregateStatus,
+} from "@/types/orders";
 import { Search, Filter, X } from "lucide-react";
 
 interface OrdersFiltersProps {
@@ -19,6 +23,7 @@ export default function OrdersFilters({
 		statuses: [],
 		types: [],
 		sources: [],
+		fulfillmentStatuses: [],
 		search: "",
 	});
 	const [showAdvanced, setShowAdvanced] = useState(false);
@@ -69,12 +74,26 @@ export default function OrdersFilters({
 		onFiltersChange(newFilters);
 	};
 
+	const handleFulfillmentStatusToggle = (
+		status: FulfillmentAggregateStatus
+	) => {
+		const newFilters = {
+			...filters,
+			fulfillmentStatuses: filters.fulfillmentStatuses.includes(status)
+				? filters.fulfillmentStatuses.filter((s) => s !== status)
+				: [...filters.fulfillmentStatuses, status],
+		};
+		setFilters(newFilters);
+		onFiltersChange(newFilters);
+	};
+
 	const clearFilters = () => {
 		const defaultFilters = {
 			dateRange: "7days" as const,
 			statuses: [],
 			types: [],
 			sources: [],
+			fulfillmentStatuses: [],
 			search: "",
 		};
 		setFilters(defaultFilters);
@@ -85,6 +104,7 @@ export default function OrdersFilters({
 	const hasActiveFilters =
 		filters.statuses.length > 0 ||
 		filters.types.length > 0 ||
+		filters.fulfillmentStatuses.length > 0 ||
 		filters.search.trim() !== "";
 
 	return (
@@ -135,6 +155,7 @@ export default function OrdersFilters({
 						<span className="bg-text text-surface text-xs px-1.5 py-0.5 rounded-full">
 							{filters.statuses.length +
 								filters.types.length +
+								filters.fulfillmentStatuses.length +
 								(filters.search.trim() ? 1 : 0)}
 						</span>
 					)}
@@ -207,6 +228,31 @@ export default function OrdersFilters({
 									{type === "ticket" ? "Tickets" : "Merchandise"}
 								</button>
 							))}
+						</div>
+					</div>
+
+					{/* Fulfillment Status Filters */}
+					<div>
+						<label className="text-xs font-medium text-text-muted mb-2 block">
+							Fulfillment Status
+						</label>
+						<div className="flex gap-2">
+							{(["fulfilled", "unfulfilled", "partial"] as const).map(
+								(status) => (
+									<button
+										key={status}
+										onClick={() => handleFulfillmentStatusToggle(status)}
+										className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+											filters.fulfillmentStatuses.includes(status)
+												? "bg-cta text-text"
+												: "bg-background border border-stroke text-text-muted hover:text-text"
+										}`}
+										disabled={loading}
+									>
+										{status.charAt(0).toUpperCase() + status.slice(1)}
+									</button>
+								)
+							)}
 						</div>
 					</div>
 				</div>

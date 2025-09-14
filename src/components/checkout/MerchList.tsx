@@ -69,7 +69,9 @@ export default function MerchList({
 				qty: qty,
 				size: size,
 				color: color,
+				brandId: merchItem.brandId, // Add brandId for shipping quotes
 			};
+			console.log("🛒 MerchList: Adding item to cart", { newItem, merchItem });
 			addItem(newItem);
 		}
 	};

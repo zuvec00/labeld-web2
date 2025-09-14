@@ -15,6 +15,7 @@ import ScanResult from "@/components/scanner/ScanResult";
 import ManualEntryModal from "@/components/scanner/ManualEntryModal";
 import { Spinner } from "@/components/ui/spinner";
 import Button from "@/components/ui/button";
+import OfflineIndicator from "@/components/pwa/OfflineIndicator";
 
 export default function ScannerPage() {
 	const router = useRouter();
@@ -210,6 +211,9 @@ export default function ScannerPage() {
 
 	return (
 		<div className="min-h-screen bg-bg flex flex-col">
+			{/* Offline Indicator */}
+			<OfflineIndicator />
+
 			{/* HUD */}
 			<ScannerHUD
 				eventName={eventName}

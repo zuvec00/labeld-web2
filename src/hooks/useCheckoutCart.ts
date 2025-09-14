@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 
 export type AdmitType = "general" | "vip" | "backstage";
 
@@ -24,18 +23,37 @@ export type CartItem =
       qty: number; 
       size?: string; 
       color?: string;
+      brandId?: string; // Add brandId for shipping quotes
     };
+
+export type ShippingMethod = "delivery" | "pickup";
+
+export interface ShippingAddress {
+  name: string;
+  phone: string;
+  address: string;
+  city: string;
+  state: string;
+  postalCode?: string;
+}
+
+export interface ShippingInfo {
+  method: ShippingMethod;
+  address?: ShippingAddress;
+}
 
 type CartState = {
   eventId: string | null;
   items: CartItem[];
   contact?: { firstName?: string; lastName?: string; email?: string; phone?: string };
+  shipping?: ShippingInfo;
   termsAccepted?: boolean;
   setEventId: (id: string) => void;
   addItem: (item: CartItem) => void;
   updateQty: (key: { _type: "ticket" | "merch"; id: string; variantKey?: string }, qty: number) => void;
   removeItem: (key: { _type: "ticket" | "merch"; id: string; variantKey?: string }) => void;
   setContact: (contact: { firstName?: string; lastName?: string; email?: string; phone?: string }) => void;
+  setShipping: (shipping: ShippingInfo) => void;
   setTermsAccepted: (accepted: boolean) => void;
   clear: () => void;
 };
@@ -140,52 +158,37 @@ const removeLine = (
   });
 };
 
-export const useCheckoutCart = create<CartState>()(
-  persist(
-    (set, get) => ({
-      eventId: null,
-      items: [],
-      contact: undefined,
-      
-      setEventId: (eventId) => set({ eventId }),
-      
-      addItem: (item) => set({ 
-        items: mergeByKindAndVariant(get().items, item) 
-      }),
-      
-      updateQty: ({ _type, id, variantKey }, qty) => set({ 
-        items: patchQty(get().items, _type, id, variantKey, qty) 
-      }),
-      
-      removeItem: ({ _type, id, variantKey }) => set({ 
-        items: removeLine(get().items, _type, id, variantKey) 
-      }),
-      
-      setContact: (contact) => set({ contact }),
-      
-      setTermsAccepted: (termsAccepted) => set({ termsAccepted }),
-      
-      clear: () => set({ 
-        items: [], 
-        eventId: null, 
-        contact: undefined,
-        termsAccepted: undefined
-      }),
-    }),
-    {
-      name: "checkout-cart",
-      storage: {
-        getItem: (name) => {
-          const str = sessionStorage.getItem(name);
-          return str ? JSON.parse(str) : null;
-        },
-        setItem: (name, value) => {
-          sessionStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: (name) => {
-          sessionStorage.removeItem(name);
-        },
-      },
-    }
-  )
-);
+// Simple version without persistence to eliminate hydration issues
+export const useCheckoutCart = create<CartState>()((set, get) => ({
+  eventId: null,
+  items: [],
+  contact: undefined,
+  
+  setEventId: (eventId) => set({ eventId }),
+  
+  addItem: (item) => set({ 
+    items: mergeByKindAndVariant(get().items, item) 
+  }),
+  
+  updateQty: ({ _type, id, variantKey }, qty) => set({ 
+    items: patchQty(get().items, _type, id, variantKey, qty) 
+  }),
+  
+  removeItem: ({ _type, id, variantKey }) => set({ 
+    items: removeLine(get().items, _type, id, variantKey) 
+  }),
+  
+  setContact: (contact) => set({ contact }),
+  
+  setShipping: (shipping) => set({ shipping }),
+  
+  setTermsAccepted: (termsAccepted) => set({ termsAccepted }),
+  
+  clear: () => set({ 
+    items: [], 
+    eventId: null, 
+    contact: undefined,
+    shipping: undefined,
+    termsAccepted: undefined
+  }),
+}));

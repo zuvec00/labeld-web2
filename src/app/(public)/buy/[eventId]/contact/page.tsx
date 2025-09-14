@@ -1,18 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useCheckoutCart } from "@/hooks/useCheckoutCart";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ShippingForm from "@/components/checkout/ShippingForm";
 
 export default function ContactPage() {
-	const params = useParams();
+	// const params = useParams();
 	const router = useRouter();
-	const eventId = params.eventId as string;
-	const { contact, setContact } = useCheckoutCart();
-
+	// const eventId = params.eventId as string;
+	const { setContact, shipping, setShipping, items } = useCheckoutCart();
 	const [formData, setFormData] = useState({
 		firstName: "",
 		lastName: "",
@@ -20,14 +19,15 @@ export default function ContactPage() {
 		confirmEmail: "",
 		phone: "",
 	});
-	const [loading, setLoading] = useState(false);
+	// const [loading, setLoading] = useState(false);
 	const [errors, setErrors] = useState<Record<string, string>>({});
+	const [shippingErrors] = useState<Record<string, string>>({});
 
 	// Countdown timer (mock - 10 minutes)
 	const [timeLeft, setTimeLeft] = useState(10 * 60); // 10 minutes in seconds
 
 	// Update countdown
-	useState(() => {
+	useEffect(() => {
 		const timer = setInterval(() => {
 			setTimeLeft((prev) => {
 				if (prev <= 1) {
@@ -39,7 +39,7 @@ export default function ContactPage() {
 		}, 1000);
 
 		return () => clearInterval(timer);
-	});
+	}, []);
 
 	const formatTime = (seconds: number) => {
 		const mins = Math.floor(seconds / 60);
@@ -58,80 +58,112 @@ export default function ContactPage() {
 
 		// Save to cart as user types for real-time validation
 		const updatedContact = {
-			firstName: formData.firstName,
-			lastName: formData.lastName,
-			email: formData.email,
-			phone: formData.phone,
-			// Update the current field
-			[field]: value,
+			firstName: field === "firstName" ? value : formData.firstName,
+			lastName: field === "lastName" ? value : formData.lastName,
+			email: field === "email" ? value : formData.email,
+			phone: field === "phone" ? value : formData.phone,
 		};
+
+		// Debug logging
+		console.log("Contact form update:", { field, value, updatedContact });
+
 		setContact(updatedContact);
 	};
 
-	const validateForm = () => {
-		const newErrors: Record<string, string> = {};
+	// Check if cart has merch items
+	const hasMerch = items.some((item) => item._type === "merch");
 
-		if (!formData.firstName.trim()) {
-			newErrors.firstName = "First name is required";
-		}
+	// const validateForm = () => {
+	// 	const newErrors: Record<string, string> = {};
+	// 	const newShippingErrors: Record<string, string> = {};
 
-		if (!formData.lastName.trim()) {
-			newErrors.lastName = "Last name is required";
-		}
+	// 	// Contact validation
+	// 	if (!formData.firstName.trim()) {
+	// 		newErrors.firstName = "First name is required";
+	// 	}
 
-		if (!formData.email.trim()) {
-			newErrors.email = "Email is required";
-		} else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-			newErrors.email = "Please enter a valid email";
-		}
+	// 	if (!formData.lastName.trim()) {
+	// 		newErrors.lastName = "Last name is required";
+	// 	}
 
-		if (!formData.confirmEmail.trim()) {
-			newErrors.confirmEmail = "Please confirm your email";
-		} else if (formData.email !== formData.confirmEmail) {
-			newErrors.confirmEmail = "Emails do not match";
-		}
+	// 	if (!formData.email.trim()) {
+	// 		newErrors.email = "Email is required";
+	// 	} else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+	// 		newErrors.email = "Please enter a valid email";
+	// 	}
 
-		if (!formData.phone.trim()) {
-			newErrors.phone = "Phone number is required";
-		}
+	// 	if (!formData.confirmEmail.trim()) {
+	// 		newErrors.confirmEmail = "Please confirm your email";
+	// 	} else if (formData.email !== formData.confirmEmail) {
+	// 		newErrors.confirmEmail = "Emails do not match";
+	// 	}
 
-		setErrors(newErrors);
-		return Object.keys(newErrors).length === 0;
-	};
+	// 	if (!formData.phone.trim()) {
+	// 		newErrors.phone = "Phone number is required";
+	// 	}
 
-	const handleSubmit = async () => {
-		if (!validateForm()) return;
+	// 	// Shipping validation (only if merch is in cart)
+	// 	if (hasMerch && shipping) {
+	// 		if (shipping.method === "delivery" && shipping.address) {
+	// 			if (!shipping.address.name.trim()) {
+	// 				newShippingErrors.name = "Full name is required";
+	// 			}
+	// 			if (!shipping.address.phone.trim()) {
+	// 				newShippingErrors.phone = "Phone number is required";
+	// 			}
+	// 			if (!shipping.address.address.trim()) {
+	// 				newShippingErrors.address = "Street address is required";
+	// 			}
+	// 			if (!shipping.address.city.trim()) {
+	// 				newShippingErrors.city = "City is required";
+	// 			}
+	// 			if (!shipping.address.state.trim()) {
+	// 				newShippingErrors.state = "State is required";
+	// 			}
+	// 		}
+	// 	}
 
-		setLoading(true);
-		try {
-			// TODO: Replace with actual API call
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+	// 	setErrors(newErrors);
+	// 	setShippingErrors(newShippingErrors);
+	// 	return (
+	// 		Object.keys(newErrors).length === 0 &&
+	// 		Object.keys(newShippingErrors).length === 0
+	// 	);
+	// };
 
-			// Save contact info to cart
-			setContact({
-				firstName: formData.firstName,
-				lastName: formData.lastName,
-				email: formData.email,
-				phone: formData.phone,
-			});
+	// const handleSubmit = async () => {
+	// 	if (!validateForm()) return;
 
-			// TODO: Create pending order
-			// const response = await fetch('/api/checkout/init', {
-			//   method: 'POST',
-			//   headers: { 'Content-Type': 'application/json' },
-			//   body: JSON.stringify({ cart: cart, contact: formData })
-			// });
-			// const { orderId } = await response.json();
+	// 	setLoading(true);
+	// 	try {
+	// 		// TODO: Replace with actual API call
+	// 		await new Promise((resolve) => setTimeout(resolve, 1000));
 
-			// Navigate to payment
-			router.push(`/buy/${eventId}/pay`);
-		} catch (error) {
-			console.error("Failed to submit contact info:", error);
-			setErrors({ submit: "Failed to submit. Please try again." });
-		} finally {
-			setLoading(false);
-		}
-	};
+	// 		// Save contact info to cart
+	// 		setContact({
+	// 			firstName: formData.firstName,
+	// 			lastName: formData.lastName,
+	// 			email: formData.email,
+	// 			phone: formData.phone,
+	// 		});
+
+	// 		// TODO: Create pending order
+	// 		// const response = await fetch('/api/checkout/init', {
+	// 		//   method: 'POST',
+	// 		//   headers: { 'Content-Type': 'application/json' },
+	// 		//   body: JSON.stringify({ cart: cart, contact: formData })
+	// 		// });
+	// 		// const { orderId } = await response.json();
+
+	// 		// Navigate to payment
+	// 		router.push(`/buy/${eventId}/pay`);
+	// 	} catch (error) {
+	// 		console.error("Failed to submit contact info:", error);
+	// 		setErrors({ submit: "Failed to submit. Please try again." });
+	// 	} finally {
+	// 		setLoading(false);
+	// 	}
+	// };
 
 	return (
 		<div>
@@ -267,6 +299,32 @@ export default function ContactPage() {
 					)}
 				</div>
 			</div>
+
+			{/* Debug Info - Remove this in production */}
+			{process.env.NODE_ENV === "development" && (
+				<div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 mt-6">
+					<p className="text-xs text-yellow-600 font-mono">
+						Debug: FormData: {JSON.stringify(formData)} | Shipping:{" "}
+						{JSON.stringify(shipping)} | HasMerch: {hasMerch ? "yes" : "no"}
+					</p>
+				</div>
+			)}
+
+			{/* Shipping Form - Only show if merch is in cart */}
+			{hasMerch && (
+				<div className="bg-surface rounded-2xl border border-stroke p-6 mt-6">
+					<ShippingForm
+						shipping={shipping}
+						onShippingChange={setShipping}
+						errors={shippingErrors}
+						contactData={{
+							firstName: formData.firstName,
+							lastName: formData.lastName,
+							phone: formData.phone,
+						}}
+					/>
+				</div>
+			)}
 		</div>
 	);
 }

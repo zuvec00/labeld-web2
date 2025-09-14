@@ -1,7 +1,10 @@
 // components/orders/OrderDetailDrawer.tsx
-import { OrderWithVendorStatus } from "@/types/orders";
+import { OrderWithVendorStatus, LineItem } from "@/types/orders";
 import { getLineKey, getLineItemSummary } from "@/lib/orders/helpers";
+import { useAuth } from "@/lib/auth/AuthContext";
 import StatusBadge from "./StatusBadge";
+import FulfillmentManagement from "./FulfillmentManagement";
+import OrderTimeline from "./OrderTimeline";
 import Money from "./Money";
 import Date from "./Date";
 
@@ -9,18 +12,44 @@ interface OrderDetailDrawerProps {
 	order: OrderWithVendorStatus | null;
 	isOpen: boolean;
 	onClose: () => void;
+	onUpdate?: () => void;
 }
 
 export default function OrderDetailDrawer({
 	order,
 	isOpen,
 	onClose,
+	onUpdate,
 }: OrderDetailDrawerProps) {
+	const { user } = useAuth();
+
 	if (!isOpen || !order) return null;
 
-	const getVendorStatusForLine = (line: any) => {
+	console.log("🔍 OrderDetailDrawer: Received order data", {
+		orderId: order.id,
+		fulfillmentLines: order.fulfillmentLines,
+		user: user?.uid,
+	});
+
+	const getVendorStatusForLine = (line: LineItem) => {
 		const lineKey = getLineKey(line);
 		return order.vendorLineStatuses?.[lineKey] || "paid";
+	};
+
+	const getTotalShippingFee = () => {
+		if (!order.fulfillmentLines) return 0;
+		return Object.values(order.fulfillmentLines).reduce(
+			(total, fulfillmentLine) => {
+				return total + (fulfillmentLine.shipping?.feeMinor || 0);
+			},
+			0
+		);
+	};
+
+	const getFirstFulfillmentLine = () => {
+		if (!order.fulfillmentLines) return null;
+		const fulfillmentLines = Object.values(order.fulfillmentLines);
+		return fulfillmentLines.length > 0 ? fulfillmentLines[0] : null;
 	};
 
 	const getVisibilityReasonLabel = (reason?: string) => {
@@ -98,6 +127,12 @@ export default function OrderDetailDrawer({
 						<h3 className="font-medium text-text mb-3">Customer</h3>
 						<div className="space-y-2">
 							<div>
+								<span className="text-sm text-text-muted">Name:</span>
+								<span className="text-sm text-text ml-2">
+									{getFirstFulfillmentLine()?.shipping?.address?.name || "—"}
+								</span>
+							</div>
+							<div>
 								<span className="text-sm text-text-muted">Email:</span>
 								<span className="text-sm text-text ml-2">
 									{order.deliverTo?.email || "—"}
@@ -106,11 +141,125 @@ export default function OrderDetailDrawer({
 							<div>
 								<span className="text-sm text-text-muted">Phone:</span>
 								<span className="text-sm text-text ml-2">
-									{order.deliverTo?.phone || "—"}
+									{getFirstFulfillmentLine()?.shipping?.address?.phone ||
+										order.deliverTo?.phone ||
+										"—"}
 								</span>
 							</div>
 						</div>
 					</div>
+
+					{/* Shipping Information */}
+					{order.lineItems.some((item) => item._type === "merch") && (
+						<div className="rounded-lg bg-surface border border-stroke p-4">
+							<h3 className="font-medium text-text mb-3">Shipping</h3>
+							<div className="space-y-4">
+								{Object.values(order.fulfillmentLines || {})
+									.filter((fulfillmentLine) => fulfillmentLine.shipping)
+									.map((fulfillmentLine, index) => (
+										<div
+											key={index}
+											className="border border-stroke/50 rounded-lg p-3"
+										>
+											<div className="flex items-center justify-between mb-2">
+												<span className="text-sm font-medium text-text">
+													{fulfillmentLine.lineKey}
+												</span>
+												<span className="text-sm text-text-muted">
+													{fulfillmentLine.shipping?.method === "delivery"
+														? "Delivery"
+														: "Pickup"}
+												</span>
+											</div>
+
+											{fulfillmentLine.shipping?.method === "delivery" &&
+											fulfillmentLine.shipping?.address ? (
+												<div className="space-y-1">
+													<div>
+														<span className="text-xs text-text-muted">
+															Name:
+														</span>
+														<span className="text-xs text-text ml-2">
+															{fulfillmentLine.shipping.address.name}
+														</span>
+													</div>
+													<div>
+														<span className="text-xs text-text-muted">
+															Address:
+														</span>
+														<span className="text-xs text-text ml-2">
+															{fulfillmentLine.shipping.address.address}
+														</span>
+													</div>
+													<div>
+														<span className="text-xs text-text-muted">
+															City:
+														</span>
+														<span className="text-xs text-text ml-2">
+															{fulfillmentLine.shipping.address.city}
+														</span>
+													</div>
+													<div>
+														<span className="text-xs text-text-muted">
+															State:
+														</span>
+														<span className="text-xs text-text ml-2">
+															{fulfillmentLine.shipping.address.state}
+														</span>
+													</div>
+													{fulfillmentLine.shipping.address.postalCode && (
+														<div>
+															<span className="text-xs text-text-muted">
+																Postal Code:
+															</span>
+															<span className="text-xs text-text ml-2">
+																{fulfillmentLine.shipping.address.postalCode}
+															</span>
+														</div>
+													)}
+													<div>
+														<span className="text-xs text-text-muted">
+															Phone:
+														</span>
+														<span className="text-xs text-text ml-2">
+															{fulfillmentLine.shipping.address.phone}
+														</span>
+													</div>
+												</div>
+											) : fulfillmentLine.shipping?.method === "pickup" ? (
+												<div>
+													<span className="text-xs text-text-muted">
+														Pickup Location:
+													</span>
+													<span className="text-xs text-text ml-2">
+														{fulfillmentLine.shipping.pickupAddress ||
+															"Vendor pickup address"}
+													</span>
+												</div>
+											) : (
+												<div>
+													<span className="text-xs text-text-muted">
+														Status:
+													</span>
+													<span className="text-xs text-text ml-2">
+														{fulfillmentLine.shipping?.status ||
+															"No status info"}
+													</span>
+												</div>
+											)}
+										</div>
+									))}
+
+								{Object.values(order.fulfillmentLines || {}).filter(
+									(fl) => fl.shipping
+								).length === 0 && (
+									<div className="text-sm text-text-muted">
+										No shipping information available
+									</div>
+								)}
+							</div>
+						</div>
+					)}
 
 					{/* Event Information */}
 					<div className="rounded-lg bg-surface border border-stroke p-4">
@@ -185,6 +334,12 @@ export default function OrderDetailDrawer({
 						</div>
 					</div>
 
+					{/* Fulfillment Management - Show for vendors with merch lines */}
+					{order.lineItems.some((item) => item._type === "merch") &&
+						onUpdate && (
+							<FulfillmentManagement order={order} onUpdate={onUpdate} />
+						)}
+
 					{/* Payment Information */}
 					<div className="rounded-lg bg-surface border border-stroke p-4">
 						<h3 className="font-medium text-text mb-3">Payment</h3>
@@ -222,6 +377,17 @@ export default function OrderDetailDrawer({
 								<span className="text-text-muted">Items Subtotal:</span>
 								<Money amountMinor={order.amount.itemsSubtotalMinor} />
 							</div>
+							{(() => {
+								const totalShippingFee = getTotalShippingFee();
+								return (
+									totalShippingFee > 0 && (
+										<div className="flex justify-between text-sm">
+											<span className="text-text-muted">Shipping:</span>
+											<Money amountMinor={totalShippingFee} />
+										</div>
+									)
+								);
+							})()}
 							<div className="flex justify-between text-sm">
 								<span className="text-text-muted">Fees:</span>
 								<Money amountMinor={order.amount.feesMinor} />
@@ -235,42 +401,8 @@ export default function OrderDetailDrawer({
 						</div>
 					</div>
 
-					{/* Timestamps */}
-					<div className="rounded-lg bg-surface border border-stroke p-4">
-						<h3 className="font-medium text-text mb-3">Timeline</h3>
-						<div className="space-y-2 text-sm">
-							<div>
-								<span className="text-text-muted">Created:</span>
-								<span className="text-text ml-2">
-									<Date timestamp={order.createdAt} />
-								</span>
-							</div>
-							{order.paidAt && (
-								<div>
-									<span className="text-text-muted">Paid:</span>
-									<span className="text-text ml-2">
-										<Date timestamp={order.paidAt} />
-									</span>
-								</div>
-							)}
-							{order.updatedAt && (
-								<div>
-									<span className="text-text-muted">Updated:</span>
-									<span className="text-text ml-2">
-										<Date timestamp={order.updatedAt} />
-									</span>
-								</div>
-							)}
-							{order.cancelledAt && (
-								<div>
-									<span className="text-text-muted">Cancelled:</span>
-									<span className="text-text ml-2">
-										<Date timestamp={order.cancelledAt} />
-									</span>
-								</div>
-							)}
-						</div>
-					</div>
+					{/* Timeline */}
+					<OrderTimeline orderId={order.id} onUpdate={onUpdate} />
 				</div>
 			</div>
 		</>

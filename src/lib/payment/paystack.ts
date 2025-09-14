@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { CartItem } from "@/hooks/useCheckoutCart";
+import { shippingService, type VendorShippingInfo } from "@/lib/shipping/shippingService";
 
 declare global {
 	interface Window {
@@ -65,13 +66,15 @@ export interface FinalizeOrderPayload {
     ticketTypeId?: string;
     merchItemId?: string;
     qty: number;
-    variantKey?: string; // for merch size/color
+    size?: string; // for merch size
+    color?: string; // for merch color
   }>;
   clientTotals: {
     currency: Currency;
     itemsSubtotalMinor: number;
     feesMinor: number;
     totalMinor: number;
+    shippingFeeMinor?: number; // NEW: Shipping fee
   };
 }
 
@@ -82,6 +85,7 @@ export interface FinalizeOrderResponse {
   amount?: { 
     itemsSubtotalMinor: number; 
     feesMinor: number; 
+    shippingMinor?: number;
     totalMinor: number; 
     currency: "NGN" | "USD" 
   };
@@ -320,15 +324,60 @@ export class PaystackService {
 
 	// Helper method to finalize order after successful payment
 	public async finalizeOrder(
-		payload: FinalizeOrderPayload
+		payload: FinalizeOrderPayload,
+		items: CartItem[],
+		shippingInfo?: { method: "delivery" | "pickup"; address?: Record<string, unknown> },
+		vendorsWithQuotes?: VendorShippingInfo[]
 	): Promise<string> {
 		try {
+			console.log("🚀 Finalizing order with payload:", {
+				...payload,
+				clientTotals: {
+					...payload.clientTotals,
+					shippingFeeMinor: payload.clientTotals.shippingFeeMinor || 0,
+				}
+			});
+
 			const finalizeOrderFn = httpsCallable(this.functions, 'finalizeOrder');
 			const res = await finalizeOrderFn(payload);
 			
 			const data = res.data as FinalizeOrderResponse;
 			if (!data.success || !data.orderId) {
 				throw new Error(data?.error || "Failed to finalize order");
+			}
+
+			const hasMerch = items.some(item => item._type === "merch");
+
+			// If caller didn't pre-compute vendors/quotes, do it here.
+			if (hasMerch && shippingInfo) {
+				try {
+					let vendors = vendorsWithQuotes || shippingService.getVendorsFromCart(items);
+
+					// Only quote if delivery & an address with state is present
+					const isDelivery = shippingInfo.method === "delivery";
+					const state = (shippingInfo.address as any)?.state;
+					const city = (shippingInfo.address as any)?.city;
+
+					if (isDelivery && state) {
+						vendors = await shippingService.quoteShippingForAllVendors(vendors, state, city);
+					}
+
+					console.log("Creating fulfillment lines...");
+					await shippingService.createFulfillmentLines(
+						data.orderId,
+						vendors,
+						shippingInfo.method,
+						shippingInfo.address
+					);
+					console.log("Fulfillment lines created successfully");
+				} catch (fulfillmentErr) {
+					console.error("Fulfillment overlay creation failed:", fulfillmentErr);
+					// Do not throw: order is already finalized
+				}
+			} else {
+				console.log("Skipping fulfillment line creation - conditions not met");
+				console.log("- hasMerch:", hasMerch);
+				console.log("- shippingInfo:", shippingInfo);
 			}
 
 			return data.orderId;

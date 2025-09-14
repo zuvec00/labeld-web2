@@ -6,6 +6,7 @@ import {
   getVendorScope,
   getOrdersInDateRange,
   getVendorLineStatuses,
+  getFulfillmentLines,
   getEventDetailsBatch,
   filterOrdersByVendorScope,
 } from "@/lib/firebase/queries/orders";
@@ -14,8 +15,9 @@ import {
   VendorScope,
   OrderFilters,
   OrderTab,
+  FulfillmentStatus,
 } from "@/types/orders";
-import { getDateRange } from "@/lib/orders/helpers";
+import { getDateRange, calculateFulfillmentAggregateStatus, getLineFulfillmentStatus } from "@/lib/orders/helpers";
 import { QueryDocumentSnapshot } from "firebase/firestore";
 
 interface UseOrdersResult {
@@ -42,6 +44,7 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
     statuses: [],
     types: [],
     sources: [],
+    fulfillmentStatuses: [],
     search: "",
   });
   const [initialized, setInitialized] = useState(false);
@@ -130,6 +133,22 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
         });
       }
 
+      if (activeFilters.fulfillmentStatuses.length > 0) {
+        filteredOrders = filteredOrders.filter(order => {
+          const vendorOwnedLineKeys = order.lineItems
+            .filter(item => item._type === "merch")
+            .map(item => `merch:${item.merchItemId}`);
+          
+          const fulfillmentStatus = order.fulfillmentAggregateStatus || 
+            calculateFulfillmentAggregateStatus(
+              order.fulfillmentStatuses || {},
+              vendorOwnedLineKeys
+            );
+          
+          return activeFilters.fulfillmentStatuses.includes(fulfillmentStatus);
+        });
+      }
+
       if (activeFilters.search.trim()) {
         const searchTerm = activeFilters.search.toLowerCase();
         filteredOrders = filteredOrders.filter(order => {
@@ -139,19 +158,68 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
         });
       }
 
-      // Get vendor line statuses and event details
+      // Get vendor line statuses, fulfillment lines, and event details
       if (filteredOrders.length > 0) {
         const orderIds = filteredOrders.map(order => order.id);
-        const [vendorLineStatuses, eventDetails] = await Promise.all([
+        
+        const [vendorLineStatuses, fulfillmentLines, eventDetails] = await Promise.all([
           getVendorLineStatuses(orderIds),
+          getFulfillmentLines(orderIds),
           getEventDetailsBatch([...new Set(filteredOrders.map(order => order.eventId))])
         ]);
 
-        filteredOrders = filteredOrders.map(order => ({
+        console.log("🔍 useOrders: Raw fulfillment data", {
+          orderIds,
+          fulfillmentLines: Object.keys(fulfillmentLines).reduce((acc, orderId) => {
+            acc[orderId] = Object.keys(fulfillmentLines[orderId]).map(key => ({
+              key,
+              ...fulfillmentLines[orderId][key]
+            }));
+            return acc;
+          }, {} as Record<string, unknown[]>)
+        });
+
+        // Debug specific order that we know has fulfillment data
+        const debugOrderId = "vdXvKU8XlyO8rJ3oLFPq";
+        if (fulfillmentLines[debugOrderId]) {
+          console.log("🔍 useOrders: Debug specific order", {
+            orderId: debugOrderId,
+            rawFulfillmentData: fulfillmentLines[debugOrderId],
+            firstLineKey: Object.keys(fulfillmentLines[debugOrderId])[0],
+            firstLineData: fulfillmentLines[debugOrderId][Object.keys(fulfillmentLines[debugOrderId])[0]]
+          });
+        }
+
+
+        filteredOrders = filteredOrders.map(order => {
+          const orderFulfillmentLines = fulfillmentLines[order.id] || {};
+          const lines = Object.values(orderFulfillmentLines);
+          
+          // Compute normalized fulfillment statuses
+          const fulfillmentStatuses: Record<string, FulfillmentStatus> = {};
+          lines.forEach(line => { 
+            fulfillmentStatuses[line.lineKey] = getLineFulfillmentStatus(line); 
+          });
+
+          // Compute aggregate status for vendor-owned lines
+          const vendorOwnedLineKeys = order.lineItems
+            .filter(item => item._type === "merch")
+            .map(item => `merch:${item.merchItemId}`);
+
+          const fulfillmentAggregateStatus = calculateFulfillmentAggregateStatus(
+            fulfillmentStatuses,
+            vendorOwnedLineKeys
+          );
+
+          return {
           ...order,
           vendorLineStatuses: vendorLineStatuses[order.id] || {},
+            fulfillmentLines: orderFulfillmentLines,
+            fulfillmentStatuses,
+            fulfillmentAggregateStatus,
           eventTitle: eventDetails[order.eventId]?.title,
-        })) as OrderWithVendorStatus[];
+          };
+        }) as OrderWithVendorStatus[];
       }
 
       if (reset) {

@@ -31,7 +31,7 @@ export default function DropStatusCapsule({
 	let txt = "";
 
 	if (daysDiff > 0) {
-		bg = "bg-vibeaccent"; // map this to your Tailwind color or use inline style
+		bg = "bg-accent"; // map this to your Tailwind color or use inline style
 		emoji = "⏳";
 		text =
 			daysDiff === 1
@@ -41,7 +41,7 @@ export default function DropStatusCapsule({
 				: shortText
 				? `In ${daysDiff} d`
 				: `Drops in ${daysDiff} days`;
-		txt = "text-black";
+		txt = "text-black font-heading";
 	} else if (daysDiff === 0) {
 		if (now < launchDate) {
 			bg = "bg-edit";
@@ -81,7 +81,7 @@ export default function DropStatusCapsule({
 			].join(" ")}
 		>
 			<span aria-hidden>{emoji}</span>
-			<span className="font-medium text-[13px]">{text}</span>
+			<span className="font-heading text-[13px]">{text}</span>
 		</span>
 	);
 }
