@@ -107,14 +107,14 @@ export default function RecentContent({
 				</button>
 			</div>
 
-			<div className="grid grid-cols-1 gap-3">
-				{items.map((item) => (
+			<div className="grid grid-cols-2 gap-3">
+				{items.slice(0, 6).map((item) => (
 					<div
 						key={item.id}
 						className="border border-stroke rounded-lg overflow-hidden hover:border-cta/20 transition-colors"
 					>
 						{/* Image */}
-						<div className="aspect-video bg-background relative overflow-hidden">
+						<div className="aspect-square bg-background relative overflow-hidden">
 							{item.teaserImageUrl ? (
 								<img
 									src={item.teaserImageUrl}
@@ -128,45 +128,41 @@ export default function RecentContent({
 							)}
 
 							{/* Status badges */}
-							<div className="absolute top-2 left-2 flex gap-1">
-								{item.visibility === "private" ? (
-									<span className="text-xs px-2 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
-										<EyeOff className="w-3 h-3" />
-										Private
+							<div className="absolute top-1 left-1 flex flex-col gap-1">
+								{item.visibility === "public" ? (
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
+										<Eye className="w-2.5 h-2.5" />
 									</span>
 								) : (
-									<span className="text-xs px-2 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
-										<Eye className="w-3 h-3" />
-										Public
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
+										<EyeOff className="w-2.5 h-2.5" />
 									</span>
 								)}
 
 								{item.isPublished ? (
-									<span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 flex items-center gap-1">
-										<CheckCircle className="w-3 h-3" />
-										Published
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 flex items-center gap-1">
+										<CheckCircle className="w-2.5 h-2.5" />
 									</span>
 								) : (
-									<span className="text-xs px-2 py-0.5 rounded-full bg-edit/10 text-edit border border-edit/20 flex items-center gap-1">
-										<Clock className="w-3 h-3" />
-										Draft
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-edit/10 text-edit border border-edit/20 flex items-center gap-1">
+										<Clock className="w-2.5 h-2.5" />
 									</span>
 								)}
 							</div>
 
 							{/* Reactions count */}
 							{item.reactionsCount > 0 && (
-								<div className="absolute top-2 right-2">
-									<span className="text-xs px-2 py-0.5 rounded-full bg-background/80 text-text border border-stroke/50">
-										{item.reactionsCount} reactions
+								<div className="absolute top-1 right-1">
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text border border-stroke/50">
+										{item.reactionsCount}
 									</span>
 								</div>
 							)}
 						</div>
 
 						{/* Content */}
-						<div className="p-3">
-							<div className="text-sm text-text line-clamp-2 mb-2">
+						<div className="p-2">
+							<div className="text-xs text-text line-clamp-2 mb-1">
 								{item.caption || "No caption"}
 							</div>
 							<div className="text-xs text-text-muted">
@@ -180,7 +176,7 @@ export default function RecentContent({
 			{/* Footer */}
 			<div className="mt-4 pt-3 border-t border-stroke/50">
 				<div className="flex items-center justify-between text-xs text-text-muted">
-					<span>Last {items.length} posts</span>
+					<span>Last {Math.min(items.length, 6)} posts</span>
 					<span>
 						{items.filter((item) => item.isPublished).length} published
 					</span>

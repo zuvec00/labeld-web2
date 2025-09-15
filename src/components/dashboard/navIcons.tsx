@@ -2,7 +2,6 @@
 import React from "react";
 import {
 	LayoutDashboard,
-	Palette,
 	Radar,
 	Package,
 	Layers,
@@ -11,6 +10,7 @@ import {
 	Ticket,
 	Settings,
 	HelpCircle,
+	Globe,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -20,7 +20,7 @@ export const getNavIcon = (iconName: string) => {
 		case "Dashboard":
 			return <LayoutDashboard {...iconProps} />;
 		case "BrandSpace":
-			return <Palette {...iconProps} />;
+			return <Globe {...iconProps} />;
 		case "Radar":
 			return <Radar {...iconProps} />;
 		case "Pieces":

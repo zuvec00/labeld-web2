@@ -17,11 +17,11 @@ const manrope = Manrope({
 });
 
 export const metadata = {
-	title: "Labeld Scanner",
+	title: "Labeld - For the Culture, Not the Clout",
 	description:
-		"Professional ticket scanning and event management for Labeld events",
+		"Your digital social marketplace for brands that move culture and the ones who wear it. Drop, discover, and connect with real fans.",
 	manifest: "/manifest.webmanifest",
-	themeColor: "#FF5A2E",
+	themeColor: "#FF5E2E",
 	viewport:
 		"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
 	appleWebApp: {
@@ -31,12 +31,12 @@ export const metadata = {
 	},
 	icons: {
 		icon: [
-			{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
-			{ url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+			{ url: "/labeld_logo.png", sizes: "192x192", type: "image/png" },
+			{ url: "/labeld_logo.png", sizes: "512x512", type: "image/png" },
 		],
 		apple: [
-			{ url: "/icons/icon-152.png", sizes: "152x152", type: "image/png" },
-			{ url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+			{ url: "/labeld_logo.png", sizes: "152x152", type: "image/png" },
+			{ url: "/labeld_logo.png", sizes: "192x192", type: "image/png" },
 		],
 	},
 };
@@ -60,11 +60,11 @@ export default function RootLayout({
 				<meta name="application-name" content="Labeld" />
 
 				{/* iOS Splash Screens */}
-				<link rel="apple-touch-startup-image" href="/icons/icon-512.png" />
+				<link rel="apple-touch-startup-image" href="/labeld_logo.png" />
 
 				{/* Theme Colors */}
-				<meta name="theme-color" content="#FF5A2E" />
-				<meta name="msapplication-TileColor" content="#FF5A2E" />
+				<meta name="theme-color" content="#FF5E2E" />
+				<meta name="msapplication-TileColor" content="#FF5E2E" />
 				<meta name="msapplication-config" content="/browserconfig.xml" />
 
 				{/* Prevent zoom on iOS */}
@@ -75,7 +75,7 @@ export default function RootLayout({
 			</head>
 			<body className={`${unbounded.variable} ${manrope.variable} antialiased`}>
 				<RegisterSW />
-				<InstallPrompt />
+				{/* <InstallPrompt /> */}
 				<AuthProvider>{children}</AuthProvider>
 			</body>
 		</html>

@@ -18,6 +18,11 @@ interface Props {
 	onModeChange?: (mode: Mode) => void;
 }
 
+interface FirebaseError {
+	code?: string;
+	message?: string;
+}
+
 export default function AuthForm({ mode, onModeChange }: Props) {
 	const router = useRouter();
 	const {
@@ -31,6 +36,8 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 	const [showPw, setShowPw] = useState(false);
 	const [isIOS, setIsIOS] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
+	const [googleLoading, setGoogleLoading] = useState(false);
+	const [appleLoading, setAppleLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	// if already logged in, bounce
@@ -61,10 +68,10 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 			// 3) route by flags
 			const data = snap.data();
 
-			if (data?.profileSetupComplete !== true) {
-				if (!cancelled) router.replace("/user/setup");
-				return;
-			}
+			// if (data?.profileSetupComplete !== true) {
+			// 	if (!cancelled) router.replace("/user/setup");
+			// 	return;
+			// }
 
 			// (optional) brand flow
 			if (data?.isBrand === true && data?.brandSpaceSetupComplete !== true) {
@@ -125,17 +132,72 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 
 				toast({
 					title: "Back in the culture 💚",
-					description: "Let’s pick up where you left off.",
+					description: "Let's pick up where you left off.",
 					duration: 4000,
 				});
 
 				// optional OneSignal + notif via CF later
 				router.replace("/dashboard");
 			}
-		} catch (err) {
-			setError(
-				"Authentication failed. Please try again:" + (err as Error).message
-			);
+		} catch (err: unknown) {
+			// Handle Firebase Auth errors with user-friendly messages
+			const errorCode = (err as FirebaseError)?.code;
+			let errorMessage = "Authentication failed. Please try again.";
+
+			switch (errorCode) {
+				// Sign up errors
+				case "auth/email-already-in-use":
+					errorMessage =
+						"This email is already registered. Try signing in instead.";
+					break;
+				case "auth/invalid-email":
+					errorMessage = "Please enter a valid email address.";
+					break;
+				case "auth/weak-password":
+					errorMessage = "Password should be at least 6 characters long.";
+					break;
+				case "auth/operation-not-allowed":
+					errorMessage = "Email/password accounts are not enabled.";
+					break;
+
+				// Sign in errors
+				case "auth/user-not-found":
+					errorMessage =
+						"No account found with this email. Check your email or sign up.";
+					break;
+				case "auth/wrong-password":
+					errorMessage = "Incorrect password. Please try again.";
+					break;
+				case "auth/invalid-credential":
+					errorMessage =
+						"Invalid email or password. Please check your credentials.";
+					break;
+				case "auth/user-disabled":
+					errorMessage =
+						"This account has been disabled. Please contact support.";
+					break;
+				case "auth/too-many-requests":
+					errorMessage = "Too many failed attempts. Please try again later.";
+					break;
+
+				// Network errors
+				case "auth/network-request-failed":
+					errorMessage =
+						"Network error. Please check your connection and try again.";
+					break;
+				case "auth/timeout":
+					errorMessage = "Request timed out. Please try again.";
+					break;
+
+				// Generic fallback - show Firebase's raw error message
+				default:
+					errorMessage =
+						(err as FirebaseError)?.message ||
+						"Authentication failed. Please try again.";
+					break;
+			}
+
+			setError(errorMessage);
 		} finally {
 			setSubmitting(false);
 		}
@@ -143,6 +205,7 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 
 	async function handleGoogle() {
 		setError(null);
+		setGoogleLoading(true);
 		try {
 			const u = await signInWithGoogle();
 			await auth.currentUser?.getIdToken(true);
@@ -166,15 +229,49 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 				duration: 4000,
 			});
 
-			// optional: await sendNotificationCF({ title:"Back in the culture 💚", content:"Let’s pick up where you left off.", externalUserIds:[u.uid] });
+			// optional: await sendNotificationCF({ title:"Back in the culture 💚", content:"Let's pick up where you left off.", externalUserIds:[u.uid] });
 			router.replace(mode === "signup" ? "/user/setup" : "/dashboard");
-		} catch (err) {
-			setError("Google sign-in failed: " + (err as Error).message);
+		} catch (err: unknown) {
+			// Handle Google sign-in specific errors
+			const errorCode = (err as FirebaseError)?.code;
+			let errorMessage = "Google sign-in failed. Please try again.";
+
+			switch (errorCode) {
+				case "auth/popup-closed-by-user":
+					errorMessage = "Sign-in was cancelled. Please try again.";
+					break;
+				case "auth/popup-blocked":
+					errorMessage =
+						"Popup was blocked by your browser. Please allow popups and try again.";
+					break;
+				case "auth/operation-not-allowed":
+					errorMessage =
+						"Google sign-in is not enabled. Please contact support.";
+					break;
+				case "auth/account-exists-with-different-credential":
+					errorMessage =
+						"An account already exists with this email using a different sign-in method.";
+					break;
+				case "auth/network-request-failed":
+					errorMessage =
+						"Network error. Please check your connection and try again.";
+					break;
+				default:
+					errorMessage =
+						(err as FirebaseError)?.message ||
+						"Google sign-in failed. Please try again.";
+					break;
+			}
+
+			setError(errorMessage);
+		} finally {
+			setGoogleLoading(false);
 		}
 	}
 
 	async function handleApple() {
 		setError(null);
+		setAppleLoading(true);
 		try {
 			const u = await signInWithApple();
 			await auth.currentUser?.getIdToken(true);
@@ -198,9 +295,43 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 			});
 
 			router.replace(mode === "signup" ? "/user/setup" : "/dashboard");
-		} catch (err) {
+		} catch (err: unknown) {
 			console.error("Apple sign-in error:", err);
-			setError("Apple sign-in failed: " + (err as Error).message);
+
+			// Handle Apple sign-in specific errors
+			const errorCode = (err as FirebaseError)?.code;
+			let errorMessage = "Apple sign-in failed. Please try again.";
+
+			switch (errorCode) {
+				case "auth/popup-closed-by-user":
+					errorMessage = "Sign-in was cancelled. Please try again.";
+					break;
+				case "auth/popup-blocked":
+					errorMessage =
+						"Popup was blocked by your browser. Please allow popups and try again.";
+					break;
+				case "auth/operation-not-allowed":
+					errorMessage =
+						"Apple sign-in is not enabled. Please contact support.";
+					break;
+				case "auth/account-exists-with-different-credential":
+					errorMessage =
+						"An account already exists with this email using a different sign-in method.";
+					break;
+				case "auth/network-request-failed":
+					errorMessage =
+						"Network error. Please check your connection and try again.";
+					break;
+				default:
+					errorMessage =
+						(err as FirebaseError)?.message ||
+						"Apple sign-in failed. Please try again.";
+					break;
+			}
+
+			setError(errorMessage);
+		} finally {
+			setAppleLoading(false);
 		}
 	}
 
@@ -210,13 +341,13 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 	// - Apple button: onClick={handleApple}
 
 	// For the submit button text:
-	const submitText = submitting ? (
-		<Spinner size="sm" className="mr-2" />
-	) : mode === "login" ? (
-		"Enter the Culture"
-	) : (
-		"Join the Culture"
-	);
+	const submitText = submitting
+		? mode === "login"
+			? "Entering..."
+			: "Joining..."
+		: mode === "login"
+		? "Enter the Culture"
+		: "Join the Culture";
 
 	const headline = mode === "login" ? "Welcome Back" : "Sign up";
 	const subcopy =
@@ -274,6 +405,13 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 				</button>
 			</div> */}
 
+				{/* Error Message */}
+				{error && (
+					<div className="mt-4 p-3 rounded-lg bg-red-50 border border-red-200">
+						<p className="text-sm text-red-600">{error}</p>
+					</div>
+				)}
+
 				{/* Form */}
 				<form onSubmit={handleSubmit} className="mt-6 space-y-4">
 					{/* Email */}
@@ -285,6 +423,7 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 							type="email"
 							placeholder="e.g example@email.com"
 							required
+							disabled={submitting || googleLoading || appleLoading}
 						/>
 					</div>
 
@@ -299,12 +438,14 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 								placeholder="********"
 								required
 								className="pr-10"
+								disabled={submitting || googleLoading || appleLoading}
 							/>
 							<button
 								type="button"
 								onClick={() => setShowPw((s) => !s)}
-								className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
+								className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text disabled:opacity-50 disabled:cursor-not-allowed"
 								aria-label={showPw ? "Hide password" : "Show password"}
+								disabled={submitting || googleLoading || appleLoading}
 							>
 								{showPw ? (
 									<EyeOff className="size-5" />
@@ -348,17 +489,21 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 					{/* Social buttons */}
 					<div className="grid grid-cols-2 gap-3">
 						<IconButton
-							text="Google"
+							text={googleLoading ? "Signing in..." : "Google"}
 							iconSrc="/icons/google.svg"
 							onClick={handleGoogle}
 							variant="outline"
+							disabled={submitting || googleLoading || appleLoading}
+							loading={googleLoading}
 						/>
 						{isIOS && (
 							<IconButton
-								text="Apple"
+								text={appleLoading ? "Signing in..." : "Apple"}
 								iconSrc="/icons/apple-white.png"
 								onClick={handleApple}
 								variant="outline"
+								disabled={submitting || googleLoading || appleLoading}
+								loading={appleLoading}
 							/>
 						)}
 					</div>
@@ -366,9 +511,10 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 					{/* Submit */}
 					<Button
 						type="submit"
-						text={mode === "login" ? "Enter the Culture" : "Join the Culture"}
+						text={submitText}
 						variant="cta"
 						className="w-full mt-2"
+						disabled={submitting || googleLoading || appleLoading}
 					/>
 				</form>
 
@@ -381,7 +527,7 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 								onClick={() => onModeChange?.("signup")}
 								className="text-cta font-semibold"
 							>
-								{submitText}
+								Join the Culture
 							</button>
 						</>
 					) : (
@@ -424,14 +570,17 @@ function TextLabel({
 
 function Input({
 	className,
+	disabled,
 	...props
 }: React.InputHTMLAttributes<HTMLInputElement> & { className?: string }) {
 	return (
 		<input
 			{...props}
+			disabled={disabled}
 			className={[
 				"w-full rounded-xl bg-bg border border-stroke px-4 py-3 outline-none",
 				"focus:border-accent text-text placeholder:text-text-muted",
+				"disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-stroke/20",
 				className || "",
 			].join(" ")}
 		/>
@@ -442,9 +591,10 @@ function Button({
 	text,
 	variant = "primary",
 	className,
+	disabled,
 	...props
 }: React.ButtonHTMLAttributes<HTMLButtonElement> & {
-	text: string;
+	text: string | React.ReactNode;
 	variant?: "primary" | "cta" | "outline";
 	className?: string;
 }) {
@@ -462,8 +612,10 @@ function Button({
 	return (
 		<button
 			{...props}
+			disabled={disabled}
 			className={[
 				"rounded-2xl px-4 py-3 font-semibold transition hover:opacity-90",
+				"disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:opacity-50",
 				style,
 				className || "",
 			].join(" ")}
@@ -478,11 +630,15 @@ function IconButton({
 	iconSrc,
 	onClick,
 	variant = "outline",
+	disabled = false,
+	loading = false,
 }: {
 	text: string;
 	iconSrc: string;
 	onClick?: () => void;
 	variant?: "outline" | "solid";
+	disabled?: boolean;
+	loading?: boolean;
 }) {
 	const style =
 		variant === "solid"
@@ -493,10 +649,15 @@ function IconButton({
 		<button
 			type="button"
 			onClick={onClick}
-			className={`rounded-xl px-3 py-3 font-unbounded font-regular text-text  transition ${style}`}
+			disabled={disabled}
+			className={`rounded-xl px-3 py-3 font-unbounded font-regular text-text transition ${style} disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-surface`}
 		>
 			<span className="inline-flex items-center gap-2 justify-center w-full">
-				<Image src={iconSrc} alt="" width={18} height={18} />
+				{loading ? (
+					<Spinner size="sm" />
+				) : (
+					<Image src={iconSrc} alt="" width={18} height={18} />
+				)}
 				{text}
 			</span>
 		</button>

@@ -2,7 +2,7 @@
 // Server-only flags. Do NOT export anything that leaks secrets.
 // We only expose booleans for gating UI.
 
-export type FeatureKey = 'events' | 'orders' | 'wallet' | 'sales' | 'brandspace';
+export type FeatureKey = 'events' | 'orders' | 'wallet' | 'sales' | 'brandspace' | 'installPrompt';
 
 export type FeatureConfig = Record<FeatureKey, boolean>;
 
@@ -13,28 +13,32 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     orders: true, 
     wallet: true, 
     sales: true,
-    brandspace: true 
+    brandspace: true,
+    installPrompt: true
   },
   test: { 
     events: false, 
     orders: false, 
     wallet: false, 
     sales: false,
-    brandspace: true 
+    brandspace: true,
+    installPrompt: false
   },
   staging: { 
     events: false, 
     orders: false, 
     wallet: false, 
     sales: false,
-    brandspace: true 
+    brandspace: true,
+    installPrompt: false
   },
   production: { 
     events: false, 
     orders: false, 
     wallet: false, 
     sales: false,
-    brandspace: true 
+    brandspace: true,
+    installPrompt: false
   },
 };
 
@@ -50,6 +54,7 @@ const overrides: Partial<FeatureConfig> = {
   orders: bool(process.env.FEATURE_OVERRIDE_ORDERS),
   wallet: bool(process.env.FEATURE_OVERRIDE_WALLET),
   sales: bool(process.env.FEATURE_OVERRIDE_SALES),
+  installPrompt: bool(process.env.FEATURE_OVERRIDE_INSTALL_PROMPT),
 //   brandspace: bool(process.env.FEATURE_OVERRIDE_BRANDSPACE),
 };
 
@@ -59,6 +64,7 @@ const serverEnables: Partial<FeatureConfig> = {
   orders: bool(process.env.FEATURE_ENABLE_ORDERS),
   wallet: bool(process.env.FEATURE_ENABLE_WALLET),
   sales: bool(process.env.FEATURE_ENABLE_SALES),
+  installPrompt: bool(process.env.FEATURE_ENABLE_INSTALL_PROMPT),
 //   brandspace: bool(process.env.FEATURE_ENABLE_BRANDSPACE),
 };
 
@@ -77,7 +83,7 @@ export function isFeatureEnabled(key: FeatureKey): boolean {
 // Get all feature states for debugging/admin purposes
 export function getAllFeatureStates(): FeatureConfig {
   const result: FeatureConfig = {} as FeatureConfig;
-  const keys: FeatureKey[] = ['events', 'orders', 'wallet', 'brandspace'];
+  const keys: FeatureKey[] = ['events', 'orders', 'wallet', 'brandspace', 'installPrompt'];
   
   keys.forEach(key => {
     result[key] = isFeatureEnabled(key);
@@ -96,6 +102,6 @@ export function hasLockedFeatures(): boolean {
 export function getLockedFeatures(): FeatureKey[] {
   const states = getAllFeatureStates();
   return Object.entries(states)
-    .filter(([_, enabled]) => !enabled)
-    .map(([key, _]) => key as FeatureKey);
+    .filter(([, enabled]) => !enabled)
+    .map(([key]) => key as FeatureKey);
 }

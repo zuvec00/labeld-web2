@@ -1,21 +1,63 @@
 "use client";
 
 import Image from "next/image";
+import { useState, useEffect } from "react";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/firebaseConfig";
 
 export default function Topbar() {
+	const { user } = useAuth();
+	const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		const fetchUserProfile = async () => {
+			if (!user) {
+				setLoading(false);
+				return;
+			}
+
+			try {
+				const userDocRef = doc(db, "users", user.uid);
+				const userDoc = await getDoc(userDocRef);
+
+				if (userDoc.exists()) {
+					const userData = userDoc.data();
+					setProfileImageUrl(userData.profileImageUrl || null);
+				}
+			} catch (error) {
+				console.error("Error fetching user profile:", error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchUserProfile();
+	}, [user]);
 	return (
 		<div className="h-16 sm:h-18 flex items-center gap-3 px-4 sm:px-6 lg:px-8">
 			<div className="flex items-center gap-2">
-				<Image
-					src="/1.svg"
-					alt="Labeld"
-					width={16}
-					height={16}
-					className="h-16 w-16"
-				/>
+				<div
+					className="flex flex-col justify-center"
+					style={{ height: "72px" }}
+				>
+					<div style={{ height: "5px" }}></div>
+					<Image
+						src="/1.svg"
+						alt="Labeld"
+						width={15}
+						height={15}
+						className="h-15 w-15"
+					/>
+				</div>
+				<span className="font-heading font-semibold text-2xl text-cta">
+					LABELD
+				</span>
 			</div>
+			<div className="flex-1"></div>
 			{/* Search */}
-			<div className="flex-1">
+			{/* <div className="flex-1">
 				<div className="hidden md:flex items-center gap-2 rounded-xl bg-surface border border-stroke px-3 py-2">
 					<span className="text-text-muted">🔎</span>
 					<input
@@ -26,7 +68,7 @@ export default function Topbar() {
 						/
 					</kbd>
 				</div>
-			</div>
+			</div> */}
 
 			{/* Right actions */}
 			<div className="flex items-center gap-2">
@@ -37,13 +79,26 @@ export default function Topbar() {
 					🔔
 				</button>
 				<div className="h-9 w-9 rounded-full overflow-hidden border border-stroke">
-					<Image
-						src="/images/onboarding-hero.jpeg"
-						alt=""
-						width={36}
-						height={36}
-						className="object-cover h-full w-full"
-					/>
+					{loading ? (
+						<div className="h-full w-full bg-stroke animate-pulse" />
+					) : profileImageUrl ? (
+						<Image
+							src={profileImageUrl}
+							alt="Profile"
+							width={36}
+							height={36}
+							className="object-cover h-full w-full"
+							onError={() => setProfileImageUrl(null)}
+						/>
+					) : (
+						<Image
+							src="/images/profile-hero.jpg"
+							alt="Profile"
+							width={36}
+							height={36}
+							className="object-cover h-full w-full"
+						/>
+					)}
 				</div>
 			</div>
 		</div>

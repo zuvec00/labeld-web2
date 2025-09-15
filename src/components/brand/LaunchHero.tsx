@@ -28,7 +28,7 @@ export default function LaunchHero({
 	// derive preview URL (falls back to your stock hero)
 	const src = useMemo(() => {
 		if (previewFile) return URL.createObjectURL(previewFile);
-		return "/images/pic3.jpeg";
+		return "/images/profile-hero.JPG";
 	}, [previewFile]);
 
 	// derive title & blurb based on brand vs non-brand

@@ -11,7 +11,7 @@ import {
 	Layers,
 	Share2,
 	Plus,
-	Radar,
+	FileText,
 } from "lucide-react";
 import { BrandSpaceKPIs, BrandSpaceData } from "@/hooks/useBrandSpace";
 
@@ -140,10 +140,10 @@ export function FollowersCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 					{kpis.followersChange7d > 0 ? "+" : ""}
 					{kpis.followersChange7d} this 7d
 				</p>
-				<button className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1">
+				{/* <button className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1">
 					<Share2 className="w-3 h-3" />
 					Share link
-				</button>
+				</button> */}
 			</div>
 		</div>
 	);
@@ -165,10 +165,13 @@ export function PiecesCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 				<p className="text-xs text-text-muted">
 					{kpis.piecesAvailable} available now
 				</p>
-				<button className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1">
+				<a
+					href="/pieces"
+					className="text-xs font-heading text-cta hover:text-cta/80  transition-colors flex items-center gap-1"
+				>
 					<Plus className="w-3 h-3" />
 					Add piece
-				</button>
+				</a>
 			</div>
 		</div>
 	);
@@ -205,7 +208,7 @@ export function PostsCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 		<div className="rounded-lg bg-surface border border-stroke p-4 hover:border-cta/20 transition-colors">
 			<div className="flex items-center justify-between mb-2">
 				<h3 className="text-sm font-medium text-text-muted">Radar Posts</h3>
-				<Radar className="w-4 h-4 text-text-muted" />
+				<FileText className="w-4 h-4 text-text-muted" />
 			</div>
 
 			<div className="text-2xl font-heading font-semibold text-text mb-1">
@@ -218,10 +221,13 @@ export function PostsCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 						? `Last: ${formatRelativeTime(kpis.lastPostDate)}`
 						: "No posts yet"}
 				</p>
-				<button className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1">
+				<a
+					href="/radar"
+					className="text-xs font-heading text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
+				>
 					<Plus className="w-3 h-3" />
 					Create post
-				</button>
+				</a>
 			</div>
 		</div>
 	);
