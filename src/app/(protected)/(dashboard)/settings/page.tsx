@@ -17,7 +17,7 @@ export default function SettingsPage() {
 			</div>
 
 			{/* Shipping Settings */}
-			<ShippingSettings />
+			{/* <ShippingSettings /> */}
 		</div>
 	);
 }

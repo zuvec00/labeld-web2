@@ -266,15 +266,14 @@ export default function ShippingSettings() {
 								className="w-32"
 							/>
 							<Button
+								text=""
 								onClick={addStateFee}
 								disabled={
 									!newStateFee.state.trim() || newStateFee.feeMinor <= 0
 								}
-								size="sm"
-								className="bg-cta hover:bg-cta/90 text-text"
-							>
-								<Plus className="w-4 h-4" />
-							</Button>
+								leftIcon={<Plus className="w-4 h-4" />}
+								className="bg-cta hover:bg-cta/90 text-text px-3 py-2"
+							/>
 						</div>
 
 						{/* State Fees List */}
@@ -302,13 +301,12 @@ export default function ShippingSettings() {
 											className="w-32"
 										/>
 										<Button
+											text=""
 											onClick={() => removeStateFee(state)}
-											size="sm"
 											variant="outline"
-											className="text-alert border-alert hover:bg-alert/10"
-										>
-											<Trash2 className="w-4 h-4" />
-										</Button>
+											leftIcon={<Trash2 className="w-4 h-4" />}
+											className="text-alert border-alert hover:bg-alert/10 px-3 py-2"
+										/>
 									</div>
 								)
 							)}
@@ -372,13 +370,12 @@ export default function ShippingSettings() {
 				{/* Save Button */}
 				<div className="pt-4 border-t border-stroke">
 					<Button
+						text={saving ? "Saving..." : "Save Settings"}
 						onClick={saveSettings}
 						disabled={saving}
+						leftIcon={<Save className="w-4 h-4" />}
 						className="bg-cta hover:bg-cta/90 text-text"
-					>
-						<Save className="w-4 h-4 mr-2" />
-						{saving ? "Saving..." : "Save Settings"}
-					</Button>
+					/>
 				</div>
 			</div>
 		</div>

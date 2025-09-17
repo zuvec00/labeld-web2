@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { formatWithCommasDouble, getCurrencyFromMap } from "@/lib/format";
 import Button from "@/components/ui/button";
@@ -10,10 +10,11 @@ import { Spinner } from "@/components/ui/spinner";
 import { fetchProductById, Product } from "@/lib/firebase/queries/product";
 
 export default function PieceDetailsPage({
-	params: { id },
+	params,
 }: {
-	params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
+	const { id } = use(params);
 	const [loading, setLoading] = useState(true);
 	const [piece, setPiece] = useState<Product | null>(null);
 	const [err, setErr] = useState<string | null>(null);

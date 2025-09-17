@@ -1,29 +1,30 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, use } from "react";
 // import { useRouter } from "next/navigation";
 import DropStatusCapsule from "@/components/brand/brandspace/DropStatusCapsule";
 import { Spinner } from "@/components/ui/spinner";
 import {
-	Brand,
 	DropContent,
 	fetchBrandById,
 	fetchDropContentById,
 	fetchProductById,
 	Product,
 } from "@/lib/firebase/queries/brandspace";
+import { BrandModel } from "@/lib/models/brand";
 
 export default function FeedDetailsPage({
-	params: { id },
+	params,
 }: {
-	params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
+	const { id } = use(params);
 	//const router = useRouter();
 	const [loading, setLoading] = useState(true);
 	const [content, setContent] = useState<DropContent | null>(null);
 	const [product, setProduct] = useState<Product | null>(null);
-	const [brand, setBrand] = useState<Brand | null>(null);
+	const [brand, setBrand] = useState<BrandModel | null>(null);
 	const [err, setErr] = useState<string | null>(null);
 
 	useEffect(() => {

@@ -254,7 +254,7 @@ export function watchWalletData(
   const unsubscribeEntries = watchWalletLedgerEntries(vendorId, (newEntries) => {
     entries = newEntries;
     updateCallback();
-  }, (error) => {
+  }, 50, (error) => {
     if (onError) onError(error);
   });
   

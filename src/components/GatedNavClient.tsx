@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { Lock, Sparkles } from "lucide-react";
+import { FeatureKey } from "@/lib/featureFlags";
 
 export function GatedNavClient({
 	href,
@@ -12,7 +13,7 @@ export function GatedNavClient({
 	enabled,
 	className = "",
 }: {
-	feature: "events" | "orders" | "wallet" | "sales" | "brandspace";
+	feature: FeatureKey;
 	href: string;
 	icon?: React.ReactNode;
 	label: string;

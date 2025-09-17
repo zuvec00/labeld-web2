@@ -85,10 +85,11 @@ const nextConfig: NextConfig = {
   // Enable compression
   compress: true,
 
-  // Optimize bundle
-  experimental: {
-    optimizeCss: true,
-  },
+		// Optimize bundle
+		experimental: {
+			// optimizeCss: true, // Disabled - requires critters package
+		},
+    // output: "export" // Disabled - requires generateStaticParams for all dynamic routes  
 };
 
 export default nextConfig;

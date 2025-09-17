@@ -4,6 +4,7 @@ import {
 	isFeatureEnabled,
 	getLockedFeatures,
 	hasLockedFeatures,
+	FeatureKey,
 } from "@/lib/featureFlags";
 import { FeatureBanner } from "./FeatureBanner";
 
@@ -36,7 +37,7 @@ export function FeatureGateServer({
 	children,
 	fallback,
 }: {
-	feature: "events" | "orders" | "wallet" | "sales" | "brandspace";
+	feature: FeatureKey;
 	children: React.ReactNode;
 	fallback?: React.ReactNode;
 }) {

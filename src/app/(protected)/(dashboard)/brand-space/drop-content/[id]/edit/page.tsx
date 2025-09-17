@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
@@ -19,10 +19,11 @@ import { uploadContentImageWeb } from "@/lib/storage/upload";
 import { updateDropContentCF } from "@/lib/firebase/callables/dropContent";
 
 export default function EditDropContentPage({
-	params: { id },
+	params,
 }: {
-	params: { id: string };
+	params: Promise<{ id: string }>;
 }) {
+	const { id } = use(params);
 	const router = useRouter();
 	const auth = getAuth();
 

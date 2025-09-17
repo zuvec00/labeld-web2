@@ -3,9 +3,10 @@
 
 import React from "react";
 import { Lock } from "lucide-react";
+import { FeatureKey } from "@/lib/featureFlags";
 
 type Props = {
-	feature: "events" | "orders" | "wallet" | "sales" | "brandspace";
+	feature: FeatureKey;
 	enabled: boolean;
 	children: React.ReactNode;
 	fallback?: React.ReactNode;

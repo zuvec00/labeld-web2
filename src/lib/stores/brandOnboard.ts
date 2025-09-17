@@ -89,11 +89,11 @@ export interface BrandModel {
  ***************************************/
 
 // Helper type guard for Firebase Timestamp without importing SDK types
-function isTimestamp(v): v is { toDate: () => Date } {
+function isTimestamp(v: any): v is { toDate: () => Date } {
   return v && typeof v.toDate === "function";
 }
 
-export function brandFromFirestore(map): BrandModel {
+export function brandFromFirestore(map: any): BrandModel {
   const createdAtRaw = map?.createdAt;
   const updatedAtRaw = map?.updatedAt;
 

@@ -1,10 +1,10 @@
 // components/GatedNavItem.tsx (Server Component)
 import React from "react";
-import { isFeatureEnabled } from "@/lib/featureFlags";
+import { isFeatureEnabled, FeatureKey } from "@/lib/featureFlags";
 import { GatedNavClient } from "./GatedNavClient";
 
 type Props = {
-	feature: "events" | "orders" | "wallet" | "sales" | "brandspace";
+	feature: FeatureKey;
 	href: string;
 	icon?: React.ReactNode;
 	label: string;

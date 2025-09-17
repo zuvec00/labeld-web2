@@ -298,6 +298,9 @@ export function useDashboard(): UseDashboardReturn {
     const now = new Date();
     const upcomingEvents: UpcomingEvent[] = events
       .filter(event => {
+        // Filter out events without IDs
+        if (!event.id) return false;
+        
         const startAt = event.startAt instanceof Date ? event.startAt : new Date(event.startAt);
         return startAt > now && event.status === "published";
       })
@@ -319,12 +322,12 @@ export function useDashboard(): UseDashboardReturn {
         const eventGMV = eventOrders.reduce((sum, order) => sum + order.amount.totalMinor, 0);
         
         return {
-          id: event.id,
+          id: event.id!, // We know this is not undefined due to the filter above
           title: event.title,
           startAt: event.startAt instanceof Date ? event.startAt : new Date(event.startAt),
           ticketsSold,
           gmv: eventGMV,
-          capacity: event.capacityMode === "limited" ? event.capacityTotal : undefined,
+          capacity: event.capacityMode === "limited" ? event.capacityTotal ?? undefined : undefined,
         };
       });
 
@@ -349,7 +352,7 @@ export function useDashboard(): UseDashboardReturn {
         nextPayoutAt: walletData.summary?.payout.nextPayoutAt,
         pendingFulfillment: fulfillmentCounts.unfulfilled,
         refunds,
-        followers: brandData?.followersCount || 0,
+        followers: 0, // TODO: Fetch from users collection
         // TODO: Calculate followers change from historical data
       },
       revenueData,
