@@ -3,54 +3,86 @@
 import AuthForm from "@/app/marketing/auth/AuthFom";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
-// import AuthForm from "./auth/AuthForm";
+
+function VideoWithFallback({
+	src = "/videos/intro.MP4",
+	poster = "/images/onboarding.JPG",
+	className = "",
+}: {
+	src?: string;
+	poster?: string;
+	className?: string;
+}) {
+	const ref = useRef<HTMLVideoElement | null>(null);
+	const [useImage, setUseImage] = useState(false);
+
+	useEffect(() => {
+		const v = ref.current;
+		if (!v) return;
+
+		const onError = () => {
+			console.log("Video failed to load, falling back to image");
+			setUseImage(true);
+		};
+
+		const onCanPlay = () => {
+			v.play().catch(() => {
+				console.log("Video play failed, falling back to image");
+				setUseImage(true);
+			});
+		};
+
+		v.addEventListener("error", onError);
+		v.addEventListener("canplay", onCanPlay);
+
+		// Safety timeout in case canplay never fires
+		const t = setTimeout(() => {
+			if (v.readyState < 2) {
+				console.log("Video took too long to load, falling back to image");
+				setUseImage(true);
+			}
+		}, 3000);
+
+		return () => {
+			clearTimeout(t);
+			v.removeEventListener("error", onError);
+			v.removeEventListener("canplay", onCanPlay);
+		};
+	}, []);
+
+	if (useImage) {
+		return (
+			<Image
+				src={poster}
+				alt="Creators showcasing a label drop"
+				fill
+				priority
+				className={className}
+			/>
+		);
+	}
+
+	return (
+		<video
+			ref={ref}
+			className={className}
+			poster={poster}
+			autoPlay
+			muted
+			loop
+			playsInline
+			preload="metadata"
+			onError={() => setUseImage(true)}
+		>
+			<source src={src} type="video/mp4" />
+			<source src="/videos/intro.mp4" type="video/mp4" />
+			Your browser does not support the video tag.
+		</video>
+	);
+}
 
 export default function OnboardingSplit() {
 	const [mode, setMode] = useState<"login" | "signup">("login");
-	const [showVideo, setShowVideo] = useState(true);
-	const videoRef = useRef<HTMLVideoElement>(null);
-
-	// Handle video errors and fallback to image
-	useEffect(() => {
-		const video = videoRef.current;
-		if (!video) return;
-
-		const handleVideoError = () => {
-			console.log("Video failed to load, falling back to image");
-			setShowVideo(false);
-		};
-
-		const handleVideoLoadStart = () => {
-			// Set a timeout to fallback if video doesn't start playing within 5 seconds
-			const timeout = setTimeout(() => {
-				if (video.readyState < 3) {
-					// HAVE_FUTURE_DATA or higher
-					console.log("Video took too long to load, falling back to image");
-					setShowVideo(false);
-				}
-			}, 5000);
-
-			// Clear timeout if video starts playing
-			const handleCanPlay = () => {
-				clearTimeout(timeout);
-			};
-
-			video.addEventListener("canplay", handleCanPlay, { once: true });
-			video.addEventListener("error", handleVideoError);
-
-			return () => {
-				clearTimeout(timeout);
-				video.removeEventListener("canplay", handleCanPlay);
-				video.removeEventListener("error", handleVideoError);
-			};
-		};
-
-		video.addEventListener("loadstart", handleVideoLoadStart, { once: true });
-
-		return () => {
-			video.removeEventListener("loadstart", handleVideoLoadStart);
-		};
-	}, []);
 
 	return (
 		<div className="min-h-dvh bg-bg text-text">
@@ -58,30 +90,7 @@ export default function OnboardingSplit() {
 			<div className="lg:hidden">
 				{/* Mobile Hero Section */}
 				<section className="relative h-[50vh] min-h-[400px]">
-					{/* Video with fallback to image */}
-					{showVideo ? (
-						<video
-							ref={videoRef}
-							autoPlay
-							loop
-							muted
-							playsInline
-							className="object-cover w-full h-full"
-							poster="/images/onboarding.JPG"
-							onError={() => setShowVideo(false)}
-						>
-							<source src="/videos/intro.mp4" type="video/mp4" />
-							Your browser does not support the video tag.
-						</video>
-					) : (
-						<Image
-							src="/images/onboarding.JPG"
-							alt="Creators showcasing a label drop"
-							fill
-							priority
-							className="object-cover"
-						/>
-					)}
+					<VideoWithFallback className="object-cover w-full h-full" />
 					{/* Mobile overlay for contrast */}
 					<div className="absolute inset-0 bg-gradient-to-t from-bg/90 via-bg/50 to-transparent" />
 
@@ -112,30 +121,7 @@ export default function OnboardingSplit() {
 			<div className="hidden lg:grid lg:grid-cols-2 min-h-dvh">
 				{/* LEFT: Hero */}
 				<section className="relative m-8">
-					{/* Video with fallback to image */}
-					{showVideo ? (
-						<video
-							ref={videoRef}
-							autoPlay
-							loop
-							muted
-							playsInline
-							className="object-cover rounded-[20px] w-full h-full absolute inset-0"
-							poster="/images/onboarding.JPG"
-							onError={() => setShowVideo(false)}
-						>
-							<source src="/videos/intro.mp4" type="video/mp4" />
-							Your browser does not support the video tag.
-						</video>
-					) : (
-						<Image
-							src="/images/onboarding.JPG"
-							alt="Creators showcasing a label drop"
-							fill
-							priority
-							className="object-cover rounded-[20px]"
-						/>
-					)}
+					<VideoWithFallback className="object-cover rounded-[20px] w-full h-full absolute inset-0" />
 					{/* Desktop overlay for contrast */}
 					<div className="absolute inset-0 bg-gradient-to-t from-bg/85 via-bg/40 to-transparent rounded-[20px]" />
 
