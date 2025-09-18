@@ -119,7 +119,10 @@ export default function SettingsPage() {
 					return (
 						<button
 							key={item.id}
-							onClick={() => item.available && handleNavigateToSection(item.id)}
+							onClick={() =>
+								item.available &&
+								handleNavigateToSection(item.id as SettingsSection)
+							}
 							disabled={isDisabled}
 							className={`
 								group relative p-6 rounded-2xl border transition-all duration-200 text-left
@@ -192,10 +195,7 @@ export default function SettingsPage() {
 					rel="noopener noreferrer"
 					style={{ display: "inline-block" }}
 				>
-					<Button
-						text="Contact Support"
-						variant="secondary"
-					/>
+					<Button text="Contact Support" variant="secondary" />
 				</a>
 			</div>
 		</div>

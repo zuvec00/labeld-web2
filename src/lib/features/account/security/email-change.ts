@@ -59,7 +59,7 @@ export function getEmailVerificationStatus(user: User): {
 	return {
 		isVerified: user.emailVerified,
 		email: user.email,
-		lastSignInTime: user.metadata.lastSignInTime,
+		lastSignInTime: user.metadata.lastSignInTime || null,
 	};
 }
 
