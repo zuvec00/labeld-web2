@@ -37,7 +37,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "General",
     items: [
       { label: "Settings", href: "/settings", icon: getNavIcon("Settings") },
-      { label: "Help Desk", href: "/help", icon: getNavIcon("Help") },
+      // { label: "Help Desk", href: "/help", icon: getNavIcon("Help") },
     ],
   },
 ];
