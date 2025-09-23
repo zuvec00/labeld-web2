@@ -72,12 +72,12 @@ export default function Topbar() {
 
 			{/* Right actions */}
 			<div className="flex items-center gap-2">
-				<button className="rounded-xl border border-stroke px-3 py-2 hover:bg-surface">
+				{/* <button className="rounded-xl border border-stroke px-3 py-2 hover:bg-surface">
 					⚙️
 				</button>
 				<button className="rounded-xl border border-stroke px-3 py-2 hover:bg-surface">
 					🔔
-				</button>
+				</button> */}
 				<div className="h-9 w-9 rounded-full overflow-hidden border border-stroke">
 					{loading ? (
 						<div className="h-full w-full bg-stroke animate-pulse" />
@@ -92,7 +92,7 @@ export default function Topbar() {
 						/>
 					) : (
 						<Image
-							src="/images/profile-hero.jpg"
+							src="/images/profile-hero.JPG"
 							alt="Profile"
 							width={36}
 							height={36}

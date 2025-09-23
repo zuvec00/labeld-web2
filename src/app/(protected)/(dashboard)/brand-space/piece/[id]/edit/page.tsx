@@ -645,15 +645,18 @@ function SingleImagePicker({
 					/>
 				</div>
 			) : (
-				<div className="rounded-xl border border-dashed border-stroke p-4 text-center bg-surface">
-					<p className="text-text-muted">No image selected</p>
-				</div>
+				<label className="block cursor-pointer">
+					<div className="rounded-xl border border-dashed border-stroke p-4 text-center bg-surface hover:bg-bg transition-colors">
+						<p className="text-text-muted">No image selected</p>
+					</div>
+					<input
+						type="file"
+						accept="image/*"
+						className="sr-only"
+						onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+					/>
+				</label>
 			)}
-			<input
-				type="file"
-				accept="image/*"
-				onChange={(e) => onPick(e.target.files?.[0] ?? null)}
-			/>
 		</div>
 	);
 }
