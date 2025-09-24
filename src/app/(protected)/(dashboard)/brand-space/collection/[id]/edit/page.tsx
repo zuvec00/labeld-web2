@@ -147,7 +147,7 @@ export default function EditCollectionPage() {
 			);
 
 			await updateCollectionCF({ collectionId: doc.id, updatedData });
-			router.push(`/brand-space`);
+			router.back();
 		} catch (e: any) {
 			setErr(e?.message ?? "Failed to save changes.");
 		} finally {

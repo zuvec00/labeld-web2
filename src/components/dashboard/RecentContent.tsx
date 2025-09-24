@@ -99,7 +99,7 @@ export default function RecentContent({
 			<div className="flex items-center justify-between mb-4">
 				<h3 className="font-medium text-text">Recent Content</h3>
 				<button
-					onClick={() => router.push("/brand-space/radar")}
+					onClick={() => router.push("/radar")}
 					className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1"
 				>
 					<ExternalLink className="w-3 h-3" />

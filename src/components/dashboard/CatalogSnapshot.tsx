@@ -54,7 +54,7 @@ export default function CatalogSnapshot({
 				<div className="flex items-center justify-between mb-4">
 					<h3 className="font-medium text-text">Catalog Snapshot</h3>
 					<button
-						onClick={() => router.push("/brand-space/pieces")}
+						onClick={() => router.push("/pieces")}
 						className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1"
 					>
 						<Plus className="w-3 h-3" />
@@ -92,7 +92,7 @@ export default function CatalogSnapshot({
 			<div className="flex items-center justify-between mb-4">
 				<h3 className="font-medium text-text">Catalog Snapshot</h3>
 				<button
-					onClick={() => router.push("/brand-space/pieces")}
+					onClick={() => router.push("/pieces")}
 					className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1"
 				>
 					<ExternalLink className="w-3 h-3" />

@@ -119,10 +119,18 @@ export async function addDropProductCF(productData: Record<string, any>): Promis
   const fx = getFunctions(app);
   const callable = httpsCallable(fx, "addDropProduct");
   const { data } = await callable({ productData });
-  // Backend can return { success: true, id: "..." } or just { success: true }
-  const ok = (data as any)?.success === true || data === true;
+  
+  // Debug: Log the full response from backend
+  console.log("addDropProductCF backend response:", data);
+  
+  // Backend returns { success: true, productId: "..." }
+  const ok = (data as any)?.success === true;
   if (!ok) throw new Error("Add drop product failed");
-  return { id: (data as any)?.id };
+  
+  const id = (data as any)?.productId; // Updated to use productId from backend
+  console.log("Extracted productId from backend response:", id);
+  
+  return { id };
 }
 
 export async function updateDropProduct(productId: string, updatedData: Record<string, any>) {

@@ -204,7 +204,7 @@ export default function EditPiecePage() {
 			});
 
 			await updateDropProduct(product.id, updatedData);
-			router.push(`/brand/pieces/${product.id}`);
+			router.back();
 		} catch (e: any) {
 			setErr(e?.message ?? "Failed to save changes.");
 		} finally {

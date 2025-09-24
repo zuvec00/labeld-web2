@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { uploadFileGetURL } from "@/lib/storage/upload";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { sendNotificationCF } from "@/lib/firebase/callables/users";
 import { addDropProductCF } from "@/lib/firebase/queries/product";
+import RadarPromotionPopup from "@/components/radar/RadarPromotionPopup";
 
 /* ----------------------------- Currency list ---------------------------- */
 const currencyList: Array<{
@@ -108,6 +109,10 @@ export default function NewPiecePage() {
 	const [sizes, setSizes] = useState<string[]>([]);
 	const [copLink, setCopLink] = useState("");
 	const [useInstagramLink, setUseInstagramLink] = useState(false);
+
+	// Radar promotion popup
+	const [showRadarPopup, setShowRadarPopup] = useState(false);
+	const [createdPieceData, setCreatedPieceData] = useState<any>(null);
 
 	// size chips
 	const predefinedSizes = ["XS", "S", "M", "L", "XL", "XXL", "One Size"];
@@ -230,21 +235,42 @@ export default function NewPiecePage() {
 			);
 
 			// 5) write via CF
-			const { id } = await addDropProductCF(productData);
+			const result = await addDropProductCF(productData);
+			console.log("addDropProductCF result:", result);
+
+			const { id } = result;
 
 			// 6) optional notif (parity with Flutter)
 			try {
-				await sendNotificationCF({
-					title: "New drop 👀",
-					content: "Be the first to check it out",
-					externalUserIds: [uid], // or your follower targeting on the backend
-				});
+				// await sendNotificationCF({
+				// 	title: "New drop 👀",
+				// 	content: "Be the first to check it out",
+				// 	externalUserIds: [uid], // or your follower targeting on the backend
+				// });
 			} catch {
 				/* non-fatal */
 			}
 
-			// 7) route
-			router.push("/pieces");
+			// 7) Show radar promotion popup with piece data
+			if (!id) {
+				console.error(
+					"No product ID returned from addDropProductCF. Result:",
+					result
+				);
+				setErr("Failed to get product ID. Please try again.");
+				return;
+			}
+
+			// Now we have the real product ID from the backend!
+			setCreatedPieceData({
+				id,
+				dropName: pieceName.trim(),
+				mainVisualUrl,
+				styleTags: tags.length ? tags : null,
+				dropId: collectionId || null,
+				launchDate: launch.toISOString(),
+			});
+			setShowRadarPopup(true);
 		} catch (e: any) {
 			setErr(e?.message ?? "Failed to create piece.");
 		} finally {
@@ -483,6 +509,24 @@ export default function NewPiecePage() {
 				<div className="fixed left-1/2 -translate-x-1/2 bottom-20 bg-alert/10 text-alert px-4 py-2 rounded-xl border border-alert/20">
 					{err}
 				</div>
+			)}
+
+			{/* Radar Promotion Popup */}
+			{showRadarPopup && createdPieceData && (
+				<RadarPromotionPopup
+					isOpen={showRadarPopup}
+					onClose={() => {
+						setShowRadarPopup(false);
+						setCreatedPieceData(null);
+						router.push("/pieces");
+					}}
+					onSuccess={() => {
+						setShowRadarPopup(false);
+						setCreatedPieceData(null);
+						router.push("/radar");
+					}}
+					pieceData={createdPieceData}
+				/>
 			)}
 		</div>
 	);

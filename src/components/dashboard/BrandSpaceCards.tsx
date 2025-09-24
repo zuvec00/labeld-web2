@@ -14,6 +14,7 @@ import {
 	FileText,
 } from "lucide-react";
 import { BrandSpaceKPIs, BrandSpaceData } from "@/hooks/useBrandSpace";
+import { useRouter } from "next/navigation";
 
 interface BrandSpaceCardsProps {
 	data: BrandSpaceData | null;
@@ -150,6 +151,7 @@ export function FollowersCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 }
 
 export function PiecesCard({ kpis }: { kpis: BrandSpaceKPIs }) {
+	const router = useRouter();
 	return (
 		<div className="rounded-lg bg-surface border border-stroke p-4 hover:border-cta/20 transition-colors">
 			<div className="flex items-center justify-between mb-2">
@@ -165,13 +167,14 @@ export function PiecesCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 				<p className="text-xs text-text-muted">
 					{kpis.piecesAvailable} available now
 				</p>
-				<a
-					href="/pieces"
+				<button
+					type="button"
+					onClick={() => router.push("/pieces")}
 					className="text-xs font-heading text-cta hover:text-cta/80  transition-colors flex items-center gap-1"
 				>
 					<Plus className="w-3 h-3" />
 					Add piece
-				</a>
+				</button>
 			</div>
 		</div>
 	);
@@ -204,6 +207,7 @@ export function CollectionsCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 }
 
 export function PostsCard({ kpis }: { kpis: BrandSpaceKPIs }) {
+	const router = useRouter();
 	return (
 		<div className="rounded-lg bg-surface border border-stroke p-4 hover:border-cta/20 transition-colors">
 			<div className="flex items-center justify-between mb-2">
@@ -221,13 +225,15 @@ export function PostsCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 						? `Last: ${formatRelativeTime(kpis.lastPostDate)}`
 						: "No posts yet"}
 				</p>
-				<a
-					href="/radar"
+				<button
+					type="button"
+					onClick={() => router.push("/radar")}
+					//href="/radar"
 					className="text-xs font-heading text-accent hover:text-accent/80 transition-colors flex items-center gap-1"
 				>
 					<Plus className="w-3 h-3" />
 					Create post
-				</a>
+				</button>
 			</div>
 		</div>
 	);
