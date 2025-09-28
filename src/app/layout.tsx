@@ -78,6 +78,8 @@ export default function RootLayout({
 				<RegisterSW />
 				{/* <InstallPrompt /> */}
 				<AuthProvider>{children}</AuthProvider>
+				{/* Analytics */}
+				<Analytics />
 			</body>
 		</html>
 	);
