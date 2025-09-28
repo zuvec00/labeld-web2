@@ -3,6 +3,7 @@ import { Manrope, Unbounded } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import RegisterSW from "@/components/pwa/RegisterSW";
+import { Analytics } from "@vercel/analytics/next";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
 const unbounded = Unbounded({
 	subsets: ["latin"],
