@@ -77,7 +77,7 @@ function FeatureGateClient({
 }: Omit<Props, "enabled">) {
 	// This is a placeholder - in a real implementation, this would receive
 	// the enabled state from a server component that calls isFeatureEnabled
-	const enabled = true; // This will be replaced with actual server-side logic
+	const enabled = false; // This will be replaced with actual server-side logic
 
 	return (
 		<FeatureGate

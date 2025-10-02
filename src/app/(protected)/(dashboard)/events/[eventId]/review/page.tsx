@@ -122,11 +122,13 @@ export default function ReviewPage() {
 		setPublishing(true);
 		try {
 			await publishEvent(event.id);
-			// After publishing, route to a dashboard page or public URL preview
-			const publicPath = event.slug
-				? `/events/${event.slug}`
-				: `/events/${event.id}`;
-			router.push(publicPath);
+			// After publishing, open the public event page in a new window
+			const publicUrl = event.slug
+				? `https://eventslabeldapp.vercel.app/${event.id}-${event.slug}`
+				: `https://eventslabeldapp.vercel.app/${event.id}`;
+			window.open(publicUrl, "_blank");
+			// Navigate back to events dashboard
+			router.push("/events");
 		} finally {
 			setPublishing(false);
 		}
@@ -144,8 +146,8 @@ export default function ReviewPage() {
 	}
 
 	const publicUrl = event.slug
-		? `/events/${event.slug}`
-		: `/events/${event.id}`;
+		? `https://eventslabeldapp.vercel.app/${event.id}-${event.slug}`
+		: `https://eventslabeldapp.vercel.app/${event.id}`;
 
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-4xl mx-auto">
@@ -164,7 +166,7 @@ export default function ReviewPage() {
 					<Button
 						variant="outline"
 						text="Preview"
-						onClick={() => router.push(publicUrl)}
+						onClick={() => window.open(publicUrl, "_blank")}
 					/>
 					<Button
 						variant={canPublish ? "primary" : "disabled"}
@@ -369,7 +371,7 @@ export default function ReviewPage() {
 					<Button
 						variant="outline"
 						text="Preview"
-						onClick={() => router.push(publicUrl)}
+						onClick={() => window.open(publicUrl, "_blank")}
 					/>
 					<Button
 						variant={canPublish ? "primary" : "disabled"}

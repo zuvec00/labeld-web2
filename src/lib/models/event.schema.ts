@@ -4,7 +4,7 @@ import { z } from "zod";
 export const eventDetailsSchema = z.object({
   title: z.string().min(3).max(75),
   slug: z.string().min(3),
-  description: z.string().min(50).max(2000),
+  description: z.string().min(1).max(2000),
   coverImageURL: z.string().url(),
   startAt: z.coerce.date(),
   endAt: z.coerce.date(),

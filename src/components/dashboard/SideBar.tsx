@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { NAV_SECTIONS } from "./nav";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import GatedNavItem from "@/components/GatedNavItem";
 
 export default function Sidebar() {
 	const pathname = usePathname();
@@ -44,23 +43,7 @@ export default function Sidebar() {
 									pathname === item.href ||
 									pathname?.startsWith(item.href + "/");
 
-								// If item has a feature gate, use GatedNavItem
-								if (item.feature) {
-									return (
-										<li key={item.href}>
-											<GatedNavItem
-												feature={item.feature}
-												href={item.href}
-												label={item.label}
-												icon={item.icon}
-												badge={item.badge}
-												className={active ? "bg-cta text-text" : ""}
-											/>
-										</li>
-									);
-								}
-
-								// Regular navigation item
+								// All navigation items are now regular nav items, no gating
 								return (
 									<li key={item.href}>
 										<Link

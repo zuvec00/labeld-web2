@@ -119,11 +119,7 @@ export default function TicketsStepPage() {
 
 			{/* Footer actions */}
 			<div className="flex justify-between pt-8 mt-10 border-t border-stroke">
-				<Button
-					variant="outline"
-					text="Back"
-					onClick={() => router.push(`/events/${eventIdString}/tickets`)}
-				/>
+				<Button variant="outline" text="Back" onClick={() => router.back()} />
 				<Button
 					variant={hasActiveTickets ? "primary" : "disabled"}
 					disabled={!hasActiveTickets}
@@ -564,6 +560,7 @@ function CreateGroupDialog({
 	const [groupSize, setGroupSize] = useState<number>(2);
 	const [groupPrice, setGroupPrice] = useState<string>("6000");
 	const [desc, setDesc] = useState("");
+	const [transferFee, setTransferFee] = useState(true);
 	const [salesStart, setSalesStart] = useState<string>("");
 	const [salesEnd, setSalesEnd] = useState<string>("");
 	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
@@ -727,6 +724,21 @@ function CreateGroupDialog({
 									₦ {perTicket.toLocaleString()}
 								</div>
 							</div>
+
+							<div className="flex items-center gap-2">
+								<input
+									id="transfer-fee-group"
+									type="checkbox"
+									checked={transferFee}
+									onChange={(e) => setTransferFee(e.target.checked)}
+								/>
+								<label
+									htmlFor="transfer-fee-group"
+									className="text-sm text-text-muted"
+								>
+									Transfer fees to guest
+								</label>
+							</div>
 						</>
 					)}
 
@@ -801,6 +813,7 @@ function CreateGroupDialog({
 									groupSize,
 									price: showPrice ? parseInt(groupPrice) * 100 : undefined, // Convert to kobo
 									currency: showPrice ? "NGN" : undefined,
+									transferFeesToGuest: showPrice ? transferFee : undefined,
 									salesWindow: {
 										startAt: salesStart ? new Date(salesStart) : null,
 										endAt: salesEnd ? new Date(salesEnd) : null,

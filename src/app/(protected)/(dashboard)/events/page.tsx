@@ -68,10 +68,36 @@ export default function EventsIndexPage() {
 
 	const filtered = useMemo(() => {
 		if (tab === "all") return events;
-		if (tab === "published")
-			return events.filter((e) => e.status === "published");
+		if (tab === "published") {
+			// Show published events that haven't ended yet
+			return events.filter((e) => {
+				if (e.status !== "published") return false;
+				try {
+					const endDate = e.endAt?.toDate
+						? e.endAt.toDate()
+						: new Date(e.endAt);
+					return endDate.getTime() > Date.now();
+				} catch {
+					return true; // If date parsing fails, show it
+				}
+			});
+		}
 		if (tab === "drafts") return events.filter((e) => e.status === "draft");
-		return events.filter((e) => e.status === "ended");
+		// "ended" tab: show events with status="ended" OR published events past their endAt date
+		return events.filter((e) => {
+			// if (e.status === "ended") return true;
+			if (e.status === "published") {
+				try {
+					const endDate = e.endAt?.toDate
+						? e.endAt.toDate()
+						: new Date(e.endAt);
+					return endDate.getTime() <= Date.now();
+				} catch {
+					return false;
+				}
+			}
+			return false;
+		});
 	}, [events, tab]);
 
 	if (loading) {

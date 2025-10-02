@@ -44,7 +44,7 @@ function getSimpleErrorMessage(error: ZodError): string {
 		case "slug":
 			return "Slug must be at least 3 characters.";
 		case "description":
-			return "Description must be at least 50 characters.";
+			return "Description is required.";
 		case "coverImageURL":
 			return "Please upload a valid cover image.";
 		case "startAt":

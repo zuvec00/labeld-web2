@@ -147,9 +147,9 @@ function CreateMomentDialog({
 	onCreated: (doc: MomentDoc) => void;
 }) {
 	const auth = getAuth();
-	const [type, setType] = useState<"image" | "video" | "text">("image");
+	const [type, setType] = useState<"image" | "video">("image");
 	const [file, setFile] = useState<File | null>(null);
-	const [text, setText] = useState("");
+	const [caption, setCaption] = useState("");
 	const [visibility, setVisibility] = useState<"attendeesOnly" | "public">(
 		"public"
 	);
@@ -195,24 +195,16 @@ function CreateMomentDialog({
 					`moments/${user.uid}/${crypto.randomUUID()}-${file.name}`
 				);
 			}
-			// Only include the "text" field if it's a text moment
-			const docIn: Omit<MomentDoc, "id" | "createdAt"> =
-				type === "text"
-					? {
-							eventId,
-							authorUserId: user.uid,
-							type,
-							mediaURL,
-							text,
-							visibility,
-					  }
-					: {
-							eventId,
-							authorUserId: user.uid,
-							type,
-							mediaURL,
-							visibility,
-					  };
+
+			const docIn: Omit<MomentDoc, "id" | "createdAt"> = {
+				eventId,
+				authorUserId: user.uid,
+				type,
+				mediaURL,
+				text: caption.trim() || undefined, // Only include caption if not empty
+				visibility,
+			};
+
 			const id = await createMoment(docIn);
 			onCreated({ id, ...docIn, createdAt: new Date() } as MomentDoc);
 			onClose();
@@ -240,72 +232,78 @@ function CreateMomentDialog({
 					</label>
 					<select
 						value={type}
-						onChange={(e) =>
-							setType(e.target.value as "image" | "video" | "text")
-						}
+						onChange={(e) => setType(e.target.value as "image" | "video")}
 						className="w-full rounded-xl border border-stroke px-4 py-3 bg-surface text-text outline-none focus:border-accent"
 					>
 						<option value="image">Image</option>
 						<option value="video">Video</option>
-						<option value="text">Text</option>
 					</select>
 				</div>
 
-				{type === "text" ? (
+				{/* File upload */}
+				<div>
+					<label className="block text-sm text-text-muted mb-2">
+						{type === "image" ? "Image" : "Video"}{" "}
+						<span className="text-cta">*</span>
+					</label>
+					<input
+						type="file"
+						accept={type === "image" ? "image/*" : "video/*"}
+						onChange={(e) => {
+							const selectedFile = e.target.files?.[0] ?? null;
+							setFile(selectedFile);
+							setFileError(null); // Clear any previous errors
+
+							// Create preview URL
+							if (selectedFile) {
+								const url = URL.createObjectURL(selectedFile);
+								setFilePreview(url);
+							} else {
+								setFilePreview(null);
+							}
+						}}
+						className="block w-full text-sm text-text file:mr-3 file:rounded-lg file:border file:border-stroke file:bg-bg file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-surface"
+					/>
+					<p className="text-xs text-text-muted mt-2">
+						{type === "image"
+							? "Upload an image for your moment. Recommended: JPG/PNG/WebP, max 2MB."
+							: "Upload a video for your moment. 15s max duration, 25MB max file size, 720-1080p recommended."}
+					</p>
+
+					{/* File Preview */}
+					{filePreview && (
+						<div className="mt-3">
+							{type === "image" ? (
+								<img
+									src={filePreview}
+									alt="Preview"
+									className="w-full max-h-48 object-cover rounded-xl border border-stroke"
+								/>
+							) : (
+								<video
+									src={filePreview}
+									className="w-full max-h-48 object-cover rounded-xl border border-stroke"
+									controls
+									muted
+								/>
+							)}
+						</div>
+					)}
+				</div>
+
+				{/* Caption (optional) */}
+				<div>
+					<label className="block text-sm text-text-muted mb-2">
+						Caption (optional)
+					</label>
 					<textarea
 						className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
-						rows={4}
-						value={text}
-						onChange={(e) => setText(e.target.value)}
-						placeholder="Write your update..."
+						rows={6}
+						value={caption}
+						onChange={(e) => setCaption(e.target.value)}
+						placeholder="Add a caption to your moment..."
 					/>
-				) : (
-					<div>
-						<input
-							type="file"
-							accept={type === "image" ? "image/*" : "video/*"}
-							onChange={(e) => {
-								const selectedFile = e.target.files?.[0] ?? null;
-								setFile(selectedFile);
-								setFileError(null); // Clear any previous errors
-
-								// Create preview URL
-								if (selectedFile) {
-									const url = URL.createObjectURL(selectedFile);
-									setFilePreview(url);
-								} else {
-									setFilePreview(null);
-								}
-							}}
-							className="block w-full text-sm text-text file:mr-3 file:rounded-lg file:border file:border-stroke file:bg-bg file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-surface"
-						/>
-						<p className="text-xs text-text-muted mt-2">
-							{type === "image"
-								? "Upload an image for your moment. Recommended: JPG/PNG/WebP, max 2MB."
-								: "Upload a video for your moment. 15s max duration, 25MB max file size, 720-1080p recommended."}
-						</p>
-
-						{/* File Preview */}
-						{filePreview && (
-							<div className="mt-3">
-								{type === "image" ? (
-									<img
-										src={filePreview}
-										alt="Preview"
-										className="w-full max-h-48 object-cover rounded-xl border border-stroke"
-									/>
-								) : (
-									<video
-										src={filePreview}
-										className="w-full max-h-48 object-cover rounded-xl border border-stroke"
-										controls
-										muted
-									/>
-								)}
-							</div>
-						)}
-					</div>
-				)}
+				</div>
 
 				<div>
 					<label className="block text-sm text-text-muted mb-2">
@@ -327,8 +325,8 @@ function CreateMomentDialog({
 			<div className="mt-6 flex items-center justify-end gap-2">
 				<Button variant="outline" text="Cancel" onClick={onClose} />
 				<Button
-					variant={text || file ? "primary" : "disabled"}
-					disabled={(!text && !file) || saving}
+					variant={file ? "primary" : "disabled"}
+					disabled={!file || saving}
 					text={saving ? "Saving…" : "Save"}
 					onClick={onSave}
 				/>

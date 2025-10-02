@@ -148,8 +148,11 @@ function EditTicketForm({
 	const [quantity, setQuantity] = useState<string>(
 		ticket.quantityTotal?.toString() || ""
 	);
-	const [price, setPrice] = useState<number>(
-		ticket.price ? ticket.price / 100 : 4000
+	const [quantityRemaining, setQuantityRemaining] = useState<string>(
+		ticket.quantityRemaining?.toString() || ""
+	);
+	const [price, setPrice] = useState<string>(
+		ticket.price ? (ticket.price / 100).toString() : "4000"
 	); // Convert from kobo to Naira
 	const [perUserMax, setPerUserMax] = useState<number>(
 		ticket.limits?.perUserMax || 5
@@ -174,25 +177,43 @@ function EditTicketForm({
 
 	// Group ticket specific fields
 	const [groupSize, setGroupSize] = useState<number>(ticket.groupSize || 2);
-	const [groupPrice, setGroupPrice] = useState<number>(
-		ticket.price ? ticket.price / 100 : 6000
+	const [groupPrice, setGroupPrice] = useState<string>(
+		ticket.price ? (ticket.price / 100).toString() : "6000"
 	);
 
 	const isGroupTicket = ticket.kind === "group";
 
+	const quantitySold = useMemo(() => {
+		if (qtyMode === "unlimited") return 0;
+		const total = parseInt(quantity) || 0;
+		const remaining = parseInt(quantityRemaining) || 0;
+		return Math.max(0, total - remaining);
+	}, [qtyMode, quantity, quantityRemaining]);
+
 	const canSave = useMemo(() => {
 		if (!name.trim()) return false;
-		if (qtyMode === "limited" && (!quantity || parseInt(quantity) < 1))
-			return false;
-		if (tab === "paid" && (!price || price < 50)) return false;
+		if (qtyMode === "limited") {
+			if (!quantity || parseInt(quantity) < 1) return false;
+			// Ensure remaining doesn't exceed total
+			const total = parseInt(quantity) || 0;
+			const remaining = parseInt(quantityRemaining) || 0;
+			if (remaining > total) return false;
+		}
+		if (tab === "paid") {
+			const priceNum = parseInt(price) || 0;
+			if (!price || priceNum < 50) return false;
+		}
 		if (isGroupTicket && (!groupSize || groupSize < 2)) return false;
-		if (isGroupTicket && tab === "paid" && (!groupPrice || groupPrice < 100))
-			return false;
+		if (isGroupTicket && tab === "paid") {
+			const groupPriceNum = parseInt(groupPrice) || 0;
+			if (!groupPrice || groupPriceNum < 100) return false;
+		}
 		return true;
 	}, [
 		name,
 		qtyMode,
 		quantity,
+		quantityRemaining,
 		tab,
 		price,
 		isGroupTicket,
@@ -201,8 +222,9 @@ function EditTicketForm({
 	]);
 
 	const perTicket = useMemo(() => {
-		if (!isGroupTicket || !groupSize || !groupPrice) return 0;
-		return Math.max(0, Math.floor(groupPrice / groupSize));
+		if (!isGroupTicket || !groupSize) return 0;
+		const groupPriceNum = parseInt(groupPrice) || 0;
+		return Math.max(0, Math.floor(groupPriceNum / groupSize));
 	}, [isGroupTicket, groupPrice, groupSize]);
 
 	const router = useRouter();
@@ -219,6 +241,8 @@ function EditTicketForm({
 			name,
 			description: desc || undefined,
 			quantityTotal: qtyMode === "limited" ? parseInt(quantity) : null,
+			quantityRemaining:
+				qtyMode === "limited" ? parseInt(quantityRemaining) : null,
 			limits: { perUserMax: perUserMax || undefined },
 			salesWindow: {
 				startAt: salesStart ? new Date(salesStart) : null,
@@ -232,14 +256,15 @@ function EditTicketForm({
 				...baseData,
 				kind: "group",
 				groupSize,
-				price: tab === "paid" ? groupPrice * 100 : undefined,
+				price: tab === "paid" ? parseInt(groupPrice) * 100 : undefined,
 				currency: tab === "paid" ? "NGN" : undefined,
+				transferFeesToGuest: tab === "paid" ? transferFee : undefined,
 			});
 		} else {
 			onSave({
 				...baseData,
 				kind: "single",
-				price: tab === "paid" ? price * 100 : undefined,
+				price: tab === "paid" ? parseInt(price) * 100 : undefined,
 				currency: tab === "paid" ? "NGN" : undefined,
 				transferFeesToGuest: tab === "paid" ? transferFee : undefined,
 			});
@@ -347,7 +372,7 @@ function EditTicketForm({
 						{qtyMode === "limited" && (
 							<div>
 								<label className="block text-sm text-text-muted mb-2">
-									Quantity <span className="text-cta">*</span>
+									Total quantity <span className="text-cta">*</span>
 								</label>
 								<input
 									type="number"
@@ -359,6 +384,35 @@ function EditTicketForm({
 							</div>
 						)}
 					</div>
+
+					{qtyMode === "limited" && (
+						<div className="grid gap-4 sm:grid-cols-2">
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Tickets sold (read-only)
+								</label>
+								<div className="w-full rounded-xl border border-stroke px-4 py-3 text-text-muted bg-bg">
+									{quantitySold}
+								</div>
+							</div>
+							<div>
+								<label className="block text-sm text-text-muted mb-2">
+									Remaining quantity <span className="text-cta">*</span>
+								</label>
+								<input
+									type="number"
+									className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									value={quantityRemaining}
+									min={0}
+									max={parseInt(quantity) || 0}
+									onChange={(e) => setQuantityRemaining(e.target.value)}
+								/>
+								<p className="text-xs text-text-muted mt-1">
+									Update this to release more tickets or adjust availability
+								</p>
+							</div>
+						</div>
+					)}
 
 					{tab === "paid" && (
 						<div>
@@ -376,11 +430,10 @@ function EditTicketForm({
 									value={isGroupTicket ? groupPrice : price}
 									min={isGroupTicket ? 100 : 50}
 									onChange={(e) => {
-										const value = parseInt(e.target.value || "0");
 										if (isGroupTicket) {
-											setGroupPrice(value);
+											setGroupPrice(e.target.value);
 										} else {
-											setPrice(value);
+											setPrice(e.target.value);
 										}
 									}}
 								/>
@@ -412,7 +465,7 @@ function EditTicketForm({
 						/>
 					</div>
 
-					{tab === "paid" && !isGroupTicket && (
+					{tab === "paid" && (
 						<div className="flex items-center gap-2">
 							<input
 								id="transfer-fee"

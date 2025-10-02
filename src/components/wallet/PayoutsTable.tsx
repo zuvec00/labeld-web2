@@ -1,25 +1,23 @@
 // components/wallet/PayoutsTable.tsx
-import { WithdrawalRequest } from "@/types/wallet";
+import { PayoutEntry } from "@/hooks/usePayouts";
 import { formatCurrency, formatDate } from "@/lib/wallet/mock";
 import Card from "@/components/dashboard/Card";
 
 interface PayoutsTableProps {
-	rows: WithdrawalRequest[];
+	payouts: PayoutEntry[];
 }
 
-export default function PayoutsTable({ rows }: PayoutsTableProps) {
+export default function PayoutsTable({ payouts }: PayoutsTableProps) {
 	const getStatusColor = (status: string) => {
 		switch (status) {
-			case "requested":
-				return "text-calm-2 bg-calm-2/10 border-calm-2/20";
-			case "approved":
+			case "pending":
 				return "text-edit bg-edit/10 border-edit/20";
-			case "paid":
+			case "processing":
+				return "text-calm-2 bg-calm-2/10 border-calm-2/20";
+			case "completed":
 				return "text-accent bg-accent/10 border-accent/20";
-			case "rejected":
+			case "failed":
 				return "text-alert bg-alert/10 border-alert/20";
-			case "cancelled":
-				return "text-text-muted bg-stroke border-stroke";
 			default:
 				return "text-text-muted bg-stroke border-stroke";
 		}
@@ -27,16 +25,14 @@ export default function PayoutsTable({ rows }: PayoutsTableProps) {
 
 	const getStatusLabel = (status: string) => {
 		switch (status) {
-			case "requested":
+			case "pending":
+				return "Pending";
+			case "processing":
 				return "Processing";
-			case "approved":
-				return "Approved";
-			case "paid":
+			case "completed":
 				return "Completed";
-			case "rejected":
+			case "failed":
 				return "Failed";
-			case "cancelled":
-				return "Cancelled";
 			default:
 				return status;
 		}
@@ -85,8 +81,8 @@ export default function PayoutsTable({ rows }: PayoutsTableProps) {
 							</tr>
 						</thead>
 						<tbody>
-							{rows.length === 0 ? (
-								<tr>
+							{payouts.length === 0 ? (
+								<tr key="empty-state">
 									<td colSpan={4} className="text-center py-12">
 										<div className="text-text-muted text-lg mb-2">
 											No payouts yet
@@ -97,28 +93,28 @@ export default function PayoutsTable({ rows }: PayoutsTableProps) {
 									</td>
 								</tr>
 							) : (
-								rows.map((request) => (
+								payouts.map((payout) => (
 									<tr
-										key={request.id}
+										key={payout.id}
 										className="border-b border-stroke/30 hover:bg-surface/50 transition-colors"
 									>
 										<td className="py-3 px-2 text-sm text-text">
-											{formatDate(request.createdAt)}
+											{formatDate(payout.createdAt)}
 										</td>
 										<td className="py-3 px-2 text-sm font-medium text-cta">
-											{formatCurrency(request.amountMinor)}
+											{formatCurrency(payout.amountMinor)}
 										</td>
 										<td className="py-3 px-2">
 											<span
 												className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-													request.status
+													payout.status
 												)}`}
 											>
-												{getStatusLabel(request.status)}
+												{getStatusLabel(payout.status)}
 											</span>
 										</td>
 										<td className="py-3 px-2 text-sm text-text-muted font-mono">
-											{request.reference || "—"}
+											{payout.reference || "—"}
 										</td>
 									</tr>
 								))

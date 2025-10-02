@@ -32,9 +32,9 @@ export default function Stepper({
 						>
 							<span
 								className={[
-									"grid place-items-center h-4 w-4 rounded-full border",
+									"grid place-items-center h-4 w-4 rounded-full border text-xs",
 									isActive || isDone
-										? "bg-accent border-accent"
+										? "bg-accent border-accent text-bg"
 										: "border-stroke",
 								].join(" ")}
 							>

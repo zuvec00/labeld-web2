@@ -9,21 +9,13 @@ import LedgerTable from "@/components/wallet/LedgerTable";
 import PayoutsTable from "@/components/wallet/PayoutsTable";
 import HelpPanel from "@/components/wallet/HelpPanel";
 import BankAccountBanner from "@/components/wallet/BankAccountBanner";
+import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
 import { useWallet } from "@/hooks/useWallet";
-import {
-	mockWithdrawalRequests,
-	mockWalletSummaryNoBank,
-	mockWalletSummaryUnverifiedBank,
-} from "@/lib/wallet/mock";
+import { usePayouts } from "@/hooks/usePayouts";
 
 export default function WalletPage() {
 	const { user, loading, walletData, error } = useWallet();
-
-	// Demo toggle for testing different bank account states
-	const [demoBankState, setDemoBankState] = useState<
-		"verified" | "unverified" | "none"
-	>("verified");
-	const [useRealBankData, setUseRealBankData] = useState(true);
+	const { payouts } = usePayouts(walletData?.entries || []);
 
 	// Filter state
 	const [filters, setFilters] = useState<{
@@ -37,23 +29,6 @@ export default function WalletPage() {
 		minAmount: null,
 		maxAmount: null,
 	});
-
-	// Override wallet data for demo purposes
-	const displayWalletData = {
-		...walletData,
-		summary: walletData.summary
-			? (() => {
-					switch (demoBankState) {
-						case "none":
-							return mockWalletSummaryNoBank;
-						case "unverified":
-							return mockWalletSummaryUnverifiedBank;
-						default:
-							return walletData.summary;
-					}
-			  })()
-			: null,
-	};
 
 	if (loading) {
 		return (
@@ -88,7 +63,7 @@ export default function WalletPage() {
 		);
 	}
 
-	if (!displayWalletData.summary) {
+	if (!walletData.summary) {
 		return (
 			<div className="text-center py-12">
 				<div className="text-text-muted text-lg mb-2">No wallet found</div>
@@ -101,80 +76,26 @@ export default function WalletPage() {
 
 	return (
 		<div className="space-y-8">
-			{/* Demo Controls */}
-			<div className="flex items-center gap-2 p-4 bg-stroke/30 rounded-lg">
-				<span className="text-sm text-text-muted">Demo Bank States:</span>
-				<button
-					onClick={() => setUseRealBankData(!useRealBankData)}
-					className={`px-3 py-1 text-xs rounded ${
-						useRealBankData
-							? "bg-cta text-text font-semibold"
-							: "bg-stroke text-text-muted hover:bg-stroke/80"
-					}`}
-				>
-					{useRealBankData ? "Real Data" : "Demo Data"}
-				</button>
-				{!useRealBankData && (
-					<>
-						<button
-							onClick={() => setDemoBankState("verified")}
-							className={`px-3 py-1 text-xs rounded ${
-								demoBankState === "verified"
-									? "bg-accent text-bg"
-									: "bg-stroke text-text-muted hover:bg-stroke/80"
-							}`}
-						>
-							Verified
-						</button>
-						<button
-							onClick={() => setDemoBankState("unverified")}
-							className={`px-3 py-1 text-xs rounded ${
-								demoBankState === "unverified"
-									? "bg-edit text-bg"
-									: "bg-stroke text-text-muted hover:bg-stroke/80"
-							}`}
-						>
-							Unverified
-						</button>
-						<button
-							onClick={() => setDemoBankState("none")}
-							className={`px-3 py-1 text-xs rounded ${
-								demoBankState === "none"
-									? "bg-alert text-bg"
-									: "bg-stroke text-text-muted hover:bg-stroke/80"
-							}`}
-						>
-							No Bank
-						</button>
-					</>
-				)}
-			</div>
+			{/* Test Payout Panel - Comment out when going live */}
+			<TestPayoutPanel />
 
 			{/* Header Summary */}
-			<BalanceHeader summary={displayWalletData.summary} />
+			<BalanceHeader summary={walletData.summary} />
 
 			{/* Bank Account Status Banner */}
-			{displayWalletData.summary && (
-				<BankAccountBanner
-					summary={
-						useRealBankData
-							? walletData.summary || displayWalletData.summary
-							: displayWalletData.summary
-					}
-				/>
-			)}
+			{walletData.summary && <BankAccountBanner summary={walletData.summary} />}
 
 			{/* Earnings Overview */}
-			<EarningsOverview entries={displayWalletData.entries} />
+			<EarningsOverview entries={walletData.entries} />
 
 			{/* Filters Bar */}
 			<FiltersBar onFiltersChange={setFilters} />
 
 			{/* Transaction History */}
-			<LedgerTable entries={displayWalletData.entries} filters={filters} />
+			<LedgerTable entries={walletData.entries} filters={filters} />
 
 			{/* Payouts */}
-			<PayoutsTable rows={mockWithdrawalRequests} />
+			<PayoutsTable payouts={payouts} />
 
 			{/* Help Panel */}
 			<HelpPanel />

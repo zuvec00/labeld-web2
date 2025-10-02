@@ -215,24 +215,25 @@ export function OrganizersPanel({
 	}
 
 	return (
-		<div className="bg-surface border border-stroke rounded-2xl p-6 space-y-6">
+		<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
 			{/* Header */}
-			<div className="flex items-center justify-between">
-				<div className="flex items-center gap-3">
-					<Users className="w-6 h-6 text-accent" />
-					<h3 className="font-heading font-semibold text-xl">
+			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+				<div className="flex items-center gap-2 sm:gap-3">
+					<Users className="w-5 h-5 sm:w-6 sm:h-6 text-accent" />
+					<h3 className="font-heading font-semibold text-lg sm:text-xl">
 						Organizers & Roles
 					</h3>
 				</div>
 
 				{canManage && (
 					<button
-						className="flex items-center gap-2 text-sm px-4 py-2 rounded-xl border border-stroke hover:bg-stroke/20 transition-colors disabled:opacity-50"
+						className="flex items-center justify-center gap-2 text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl border border-stroke hover:bg-stroke/20 transition-colors disabled:opacity-50"
 						disabled={saving}
 						onClick={handleUnpublishEvent}
 					>
 						<AlertTriangle className="w-4 h-4" />
-						Unpublish Event
+						<span className="hidden sm:inline">Unpublish Event</span>
+						<span className="sm:hidden">Unpublish</span>
 					</button>
 				)}
 			</div>
@@ -249,19 +250,21 @@ export function OrganizersPanel({
 
 			{/* Add Organizer Section */}
 			{canManage && (
-				<div className="rounded-xl border border-stroke p-6 bg-bg/30">
-					<div className="flex items-center gap-2 mb-4">
-						<UserPlus className="w-5 h-5 text-accent" />
-						<h4 className="font-medium">Add New Organizer</h4>
+				<div className="rounded-lg sm:rounded-xl border border-stroke p-4 sm:p-6 bg-bg/30">
+					<div className="flex items-center gap-2 mb-3 sm:mb-4">
+						<UserPlus className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+						<h4 className="font-medium text-sm sm:text-base">
+							Add New Organizer
+						</h4>
 					</div>
 
-					<div className="space-y-4">
+					<div className="space-y-3 sm:space-y-4">
 						<div>
-							<label className="block text-sm font-medium mb-2">
+							<label className="block text-xs sm:text-sm font-medium mb-2">
 								Email Address
 							</label>
 							<input
-								className="w-full rounded-xl bg-bg border border-stroke px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
+								className="w-full rounded-lg sm:rounded-xl bg-bg border border-stroke px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent transition-colors"
 								placeholder="organizer@example.com"
 								value={email}
 								onChange={(e) => setEmail(e.target.value)}
@@ -270,17 +273,17 @@ export function OrganizersPanel({
 						</div>
 
 						<div>
-							<label className="block text-sm font-medium mb-3">
+							<label className="block text-xs sm:text-sm font-medium mb-2 sm:mb-3">
 								Assign Roles
 							</label>
-							<div className="flex flex-wrap gap-4">
+							<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4">
 								{(["scanner", "manager", "owner"] as Role[]).map((role) => {
 									const config = roleConfig[role];
 									const Icon = config.icon;
 									return (
 										<label
 											key={role}
-											className="flex items-center gap-3 p-3 rounded-xl border border-stroke hover:bg-stroke/10 transition-colors cursor-pointer"
+											className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg sm:rounded-xl border border-stroke hover:bg-stroke/10 transition-colors cursor-pointer"
 										>
 											<input
 												type="checkbox"
@@ -296,11 +299,11 @@ export function OrganizersPanel({
 												disabled={saving}
 											/>
 											<Icon className={`w-4 h-4 ${config.color}`} />
-											<div>
-												<div className="text-sm font-medium">
+											<div className="min-w-0 flex-1">
+												<div className="text-xs sm:text-sm font-medium">
 													{config.label}
 												</div>
-												<div className="text-xs text-text-muted">
+												<div className="text-xs text-text-muted hidden sm:block">
 													{config.description}
 												</div>
 											</div>
@@ -315,10 +318,11 @@ export function OrganizersPanel({
 							text={saving ? "Adding..." : "Add Organizer"}
 							onClick={handleAddOrganizer}
 							disabled={!email.trim() || saving || addRoles.length === 0}
+							className="w-full sm:w-auto text-sm"
 						/>
 					</div>
 
-					<p className="text-xs text-text-muted mt-3">
+					<p className="text-xs text-text-muted mt-2 sm:mt-3">
 						The user must already have an account with this email address.
 					</p>
 				</div>
@@ -326,19 +330,23 @@ export function OrganizersPanel({
 
 			{/* Current Organizers */}
 			<div>
-				<div className="flex items-center gap-2 mb-4">
-					<Users className="w-5 h-5 text-accent" />
-					<h4 className="font-medium">Current Organizers</h4>
+				<div className="flex items-center gap-2 mb-3 sm:mb-4">
+					<Users className="w-4 h-4 sm:w-5 sm:h-5 text-accent" />
+					<h4 className="font-medium text-sm sm:text-base">
+						Current Organizers
+					</h4>
 				</div>
 
 				{loading ? (
-					<div className="py-12 flex items-center justify-center">
+					<div className="py-8 sm:py-12 flex items-center justify-center">
 						<Spinner size="lg" />
 					</div>
 				) : organizers.length === 0 ? (
-					<div className="text-center py-12">
-						<Users className="mx-auto w-12 h-12 text-text-muted mb-3" />
-						<p className="text-text-muted">No organizers added yet</p>
+					<div className="text-center py-8 sm:py-12">
+						<Users className="mx-auto w-10 h-10 sm:w-12 sm:h-12 text-text-muted mb-3" />
+						<p className="text-text-muted text-sm sm:text-base">
+							No organizers added yet
+						</p>
 						{!canManage && (
 							<p className="text-xs text-text-muted mt-1">
 								Contact an owner or manager to add organizers
@@ -346,34 +354,36 @@ export function OrganizersPanel({
 						)}
 					</div>
 				) : (
-					<div className="space-y-3">
+					<div className="space-y-2 sm:space-y-3">
 						{organizers.map((organizer) => (
 							<div
 								key={organizer.userId}
-								className="flex items-center justify-between p-4 rounded-xl border border-stroke hover:bg-stroke/5 transition-colors"
+								className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-stroke hover:bg-stroke/5 transition-colors"
 							>
-								<div className="flex items-center gap-4">
-									<div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center">
-										<span className="text-sm font-medium text-accent">
+								<div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+									<div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
+										<span className="text-xs sm:text-sm font-medium text-accent">
 											{organizer.userId.charAt(0).toUpperCase()}
 										</span>
 									</div>
 
-									<div>
-										<div className="font-medium text-sm">
+									<div className="min-w-0 flex-1">
+										<div className="font-medium text-xs sm:text-sm truncate">
 											{organizer.userId}
 										</div>
-										<div className="flex items-center gap-2 mt-1">
+										<div className="flex items-center gap-1 sm:gap-2 mt-1 flex-wrap">
 											{organizer.roles.map((role) => {
 												const config = roleConfig[role];
 												const Icon = config.icon;
 												return (
 													<span
 														key={role}
-														className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg ${config.color} bg-current/10`}
+														className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md ${config.color} bg-current/10`}
 													>
 														<Icon className="w-3 h-3" />
-														{config.label}
+														<span className="hidden sm:inline">
+															{config.label}
+														</span>
 													</span>
 												);
 											})}
@@ -382,9 +392,9 @@ export function OrganizersPanel({
 								</div>
 
 								{canManage && (
-									<div className="flex items-center gap-3">
+									<div className="flex items-center gap-2 sm:gap-3">
 										{/* Role Toggles */}
-										<div className="flex items-center gap-2">
+										<div className="flex items-center gap-1 sm:gap-2">
 											{(["scanner", "manager", "owner"] as Role[]).map(
 												(role) => {
 													const config = roleConfig[role];

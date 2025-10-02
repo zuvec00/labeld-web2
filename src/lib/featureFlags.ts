@@ -17,28 +17,28 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     installPrompt: true
   },
   test: { 
-    events: false, 
-    orders: false, 
-    wallet: false, 
-    sales: false,
+    events: true, 
+    orders: true, 
+    wallet: true, 
+    sales: true,
     brandspace: true,
-    installPrompt: false
+    installPrompt: true
   },
   staging: { 
-    events: false, 
-    orders: false, 
-    wallet: false, 
-    sales: false,
+    events: true, 
+    orders: true, 
+    wallet: true, 
+    sales: true,
     brandspace: true,
-    installPrompt: false
+    installPrompt: true
   },
   production: { 
-    events: false, 
-    orders: false, 
-    wallet: false, 
-    sales: false,
+    events: true, 
+    orders: true, 
+    wallet: true, 
+    sales: true,
     brandspace: true,
-    installPrompt: false
+    installPrompt: true
   },
 };
 

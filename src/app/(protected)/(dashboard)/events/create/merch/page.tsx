@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Stepper from "@/components/ticketing/Stepper";
 import Button from "@/components/ui/button";
-import { Plus, Package as PackageIcon } from "lucide-react";
+import { Plus, Package as PackageIcon, Sparkles } from "lucide-react";
 import { uploadFileGetURL } from "@/lib/storage/upload";
 import {
 	listMerchForEvent,
@@ -14,6 +14,9 @@ import {
 import type { MerchItemDoc } from "@/lib/models/merch";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
+
+// 🚧 Simple flag to enable/disable merch feature
+const MERCH_ENABLED = false; // Set to true when ready
 
 const STEPS = [
 	{ key: "details", label: "Details" },
@@ -69,17 +72,30 @@ export default function EventMerchPage() {
 						Optional: tees, caps, posters — sell alongside tickets.
 					</p>
 				</div>
-				<Button
-					text="Add merch"
-					variant="primary"
-					leftIcon={<Plus className="w-4 h-4" />}
-					onClick={() => setOpen(true)}
-				/>
+				{MERCH_ENABLED && (
+					<Button
+						text="Add merch"
+						variant="primary"
+						leftIcon={<Plus className="w-4 h-4" />}
+						onClick={() => setOpen(true)}
+					/>
+				)}
 			</div>
 
 			{/* Merch list / empty state */}
 			<div className="mt-6">
-				{items.length ? (
+				{!MERCH_ENABLED ? (
+					<div className="rounded-2xl bg-surface border border-stroke p-10 text-center opacity-60">
+						<PackageIcon className="mx-auto w-10 h-10 text-text-muted" />
+						<h3 className="mt-3 font-medium flex items-center justify-center gap-2">
+							<Sparkles className="w-5 h-5 text-accent" />
+							Coming Soon
+						</h3>
+						<p className="text-text-muted text-sm mt-1">
+							Merch feature is dropping this season. Stay tuned!
+						</p>
+					</div>
+				) : items.length ? (
 					<div className="grid gap-4">
 						{items.map((m) => (
 							<MerchRow
@@ -125,7 +141,7 @@ export default function EventMerchPage() {
 			</div>
 
 			{/* Dialogs */}
-			{open && (
+			{MERCH_ENABLED && open && (
 				<CreateMerchDialog
 					eventId={eventIdString}
 					onClose={() => setOpen(false)}
