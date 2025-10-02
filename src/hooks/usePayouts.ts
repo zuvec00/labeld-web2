@@ -1,6 +1,6 @@
 // hooks/usePayouts.ts
 import { useMemo } from "react";
-import { LedgerEntry } from "@/types/wallet";
+import { WalletLedgerEntry } from "@/types/wallet";
 
 export interface PayoutEntry {
   id: string;
@@ -20,7 +20,7 @@ export interface UsePayoutsReturn {
   completedPayouts: number;
 }
 
-export function usePayouts(ledgerEntries: LedgerEntry[]): UsePayoutsReturn {
+export function usePayouts(ledgerEntries: WalletLedgerEntry[]): UsePayoutsReturn {
   const payouts = useMemo(() => {
     // Filter for payout entries (type: "debit_payout")
     const payoutEntries = ledgerEntries.filter(entry => entry.type === "debit_payout");
@@ -42,11 +42,11 @@ export function usePayouts(ledgerEntries: LedgerEntry[]): UsePayoutsReturn {
       }
       
       return {
-        id: entry.id,
+        id: entry.payoutBatchId || `${entry.createdAt}-${entry.amountMinor}`, // Use payoutBatchId or create a unique ID
         createdAt: entry.createdAt,
         amountMinor: entry.amountMinor,
         status,
-        payoutBatchId: entry.payoutBatchId,
+        payoutBatchId: entry.payoutBatchId || undefined,
         targetPayoutAt: entry.targetPayoutAt,
         targetPayoutKey: entry.targetPayoutKey,
         reference: entry.payoutBatchId ? `TXN_${entry.payoutBatchId.slice(-8).toUpperCase()}` : undefined,
