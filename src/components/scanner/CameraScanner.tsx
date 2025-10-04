@@ -151,16 +151,16 @@ export default function CameraScanner({
 		}
 	}, [isTorchSupported, isTorchOn]);
 
-	// QR Code detection using jsQR with throttling
+	// Enhanced QR Code detection with multiple scanning strategies
 	const detectQRCode = useCallback(async () => {
 		if (!videoRef.current || !canvasRef.current || !isActive) {
 			animationRef.current = requestAnimationFrame(detectQRCode);
 			return;
 		}
 
-		// throttle to ~8 fps
+		// throttle to ~10 fps for better responsiveness
 		const now = performance.now();
-		if (now - lastDecodeRef.current < 120) {
+		if (now - lastDecodeRef.current < 100) {
 			animationRef.current = requestAnimationFrame(detectQRCode);
 			return;
 		}
@@ -175,8 +175,8 @@ export default function CameraScanner({
 			return;
 		}
 
-		// downscale draw to speed up jsQR
-		const targetW = 480;
+		// Use higher resolution for better detection
+		const targetW = 640;
 		const scale = targetW / video.videoWidth;
 		const w = targetW;
 		const h = Math.floor(video.videoHeight * scale);
@@ -187,11 +187,48 @@ export default function CameraScanner({
 		try {
 			const { default: jsQR } = await import("jsqr");
 			const imageData = context.getImageData(0, 0, w, h);
-			const code = jsQR(imageData.data, imageData.width, imageData.height);
 
-			if (code && code.data) {
-				onQRCodeDetected(code.data);
-				return; // stop after success
+			// Try multiple detection strategies for better success rate
+			const detectionStrategies = [
+				// 1. Full frame scan
+				{ imageData, width: w, height: h },
+				// 2. Center region scan (most common QR placement)
+				{
+					imageData: context.getImageData(w * 0.2, h * 0.2, w * 0.6, h * 0.6),
+					width: w * 0.6,
+					height: h * 0.6,
+				},
+				// 3. Top-left region scan
+				{
+					imageData: context.getImageData(0, 0, w * 0.7, h * 0.7),
+					width: w * 0.7,
+					height: h * 0.7,
+				},
+				// 4. Top-right region scan
+				{
+					imageData: context.getImageData(w * 0.3, 0, w * 0.7, h * 0.7),
+					width: w * 0.7,
+					height: h * 0.7,
+				},
+				// 5. Bottom region scan
+				{
+					imageData: context.getImageData(0, h * 0.3, w, h * 0.7),
+					width: w,
+					height: h * 0.7,
+				},
+			];
+
+			// Try each detection strategy
+			for (const strategy of detectionStrategies) {
+				const code = jsQR(
+					strategy.imageData.data,
+					strategy.width,
+					strategy.height
+				);
+				if (code && code.data) {
+					onQRCodeDetected(code.data);
+					return; // stop after success
+				}
 			}
 		} catch (err) {
 			console.error("QR decode error:", err);
@@ -324,26 +361,31 @@ export default function CameraScanner({
 			{/* QR Code scanning overlay */}
 			{isActive && hasStarted && (
 				<div className="absolute inset-0 pointer-events-none">
-					{/* Scanning frame */}
-					<div className="absolute inset-0 flex items-center justify-center">
-						<div className="w-64 h-64 border-2 border-accent rounded-2xl relative">
-							{/* Corner indicators */}
-							<div className="absolute -top-1 -left-1 w-8 h-8 border-t-4 border-l-4 border-accent rounded-tl-lg"></div>
-							<div className="absolute -top-1 -right-1 w-8 h-8 border-t-4 border-r-4 border-accent rounded-tr-lg"></div>
-							<div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-4 border-l-4 border-accent rounded-bl-lg"></div>
-							<div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-4 border-r-4 border-accent rounded-br-lg"></div>
+					{/* Full frame scanning indicator */}
+					<div className="absolute inset-0">
+						{/* Subtle border around entire frame */}
+						<div className="absolute inset-0 border-2 border-accent border-opacity-30 rounded-2xl"></div>
 
-							{/* Scanning line animation */}
-							<div className="absolute inset-0 overflow-hidden rounded-2xl">
-								<div className="absolute top-0 left-0 right-0 h-0.5 bg-accent animate-pulse"></div>
-							</div>
+						{/* Corner indicators for guidance */}
+						<div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-accent rounded-tl-lg"></div>
+						<div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-accent rounded-tr-lg"></div>
+						<div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-accent rounded-bl-lg"></div>
+						<div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-accent rounded-br-lg"></div>
+
+						{/* Scanning line animation that moves across the frame */}
+						<div className="absolute inset-0 overflow-hidden rounded-2xl">
+							<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent animate-pulse"></div>
+							<div
+								className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent animate-pulse"
+								style={{ animationDelay: "0.5s" }}
+							></div>
 						</div>
 					</div>
 
 					{/* Instructions */}
 					<div className="absolute bottom-8 left-0 right-0 text-center text-white">
-						<p className="text-sm bg-black bg-opacity-50 px-4 py-2 rounded-lg inline-block">
-							Position QR code within the frame
+						<p className="text-sm bg-black bg-opacity-70 px-4 py-2 rounded-lg inline-block backdrop-blur-sm">
+							Point camera at QR code anywhere in frame
 						</p>
 					</div>
 				</div>

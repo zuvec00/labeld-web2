@@ -22,6 +22,7 @@ export interface TicketLookupResult {
     ticketTypeId: string;
     status: "valid" | "used" | "refunded" | "revoked";
     ownerUserId: string | null;
+    qrString?: string;
   };
   event?: {
     id: string;

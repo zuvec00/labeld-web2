@@ -34,6 +34,8 @@ export default function ManualEntryModal({
 
 		try {
 			const result = await onLookup(code.trim());
+			console.log("Lookup result:", result);
+			// console.log("QR String:", result.ticket?.qrString);
 			setLookupResult(result);
 		} catch (error: any) {
 			setError(error.message || "Failed to lookup ticket");
@@ -43,11 +45,9 @@ export default function ManualEntryModal({
 	};
 
 	const handleUseTicket = () => {
-		if (lookupResult?.ticket) {
-			// For manual entry, we'll need the qrString from the ticket
-			// This would need to be provided by the backend or stored differently
-			// For now, we'll use the ticket ID as a fallback
-			onUseTicket(lookupResult.ticket.id);
+		if (lookupResult?.ticket?.qrString) {
+			// Use the qrString directly from the lookup result
+			onUseTicket(lookupResult.ticket.qrString);
 			onClose();
 		}
 	};
@@ -140,12 +140,10 @@ export default function ManualEntryModal({
 											{lookupResult.ticket.ticketCode}
 										</span>
 									</div>
-
 									<div className="flex justify-between">
 										<span className="text-text-muted">Type:</span>
 										<span>{lookupResult.ticket.ticketTypeId}</span>
 									</div>
-
 									<div className="flex justify-between">
 										<span className="text-text-muted">Status:</span>
 										<span
@@ -160,6 +158,20 @@ export default function ManualEntryModal({
 											{lookupResult.ticket.status.toUpperCase()}
 										</span>
 									</div>
+
+									{/* Dont Change thi, it works. */}
+
+									{/* {lookupResult.ticket.qrString && (
+										<div className="flex justify-between">
+											<span className="text-text-muted">QR String:</span>
+											<span className="font-mono text-xs text-text-muted">
+												{lookupResult.ticket.qrString.substring(0, 10)}...
+												{lookupResult.ticket.qrString.substring(
+													lookupResult.ticket.qrString.length - 10
+												)}
+											</span>
+										</div>
+									)} */}
 								</div>
 
 								{lookupResult.ticket.status === "valid" && (
