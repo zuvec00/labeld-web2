@@ -16,6 +16,7 @@ interface ScannerHUDProps {
 	onManualEntry: () => void;
 	onToggleSound: () => void;
 	soundEnabled: boolean;
+	isProcessing?: boolean;
 }
 
 export default function ScannerHUD({
@@ -27,6 +28,7 @@ export default function ScannerHUD({
 	onManualEntry,
 	onToggleSound,
 	soundEnabled,
+	isProcessing = false,
 }: ScannerHUDProps) {
 	const [showStats, setShowStats] = useState(false);
 
@@ -115,9 +117,18 @@ export default function ScannerHUD({
 			<div className="px-4 py-3 border-t border-stroke">
 				<div className="flex gap-3">
 					<Button
-						text={isScanning ? "Pause Scanning" : "Start Scanning"}
+						text={
+							isProcessing
+								? isScanning
+									? "Stopping..."
+									: "Starting..."
+								: isScanning
+								? "Stop Scanning"
+								: "Start Scanning"
+						}
 						variant={isScanning ? "secondary" : "primary"}
 						onClick={onToggleScanning}
+						disabled={isProcessing}
 						className="flex-1"
 					/>
 

@@ -45,6 +45,7 @@ export default function ScannerPage() {
 		stopScanning,
 		processQRCode,
 		lookupTicketByCode,
+		isProcessing,
 	} = useScanner(eventId || "");
 
 	// Check authentication and permissions
@@ -224,6 +225,7 @@ export default function ScannerPage() {
 				onManualEntry={handleManualEntry}
 				onToggleSound={() => setSoundEnabled(!soundEnabled)}
 				soundEnabled={soundEnabled}
+				isProcessing={isProcessing}
 			/>
 
 			{/* Camera Scanner */}

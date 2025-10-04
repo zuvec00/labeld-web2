@@ -47,6 +47,8 @@ export function useScanner(eventId: string) {
   // Start scanning session
   const startScanning = useCallback(async () => {
     try {
+      setState(prev => ({ ...prev, isProcessing: true }));
+      
       const deviceInfo = {
         userAgent: navigator.userAgent,
         platform: navigator.platform,
@@ -58,28 +60,38 @@ export function useScanner(eventId: string) {
         ...prev,
         isScanning: true,
         sessionId: result.sessionId,
+        isProcessing: false,
       }));
     } catch (err) {
       console.error("Failed to start scan session:", err);
+      setState(prev => ({ ...prev, isProcessing: false }));
       throw err;
     }
   }, [eventId]);
 
   // End scanning session
   const stopScanning = useCallback(async () => {
-    if (state.sessionId) {
-      try {
-        await endScanSession(state.sessionId);
+    try {
+      setState(prev => ({ ...prev, isProcessing: true }));
+      
+      if (state.sessionId) {
+        try {
+          await endScanSession(state.sessionId);
+        } catch (err) {
+          console.error("Failed to end scan session:", err);
+        }
+      }
+      
+      setState(prev => ({
+        ...prev,
+        isScanning: false,
+        sessionId: null,
+        isProcessing: false,
+      }));
     } catch (err) {
-      console.error("Failed to end scan session:", err);
+      console.error("Failed to stop scanning:", err);
+      setState(prev => ({ ...prev, isProcessing: false }));
     }
-    }
-    
-    setState(prev => ({
-      ...prev,
-      isScanning: false,
-      sessionId: null,
-    }));
   }, [state.sessionId]);
 
   // Process QR code scan

@@ -329,15 +329,25 @@ export default function CameraScanner({
 		<div
 			className={`relative bg-black rounded-2xl overflow-hidden ${className}`}
 		>
-			{/* Start scanning button overlay */}
+			{/* Open Camera button overlay */}
 			{!hasStarted && (
 				<div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
 					<button
 						onClick={beginScanning}
-						className="px-6 py-3 bg-accent text-bg rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors flex items-center gap-2"
+						disabled={isLoading}
+						className="px-6 py-3 bg-accent text-bg rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						<QrCode className="w-4 h-4" />
-						Start Scanning
+						{isLoading ? (
+							<>
+								<Spinner size="sm" />
+								Opening Camera...
+							</>
+						) : (
+							<>
+								<QrCode className="w-4 h-4" />
+								Open Camera
+							</>
+						)}
 					</button>
 				</div>
 			)}
