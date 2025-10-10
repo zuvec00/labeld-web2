@@ -137,7 +137,7 @@ export default function ReviewPage() {
 	if (loading || !event) {
 		return (
 			<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-4xl mx-auto">
-				<Stepper steps={STEPS} activeKey="review" />
+				<Stepper steps={STEPS} activeKey="review" eventId={eventIdString} />
 				<div className="min-h-dvh grid place-items-center">
 					<Spinner size="lg" />
 				</div>
@@ -151,7 +151,7 @@ export default function ReviewPage() {
 
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-4xl mx-auto">
-			<Stepper steps={STEPS} activeKey="review" />
+			<Stepper steps={STEPS} activeKey="review" eventId={eventIdString} />
 
 			{/* Header */}
 			<div className="mt-6 flex items-center justify-between">

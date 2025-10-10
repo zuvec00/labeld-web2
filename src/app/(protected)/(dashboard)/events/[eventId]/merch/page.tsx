@@ -62,7 +62,7 @@ export default function EventMerchPage() {
 
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-3xl mx-auto">
-			<Stepper steps={STEPS} activeKey="merch" />
+			<Stepper steps={STEPS} activeKey="merch" eventId={eventIdString} />
 
 			<div className="mt-6 flex items-center justify-between">
 				<div>
