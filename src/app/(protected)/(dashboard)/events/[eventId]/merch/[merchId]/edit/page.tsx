@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import {
 	getMerchItemById,
 	updateMerchItem,
@@ -115,10 +116,26 @@ export default function EditMerchPage() {
 			const uploaded: { url: string }[] = [];
 			if (files.length) {
 				for (const f of files) {
-					const url = await uploadFileGetURL(
-						f,
-						`merch/${user.uid}/${crypto.randomUUID()}-${f.name}`
-					);
+					let url: string;
+					try {
+						// Primary: Upload to Cloudinary
+						url = await uploadImageCloudinary(f, {
+							folder: `merch/${user.uid}`,
+							tags: ["merch", "event", eventId],
+						});
+						console.log("✅ Merch image uploaded to Cloudinary:", url);
+					} catch (cloudinaryError) {
+						// Fallback: Upload to Firebase Storage
+						console.warn(
+							"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+							cloudinaryError
+						);
+						url = await uploadFileGetURL(
+							f,
+							`merch/${user.uid}/${crypto.randomUUID()}-${f.name}`
+						);
+						console.log("✅ Merch image uploaded to Firebase Storage:", url);
+					}
 					uploaded.push({ url });
 				}
 			}

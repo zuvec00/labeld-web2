@@ -119,7 +119,11 @@ export default function TicketsStepPage() {
 
 			{/* Footer actions */}
 			<div className="flex justify-between pt-8 mt-10 border-t border-stroke">
-				<Button variant="outline" text="Back" onClick={() => router.back()} />
+				<Button
+					variant="outline"
+					text="Back"
+					onClick={() => router.push(`/events/${eventIdString}/details`)}
+				/>
 				<Button
 					variant={hasActiveTickets ? "primary" : "disabled"}
 					disabled={!hasActiveTickets}

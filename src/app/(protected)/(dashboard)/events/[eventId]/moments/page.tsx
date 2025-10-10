@@ -15,7 +15,12 @@ import {
 	listMomentsForEvent,
 } from "@/lib/firebase/queries/moment";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import {
+	uploadImageCloudinary,
+	uploadFileDirectCloudinary,
+} from "@/lib/storage/cloudinary";
 import { MomentRow } from "@/components/moments/MomentRow";
+import { useUploadStore } from "@/lib/stores/upload";
 
 const STEPS = [
 	{ key: "details", label: "Details" },
@@ -35,6 +40,8 @@ export default function EventMomentsPage() {
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
 
+	const { addUpload, updateUpload, removeUpload } = useUploadStore();
+
 	useEffect(() => {
 		let mounted = true;
 		(async () => {
@@ -49,6 +56,124 @@ export default function EventMomentsPage() {
 			mounted = false;
 		};
 	}, [eventIdString]);
+
+	const handleBackgroundUpload = async (
+		file: File,
+		thumbnailFile: File | null,
+		type: "image" | "video",
+		caption: string,
+		visibility: "attendeesOnly" | "public"
+	) => {
+		const auth = getAuth();
+		const user = auth.currentUser;
+		if (!user) return;
+
+		// Add to global upload store
+		const uploadId = addUpload({
+			type,
+			fileName: file.name,
+			progress: 0,
+			status: "uploading",
+		});
+
+		// Get the cancel controller for this upload
+		const upload = useUploadStore
+			.getState()
+			.uploads.find((u) => u.id === uploadId);
+		const abortController = upload?.cancelController;
+
+		try {
+			let mediaURL: string | undefined;
+			let thumbURL: string | undefined;
+
+			// Upload main file
+			const folder = `moments/${user.uid}`;
+			const tags = ["moment", "event", eventIdString, type];
+
+			// Check if upload was cancelled before starting
+			if (abortController?.signal.aborted) {
+				throw new Error("Upload cancelled");
+			}
+
+			if (type === "image") {
+				mediaURL = await uploadImageCloudinary(file, { folder, tags });
+			} else {
+				mediaURL = await uploadFileDirectCloudinary(
+					file,
+					{ folder, tags, resourceType: "video" },
+					(progress) => {
+						// Check if cancelled during progress updates
+						if (abortController?.signal.aborted) {
+							throw new Error("Upload cancelled");
+						}
+						updateUpload(uploadId, { progress: Math.round(progress) });
+					}
+				);
+			}
+
+			// Upload thumbnail if provided
+			if (thumbnailFile && type === "video") {
+				try {
+					const thumbFolder = `moments/${user.uid}/thumbnails`;
+					const thumbTags = ["moment-thumbnail", "event", eventIdString];
+					thumbURL = await uploadImageCloudinary(thumbnailFile, {
+						folder: thumbFolder,
+						tags: thumbTags,
+					});
+				} catch (error) {
+					console.warn("Thumbnail upload failed:", error);
+					thumbURL = await uploadFileGetURL(
+						thumbnailFile,
+						`moments/${user.uid}/thumbnails/${crypto.randomUUID()}-${
+							thumbnailFile.name
+						}`
+					);
+				}
+			}
+
+			// Create moment in database
+			const docIn: Omit<MomentDoc, "id" | "createdAt"> = {
+				eventId: eventIdString,
+				authorUserId: user.uid,
+				type,
+				mediaURL,
+				...(thumbURL && { thumbURL }), // Only include thumbURL if it exists
+				...(caption.trim() && { text: caption.trim() }), // Only include text if not empty
+				visibility,
+			};
+
+			const id = await createMoment(docIn);
+			const newMoment = { id, ...docIn, createdAt: new Date() } as MomentDoc;
+
+			// Update list
+			setItems((prev) => [newMoment, ...prev]);
+
+			// Mark upload as completed
+			updateUpload(uploadId, { status: "completed", progress: 100 });
+
+			// Remove completed upload after 3 seconds
+			setTimeout(() => {
+				removeUpload(uploadId);
+			}, 3000);
+		} catch (error) {
+			console.error("Background upload error:", error);
+
+			// Check if it was cancelled
+			if (error instanceof Error && error.message === "Upload cancelled") {
+				updateUpload(uploadId, {
+					status: "cancelled",
+				});
+			} else {
+				updateUpload(uploadId, {
+					status: "error",
+					error:
+						error instanceof Error
+							? error.message
+							: "Upload failed. Please try again.",
+				});
+			}
+		}
+	};
 
 	if (loading) {
 		return (
@@ -128,9 +253,8 @@ export default function EventMomentsPage() {
 
 			{open && (
 				<CreateMomentDialog
-					eventId={eventIdString}
 					onClose={() => setOpen(false)}
-					onCreated={(doc) => setItems((prev) => [doc, ...prev])}
+					onBackgroundUpload={handleBackgroundUpload}
 				/>
 			)}
 		</div>
@@ -138,83 +262,81 @@ export default function EventMomentsPage() {
 }
 
 function CreateMomentDialog({
-	eventId,
 	onClose,
-	onCreated,
+	onBackgroundUpload,
 }: {
-	eventId: string;
 	onClose: () => void;
-	onCreated: (doc: MomentDoc) => void;
+	onBackgroundUpload: (
+		file: File,
+		thumbnailFile: File | null,
+		type: "image" | "video",
+		caption: string,
+		visibility: "attendeesOnly" | "public"
+	) => void;
 }) {
 	const auth = getAuth();
 	const [type, setType] = useState<"image" | "video">("image");
 	const [file, setFile] = useState<File | null>(null);
+	const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 	const [caption, setCaption] = useState("");
 	const [visibility, setVisibility] = useState<"attendeesOnly" | "public">(
 		"public"
 	);
-	const [saving, setSaving] = useState(false);
 	const [fileError, setFileError] = useState<string | null>(null);
 	const [filePreview, setFilePreview] = useState<string | null>(null);
+	const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
 
-	// Cleanup preview URL on unmount
+	// Cleanup preview URLs on unmount
 	useEffect(() => {
 		return () => {
 			if (filePreview) {
 				URL.revokeObjectURL(filePreview);
 			}
+			if (thumbnailPreview) {
+				URL.revokeObjectURL(thumbnailPreview);
+			}
 		};
-	}, [filePreview]);
+	}, [filePreview, thumbnailPreview]);
 
 	async function onSave() {
 		const user = auth.currentUser;
-		if (!user) return;
-		setSaving(true);
-		setFileError(null);
-		try {
-			let mediaURL: string | undefined;
-			if (file) {
-				// Validate file size
-				if (file.size > 25 * 1024 * 1024) {
-					// 25MB
-					throw new Error("File size must be 25MB or less.");
-				}
+		if (!user || !file) return;
 
-				// For videos, validate duration (basic check - in real app you'd use a video library)
-				if (type === "video") {
-					// Note: This is a basic check. For production, you'd want to use a proper video library
-					// to get actual duration. This is just a placeholder for the UI.
-					if (file.size > 50 * 1024 * 1024) {
-						// Rough estimate for 15s video
-						throw new Error("Video appears to be longer than 15 seconds.");
-					}
-				}
-
-				mediaURL = await uploadFileGetURL(
-					file,
-					`moments/${user.uid}/${crypto.randomUUID()}-${file.name}`
-				);
-			}
-
-			const docIn: Omit<MomentDoc, "id" | "createdAt"> = {
-				eventId,
-				authorUserId: user.uid,
-				type,
-				mediaURL,
-				text: caption.trim() || undefined, // Only include caption if not empty
-				visibility,
-			};
-
-			const id = await createMoment(docIn);
-			onCreated({ id, ...docIn, createdAt: new Date() } as MomentDoc);
-			onClose();
-		} catch (error: unknown) {
+		// Validate file size based on type
+		const maxSize = type === "video" ? 50 * 1024 * 1024 : 10 * 1024 * 1024;
+		if (file.size > maxSize) {
 			setFileError(
-				error instanceof Error ? error.message : "Failed to save moment."
+				`File size must be ${type === "video" ? "50MB" : "10MB"} or less.`
 			);
-		} finally {
-			setSaving(false);
+			return;
 		}
+
+		// Validate thumbnail size if provided
+		if (thumbnailFile) {
+			const maxThumbSize = 5 * 1024 * 1024;
+			if (thumbnailFile.size > maxThumbSize) {
+				setFileError("Thumbnail size must be 5MB or less.");
+				return;
+			}
+		}
+
+		// For videos, validate duration (basic size-based check)
+		if (type === "video") {
+			const estimatedDuration = (file.size / (50 * 1024 * 1024)) * 30;
+			if (estimatedDuration > 35) {
+				setFileError(
+					"Video appears to be longer than 30 seconds. Please trim it."
+				);
+				return;
+			}
+		}
+
+		// For videos, always use background upload
+		// For images, also use background upload for consistency
+		onBackgroundUpload(file, thumbnailFile, type, caption, visibility);
+
+		// Close dialog immediately - upload continues in background
+		onClose();
 	}
 
 	return (
@@ -232,7 +354,18 @@ function CreateMomentDialog({
 					</label>
 					<select
 						value={type}
-						onChange={(e) => setType(e.target.value as "image" | "video")}
+						onChange={(e) => {
+							const newType = e.target.value as "image" | "video";
+							setType(newType);
+							// Clear thumbnail when switching to image type
+							if (newType === "image") {
+								setThumbnailFile(null);
+								if (thumbnailPreview) {
+									URL.revokeObjectURL(thumbnailPreview);
+									setThumbnailPreview(null);
+								}
+							}
+						}}
 						className="w-full rounded-xl border border-stroke px-4 py-3 bg-surface text-text outline-none focus:border-accent"
 					>
 						<option value="image">Image</option>
@@ -266,14 +399,15 @@ function CreateMomentDialog({
 					/>
 					<p className="text-xs text-text-muted mt-2">
 						{type === "image"
-							? "Upload an image for your moment. Recommended: JPG/PNG/WebP, max 2MB."
-							: "Upload a video for your moment. 15s max duration, 25MB max file size, 720-1080p recommended."}
+							? "Upload an image for your moment. Recommended: JPG/PNG/WebP, max 10MB."
+							: "Upload a video for your moment. 30s max duration, 50MB max file size, 720-1080p recommended. Video will upload in the background so you can continue working."}
 					</p>
 
 					{/* File Preview */}
 					{filePreview && (
 						<div className="mt-3">
 							{type === "image" ? (
+								// eslint-disable-next-line @next/next/no-img-element
 								<img
 									src={filePreview}
 									alt="Preview"
@@ -290,6 +424,48 @@ function CreateMomentDialog({
 						</div>
 					)}
 				</div>
+
+				{/* Thumbnail upload (only for videos) */}
+				{type === "video" && (
+					<div>
+						<label className="block text-sm text-text-muted mb-2">
+							Video Thumbnail (optional)
+						</label>
+						<input
+							type="file"
+							accept="image/*"
+							onChange={(e) => {
+								const selectedFile = e.target.files?.[0] ?? null;
+								setThumbnailFile(selectedFile);
+
+								// Create preview URL
+								if (selectedFile) {
+									const url = URL.createObjectURL(selectedFile);
+									setThumbnailPreview(url);
+								} else {
+									setThumbnailPreview(null);
+								}
+							}}
+							className="block w-full text-sm text-text file:mr-3 file:rounded-lg file:border file:border-stroke file:bg-bg file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-surface"
+						/>
+						<p className="text-xs text-text-muted mt-2">
+							Upload a custom thumbnail for your video. Recommended:
+							JPG/PNG/WebP, max 5MB.
+						</p>
+
+						{/* Thumbnail Preview */}
+						{thumbnailPreview && (
+							<div className="mt-3">
+								{/* eslint-disable-next-line @next/next/no-img-element */}
+								<img
+									src={thumbnailPreview}
+									alt="Thumbnail preview"
+									className="w-full max-h-48 object-cover rounded-xl border border-stroke"
+								/>
+							</div>
+						)}
+					</div>
+				)}
 
 				{/* Caption (optional) */}
 				<div>
@@ -326,8 +502,8 @@ function CreateMomentDialog({
 				<Button variant="outline" text="Cancel" onClick={onClose} />
 				<Button
 					variant={file ? "primary" : "disabled"}
-					disabled={!file || saving}
-					text={saving ? "Saving…" : "Save"}
+					disabled={!file}
+					text={type === "video" ? "Upload in Background" : "Upload"}
 					onClick={onSave}
 				/>
 			</div>

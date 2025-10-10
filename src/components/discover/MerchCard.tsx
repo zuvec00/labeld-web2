@@ -1,5 +1,6 @@
 import { ShoppingBag } from "lucide-react";
 import { useState } from "react";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface Merch {
 	id: string;
@@ -87,10 +88,13 @@ export default function MerchCard({ merch, compact = false }: MerchCardProps) {
 				{/* Product image placeholder */}
 				<div className="aspect-[3/4] bg-gray-800 relative">
 					{merch.images && merch.images.length > 0 ? (
-						<img
+						<OptimizedImage
 							src={merch.images[currentImageIndex].url}
 							alt={merch.images[currentImageIndex].alt || merch.name}
-							className="w-full h-full object-cover transition-opacity duration-500"
+							fill
+							sizeContext="card"
+							objectFit="cover"
+							className="transition-opacity duration-500"
 						/>
 					) : (
 						<div className="w-full h-full flex items-center justify-center text-gray-500">

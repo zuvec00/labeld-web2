@@ -8,6 +8,7 @@ import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { sendNotificationCF } from "@/lib/firebase/callables/users";
 import { addCollectionCF } from "@/lib/firebase/queries/collection";
@@ -393,19 +394,59 @@ export default function NewCollectionPage() {
 				return;
 			}
 			// upload main
-			const mainImageUrl = await uploadFileGetURL(
-				mainFile!,
-				`dropImages/${uid}/${Date.now()}-${mainFile!.name}`
-			);
+			let mainImageUrl: string;
+			try {
+				// Primary: Upload to Cloudinary
+				mainImageUrl = await uploadImageCloudinary(mainFile!, {
+					folder: `dropImages/${uid}`,
+					tags: ["collection", "main", uid],
+				});
+				console.log("✅ Main image uploaded to Cloudinary:", mainImageUrl);
+			} catch (cloudinaryError) {
+				// Fallback: Upload to Firebase Storage
+				console.warn(
+					"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+					cloudinaryError
+				);
+				mainImageUrl = await uploadFileGetURL(
+					mainFile!,
+					`dropImages/${uid}/${Date.now()}-${mainFile!.name}`
+				);
+				console.log(
+					"✅ Main image uploaded to Firebase Storage:",
+					mainImageUrl
+				);
+			}
+
 			// upload gallery (cap 4)
 			let galleryImageUrls: string[] | undefined;
 			if (galleryFiles.length) {
 				const take = galleryFiles.slice(0, 4);
-				galleryImageUrls = await Promise.all(
-					take.map((f) =>
-						uploadFileGetURL(f, `dropImages/${uid}/${Date.now()}-${f.name}`)
-					)
-				);
+				galleryImageUrls = [];
+
+				for (const f of take) {
+					try {
+						// Primary: Upload to Cloudinary
+						const url = await uploadImageCloudinary(f, {
+							folder: `dropImages/${uid}`,
+							tags: ["collection", "gallery", uid],
+						});
+						galleryImageUrls.push(url);
+						console.log("✅ Gallery image uploaded to Cloudinary:", url);
+					} catch (cloudinaryError) {
+						// Fallback: Upload to Firebase Storage
+						console.warn(
+							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
+							cloudinaryError
+						);
+						const url = await uploadFileGetURL(
+							f,
+							`dropImages/${uid}/${Date.now()}-${f.name}`
+						);
+						galleryImageUrls.push(url);
+						console.log("✅ Gallery image uploaded to Firebase Storage:", url);
+					}
+				}
 			}
 
 			const payload: Record<string, any> = {

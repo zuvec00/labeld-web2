@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -7,7 +6,9 @@ import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
 import Button from "@/components/ui/button";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import {
 	fetchBrandById,
 	isBrandUsernameTaken,
@@ -100,17 +101,29 @@ function SingleImagePicker({
 		<div className="flex flex-col gap-3">
 			{title ? <Label text={title} /> : null}
 			{existingUrl ? (
-				<img
-					src={existingUrl}
-					alt=""
-					className={`${size} object-cover ${radius} border border-stroke`}
-				/>
+				<div
+					className={`${size} relative overflow-hidden ${radius} border border-stroke`}
+				>
+					<OptimizedImage
+						src={existingUrl}
+						alt={title || "Image"}
+						fill
+						sizeContext={circle ? "thumbnail" : "card"}
+						objectFit="cover"
+					/>
+				</div>
 			) : file ? (
-				<img
-					src={URL.createObjectURL(file)}
-					alt=""
-					className={`${size} object-cover ${radius} border border-stroke`}
-				/>
+				<div
+					className={`${size} relative overflow-hidden ${radius} border border-stroke`}
+				>
+					<OptimizedImage
+						src={URL.createObjectURL(file)}
+						alt="Preview"
+						fill
+						sizeContext={circle ? "thumbnail" : "card"}
+						objectFit="cover"
+					/>
+				</div>
 			) : (
 				<label className="block cursor-pointer">
 					<div
@@ -355,17 +368,54 @@ export default function EditBrandProfilePage() {
 			// uploads
 			let nextLogoUrl = logoUrl ?? null;
 			if (logoFile) {
-				nextLogoUrl = await uploadFileGetURL(
-					logoFile,
-					`brandImages/${uid}/${Date.now()}-${logoFile.name}`
-				);
+				try {
+					// Primary: Upload to Cloudinary
+					nextLogoUrl = await uploadImageCloudinary(logoFile, {
+						folder: `brandImages/${uid}`,
+						tags: ["brand", "logo", uid],
+					});
+					console.log("✅ Brand logo uploaded to Cloudinary:", nextLogoUrl);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					nextLogoUrl = await uploadFileGetURL(
+						logoFile,
+						`brandImages/${uid}/${Date.now()}-${logoFile.name}`
+					);
+					console.log(
+						"✅ Brand logo uploaded to Firebase Storage:",
+						nextLogoUrl
+					);
+				}
 			}
+
 			let nextCoverUrl = coverImageUrl ?? null;
 			if (coverFile) {
-				nextCoverUrl = await uploadFileGetURL(
-					coverFile,
-					`brandCovers/${uid}/${Date.now()}-${coverFile.name}`
-				);
+				try {
+					// Primary: Upload to Cloudinary
+					nextCoverUrl = await uploadImageCloudinary(coverFile, {
+						folder: `brandCovers/${uid}`,
+						tags: ["brand", "cover", uid],
+					});
+					console.log("✅ Brand cover uploaded to Cloudinary:", nextCoverUrl);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					nextCoverUrl = await uploadFileGetURL(
+						coverFile,
+						`brandCovers/${uid}/${Date.now()}-${coverFile.name}`
+					);
+					console.log(
+						"✅ Brand cover uploaded to Firebase Storage:",
+						nextCoverUrl
+					);
+				}
 			}
 
 			await updateBrandProfile(uid, {

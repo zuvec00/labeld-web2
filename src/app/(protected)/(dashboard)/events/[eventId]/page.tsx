@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import {
 	BarChart3,
 	Calendar,
@@ -149,15 +150,18 @@ export default function EventDashboardPage() {
 		<div className="min-h-dvh bg-bg">
 			{/* Cover header */}
 			<div className="relative">
-				<div className="h-32 sm:h-40 lg:h-120 bg-stroke/20 relative">
+				<div className="h-32 sm:h-40 lg:h-48 bg-stroke/20 relative">
 					{ev.coverImageURL && (
-						<img
+						<OptimizedImage
 							src={ev.coverImageURL}
 							alt={ev.title}
-							className="w-full h-full object-cover"
+							fill
+							priority
+							sizeContext="hero"
+							objectFit="cover"
 						/>
 					)}
-					<div className="absolute inset-0 bg-black/30" />
+					<div className="absolute inset-0 bg-black/30 z-10" />
 				</div>
 
 				<div className="relative px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto">
@@ -291,11 +295,15 @@ export default function EventDashboardPage() {
 								</h3>
 								<div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
 									{ev.coverImageURL ? (
-										<img
-											src={ev.coverImageURL}
-											className="w-20 h-20 sm:w-28 sm:h-28 object-cover rounded-lg sm:rounded-xl border border-stroke flex-shrink-0"
-											alt=""
-										/>
+										<div className="w-20 h-20 sm:w-28 sm:h-28 relative rounded-lg sm:rounded-xl border border-stroke flex-shrink-0 overflow-hidden">
+											<OptimizedImage
+												src={ev.coverImageURL}
+												alt={ev.title}
+												fill
+												sizeContext="thumbnail"
+												objectFit="cover"
+											/>
+										</div>
 									) : (
 										<div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg sm:rounded-xl bg-bg border border-stroke flex-shrink-0" />
 									)}
@@ -581,11 +589,15 @@ export default function EventDashboardPage() {
 											className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-stroke"
 										>
 											{m.images?.[0]?.url ? (
-												<img
-													src={m.images[0].url}
-													className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded-lg border border-stroke flex-shrink-0"
-													alt=""
-												/>
+												<div className="w-12 h-12 sm:w-16 sm:h-16 relative rounded-lg border border-stroke flex-shrink-0 overflow-hidden">
+													<OptimizedImage
+														src={m.images[0].url}
+														alt={m.name}
+														fill
+														sizeContext="thumbnail"
+														objectFit="cover"
+													/>
+												</div>
 											) : (
 												<div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-bg border border-stroke flex-shrink-0" />
 											)}

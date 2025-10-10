@@ -7,6 +7,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { formatWithCommasDouble, getCurrencyFromMap } from "@/lib/format";
 import {
 	fetchProductById,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/firebase/queries/product";
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 
 /* ----------------------------- Currency source ---------------------------- */
 
@@ -153,23 +155,66 @@ export default function EditPiecePage() {
 			// upload images if replaced
 			let mainVisualUrl = onlineMain;
 			if (mainFile) {
-				mainVisualUrl = await uploadFileGetURL(
-					mainFile,
-					`productImages/${userId}/${Date.now()}-${mainFile.name}`
-				);
+				try {
+					// Primary: Upload to Cloudinary
+					mainVisualUrl = await uploadImageCloudinary(mainFile, {
+						folder: `productImages/${userId}`,
+						tags: ["product", "main", userId],
+					});
+					console.log(
+						"✅ Main product image uploaded to Cloudinary:",
+						mainVisualUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					mainVisualUrl = await uploadFileGetURL(
+						mainFile,
+						`productImages/${userId}/${Date.now()}-${mainFile.name}`
+					);
+					console.log(
+						"✅ Main product image uploaded to Firebase Storage:",
+						mainVisualUrl
+					);
+				}
 			}
 
 			let galleryImageUrls: string[] | undefined;
 			if (galleryFiles.length) {
-				const urls = await Promise.all(
-					galleryFiles.map((f) =>
-						uploadFileGetURL(
+				galleryImageUrls = [];
+
+				for (const f of galleryFiles) {
+					try {
+						// Primary: Upload to Cloudinary
+						const url = await uploadImageCloudinary(f, {
+							folder: `productImages/${userId}`,
+							tags: ["product", "gallery", userId],
+						});
+						galleryImageUrls.push(url);
+						console.log(
+							"✅ Gallery product image uploaded to Cloudinary:",
+							url
+						);
+					} catch (cloudinaryError) {
+						// Fallback: Upload to Firebase Storage
+						console.warn(
+							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
+							cloudinaryError
+						);
+						const url = await uploadFileGetURL(
 							f,
 							`productImages/${userId}/${Date.now()}-${f.name}`
-						)
-					)
-				);
-				galleryImageUrls = [...urls];
+						);
+						galleryImageUrls.push(url);
+						console.log(
+							"✅ Gallery product image uploaded to Firebase Storage:",
+							url
+						);
+					}
+				}
 			} else if (onlineGallery?.length) {
 				galleryImageUrls = [...onlineGallery];
 			}
@@ -619,11 +664,17 @@ function SingleImagePicker({
 		<div className="flex flex-col gap-3">
 			{existingUrl ? (
 				<div className="relative w-full">
-					<img
-						src={existingUrl}
-						alt=""
-						className="w-full max-h-72 object-cover rounded-xl border border-stroke"
-					/>
+					<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
+						<OptimizedImage
+							src={existingUrl}
+							alt="Current image"
+							width={800}
+							height={600}
+							sizeContext="card"
+							objectFit="cover"
+							className="w-full"
+						/>
+					</div>
 					<div className="mt-2 flex gap-2">
 						<button
 							type="button"
@@ -637,11 +688,15 @@ function SingleImagePicker({
 					</div>
 				</div>
 			) : file ? (
-				<div>
-					<img
+				<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
+					<OptimizedImage
 						src={URL.createObjectURL(file)}
-						alt=""
-						className="w-full max-h-72 object-cover rounded-xl border border-stroke"
+						alt="Preview"
+						width={800}
+						height={600}
+						sizeContext="card"
+						objectFit="cover"
+						className="w-full"
 					/>
 				</div>
 			) : (
@@ -737,15 +792,20 @@ function MultiImagePicker({
 					<div className="mt-3 h-16 overflow-x-auto">
 						<div className="flex items-center gap-2">
 							{existingUrls.map((u) => (
-								<div key={u} className="relative">
-									<img
+								<div
+									key={u}
+									className="relative h-16 w-16 rounded-lg border border-stroke overflow-hidden"
+								>
+									<OptimizedImage
 										src={u}
-										alt=""
-										className="h-16 w-16 rounded-lg object-cover border border-stroke"
+										alt="Gallery image"
+										fill
+										sizeContext="thumbnail"
+										objectFit="cover"
 									/>
 									<button
 										type="button"
-										className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6"
+										className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6 z-10"
 										title="Remove"
 										onClick={() => onRemoveExisting(u)}
 									>
@@ -756,15 +816,20 @@ function MultiImagePicker({
 							{files.map((f, i) => {
 								const url = URL.createObjectURL(f);
 								return (
-									<div key={`${f.name}-${i}`} className="relative">
-										<img
+									<div
+										key={`${f.name}-${i}`}
+										className="relative h-16 w-16 rounded-lg border border-stroke overflow-hidden"
+									>
+										<OptimizedImage
 											src={url}
-											alt=""
-											className="h-16 w-16 rounded-lg object-cover border border-stroke"
+											alt="Gallery preview"
+											fill
+											sizeContext="thumbnail"
+											objectFit="cover"
 										/>
 										<button
 											type="button"
-											className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6"
+											className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6 z-10"
 											title="Remove"
 											onClick={() => removeLocalAt(i)}
 										>

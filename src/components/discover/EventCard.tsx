@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Calendar, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface Event {
 	id: string;
@@ -76,10 +77,12 @@ export default function EventCard({ event }: EventCardProps) {
 				{/* Event cover image */}
 				<div className="aspect-[4/5] bg-surface relative">
 					{event.coverImageURL ? (
-						<img
+						<OptimizedImage
 							src={event.coverImageURL}
 							alt={event.title}
-							className="absolute inset-0 w-full h-full object-cover"
+							fill
+							sizeContext="card"
+							objectFit="cover"
 						/>
 					) : (
 						<div className="absolute inset-0 w-full h-full bg-gray-800 flex items-center justify-center text-gray-500 text-3xl font-bold">

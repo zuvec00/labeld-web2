@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useMemo, useState, use } from "react";
@@ -7,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { formatWithCommasDouble, getCurrencyFromMap } from "@/lib/format";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { fetchProductById, Product } from "@/lib/firebase/queries/product";
 
 export default function PieceDetailsPage({
@@ -75,19 +75,22 @@ export default function PieceDetailsPage({
 	return (
 		<div className="pb-10">
 			{/* Hero image w/ swipe-like controls */}
-			<div className="relative">
-				<img
+			<div className="relative h-[65vh] rounded-b-2xl overflow-hidden">
+				<OptimizedImage
 					key={images[idx]}
 					src={images[idx]}
 					alt={piece.dropName}
-					className="w-full h-[65vh] object-cover rounded-b-2xl"
+					fill
+					priority
+					sizeContext="hero"
+					objectFit="cover"
 				/>
 
 				{images.length > 1 && (
 					<>
 						{canPrev && (
 							<button
-								className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white px-3 py-2"
+								className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white px-3 py-2 z-10"
 								onClick={() => setIdx((i) => Math.max(0, i - 1))}
 							>
 								‹
@@ -95,7 +98,7 @@ export default function PieceDetailsPage({
 						)}
 						{canNext && (
 							<button
-								className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white px-3 py-2"
+								className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white px-3 py-2 z-10"
 								onClick={() =>
 									setIdx((i) => Math.min(images.length - 1, i + 1))
 								}
@@ -114,11 +117,17 @@ export default function PieceDetailsPage({
 						<button
 							key={src + i}
 							onClick={() => setIdx(i)}
-							className={`shrink-0 ${
+							className={`shrink-0 relative h-16 w-16 ${
 								i === idx ? "ring-2 ring-accent" : ""
 							} rounded-xl overflow-hidden`}
 						>
-							<img src={src} className="h-16 w-16 object-cover" alt="" />
+							<OptimizedImage
+								src={src}
+								alt={`View ${i + 1}`}
+								fill
+								sizeContext="thumbnail"
+								objectFit="cover"
+							/>
 						</button>
 					))}
 				</div>

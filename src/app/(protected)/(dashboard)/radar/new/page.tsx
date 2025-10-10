@@ -12,6 +12,7 @@ import {
 	type ProductLite,
 } from "@/lib/firebase/queries/product";
 import { uploadContentImageWeb } from "@/lib/storage/upload";
+import { uploadContentImageCloudinary } from "@/lib/storage/cloudinary";
 import { addDropContentCF } from "@/lib/firebase/callables/dropContent"; // <-- new
 import { sendNotificationCF } from "@/lib/firebase/callables/users"; // optional generic notification
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
@@ -130,7 +131,26 @@ export default function NewDropContentPage() {
 		setErr(null);
 		try {
 			// 1) upload image
-			const teaserImageUrl = await uploadContentImageWeb(teaserFile, user.uid);
+			let teaserImageUrl: string;
+			try {
+				// Primary: Upload to Cloudinary
+				teaserImageUrl = await uploadContentImageCloudinary(
+					teaserFile,
+					user.uid
+				);
+				console.log("✅ Teaser image uploaded to Cloudinary:", teaserImageUrl);
+			} catch (cloudinaryError) {
+				// Fallback: Upload to Firebase Storage
+				console.warn(
+					"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+					cloudinaryError
+				);
+				teaserImageUrl = await uploadContentImageWeb(teaserFile, user.uid);
+				console.log(
+					"✅ Teaser image uploaded to Firebase Storage:",
+					teaserImageUrl
+				);
+			}
 
 			// 2) resolve selected product + launch date (mirrors Flutter)
 			const selected = products.find((p) => p.id === selectedProductId);

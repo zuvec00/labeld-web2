@@ -106,7 +106,7 @@ export default function ReviewPage() {
 	const checklist = [
 		{ ok: hasActiveTickets, label: "At least one active ticket" },
 		{ ok: hasCover, label: "Cover image added" },
-		{ ok: hasDesc, label: "Description ≥ 50 characters" },
+		// { ok: hasDesc, label: "Description ≥ 50 characters" },
 		{ ok: hasWhen, label: "Start & end time set" },
 		{ ok: hasWhere, label: "Venue name, address & country set" },
 	];

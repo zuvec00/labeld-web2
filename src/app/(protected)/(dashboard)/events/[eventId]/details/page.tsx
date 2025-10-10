@@ -6,8 +6,10 @@ import { useParams, useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { slugify } from "@/lib/utils";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import { fetchEventById, updateEvent } from "@/lib/firebase/queries/event";
 import { eventDetailsSchema } from "@/lib/models/event.schema";
 import { z, ZodError } from "zod";
@@ -195,7 +197,7 @@ export default function EditEventDetailsPage() {
 
 				const startAt = convertToLocalDateTime(eventData.startAt);
 				const endAt = convertToLocalDateTime(eventData.endAt);
-
+				console.log(eventData);
 				// Populate form with existing data
 				setV({
 					title: eventData.title || "",
@@ -221,6 +223,9 @@ export default function EditEventDetailsPage() {
 				});
 
 				setCapacityInput(eventData.capacityTotal?.toString() || "100");
+
+				// Set initial cover preview from existing event data
+				// The useEffect will handle showing file preview if user picks a new file
 				setCoverPreview(eventData.coverImageURL || "");
 				console.log(eventData);
 			} finally {
@@ -237,17 +242,18 @@ export default function EditEventDetailsPage() {
 		setV((prev) => ({ ...prev, slug: slugify(prev.title) }));
 	}, [v.title]);
 
-	// When coverFile changes, update coverPreview
+	// Handle coverPreview: show picked file if present, else show URL if present
 	useEffect(() => {
-		if (!coverFile) {
+		if (coverFile) {
+			// If user picked a new file, show file preview
+			const url = URL.createObjectURL(coverFile);
+			setCoverPreview(url);
+			return () => URL.revokeObjectURL(url);
+		} else {
+			// If no file picked, show the URL from form data
 			setCoverPreview(v.coverImageURL || "");
-			return;
 		}
-		const url = URL.createObjectURL(coverFile);
-		setCoverPreview(url);
-		return () => URL.revokeObjectURL(url);
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [coverFile]);
+	}, [coverFile, v.coverImageURL]);
 
 	const canSave = useMemo(() => {
 		try {
@@ -287,6 +293,8 @@ export default function EditEventDetailsPage() {
 			return setErr("Cover image must be 2MB or less.");
 		setErr(null);
 		setCoverFile(f);
+		// Clear any previous URL when user picks a new file
+		setV((prev) => ({ ...prev, coverImageURL: "" }));
 	};
 
 	async function saveChanges() {
@@ -325,10 +333,31 @@ export default function EditEventDetailsPage() {
 			// If a new cover file is selected, upload it first
 			let finalCoverImageURL = v.coverImageURL;
 			if (coverFile) {
-				finalCoverImageURL = await uploadFileGetURL(
-					coverFile,
-					`events/covers/${crypto.randomUUID()}-${coverFile.name}`
-				);
+				try {
+					// Primary: Upload to Cloudinary
+					finalCoverImageURL = await uploadImageCloudinary(coverFile, {
+						folder: `events/covers`,
+						tags: ["event", "cover"],
+					});
+					console.log(
+						"✅ Event cover uploaded to Cloudinary:",
+						finalCoverImageURL
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					finalCoverImageURL = await uploadFileGetURL(
+						coverFile,
+						`events/covers/${crypto.randomUUID()}-${coverFile.name}`
+					);
+					console.log(
+						"✅ Event cover uploaded to Firebase Storage:",
+						finalCoverImageURL
+					);
+				}
 			}
 
 			// Validate the complete form data with the final cover image URL
@@ -409,30 +438,23 @@ export default function EditEventDetailsPage() {
 				message={err || ""}
 				onClose={() => setErr(null)}
 			/>
-			<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-2xl mx-auto">
-				{/* Header with back button */}
-				<div className="flex items-center gap-3 mt-6 mb-2">
-					{/* <Button
-						text="Back"
-						variant="outline"
-						onClick={() => router.push(`/events/${eventIdString}`)}
-						outlineColor="text-text-muted"
-						className="!px-4 !py-2"
-					/> */}
-					<h1 className="font-heading font-semibold text-2xl">
+			<div className="min-h-dvh px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8 max-w-2xl mx-auto pb-24">
+				{/* Header */}
+				<div className="mt-2 sm:mt-4 lg:mt-6 mb-3 sm:mb-4">
+					<h1 className="font-heading font-semibold text-xl sm:text-2xl">
 						Edit Event Details
 					</h1>
+					<p className="text-text-muted text-sm sm:text-base mt-1">
+						Update your event information. Changes will be saved immediately.
+					</p>
 				</div>
-				<p className="text-text-muted mt-1">
-					Update your event information. Changes will be saved immediately.
-				</p>
 
 				{/* Grouped Card Containers */}
-				<div className="mt-6 flex flex-col gap-6">
+				<div className="mt-4 sm:mt-6 flex flex-col gap-3 sm:gap-4 lg:gap-6">
 					{/* Event Info */}
-					<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div className="rounded-xl sm:rounded-2xl bg-surface border border-stroke p-4 sm:p-5 lg:p-6 flex flex-col gap-4 sm:gap-5">
 						<div>
-							<label className="block text-sm text-text-muted mb-2">
+							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 								Title <span className="text-cta">*</span>
 							</label>
 							<input
@@ -440,48 +462,53 @@ export default function EditEventDetailsPage() {
 								onChange={(e) =>
 									setV((prev) => ({ ...prev, title: e.target.value }))
 								}
-								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								placeholder="e.g Labeld Nights: Live in Lagos"
 							/>
-							<p className="text-xs text-text-muted mt-1">
+							<p className="text-xs text-text-muted mt-1 break-all">
 								URL: {v.slug ? `https://labeld.app/${v.slug}` : "—"}
 							</p>
 						</div>
 						<div>
-							<label className="block text-sm text-text-muted mb-2">
+							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 								Description <span className="text-cta">*</span>
 							</label>
 							<textarea
-								rows={5}
+								rows={4}
 								value={v.description}
 								onChange={(e) =>
 									setV((prev) => ({ ...prev, description: e.target.value }))
 								}
-								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+								className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent resize-none"
 								placeholder="Tell people what this event is about, who's performing, etc."
 							/>
 						</div>
 					</div>
 
 					{/* Cover Image */}
-					<div className="rounded-2xl bg-surface border border-stroke p-6">
-						<label className="block text-sm text-text-muted mb-2">
+					<div className="rounded-xl sm:rounded-2xl bg-surface border border-stroke p-4 sm:p-5 lg:p-6">
+						<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 							Cover image <span className="text-cta">*</span>
 						</label>
 
-						{coverPreview && (
-							<img
-								src={coverPreview}
-								alt="Cover preview"
-								className="w-full max-h-[60vh] object-cover rounded-xl border border-stroke mb-3"
-							/>
-						)}
+						{coverPreview ? (
+							<div className="relative w-full aspect-video sm:aspect-[16/10] lg:max-h-[50vh] overflow-hidden rounded-lg sm:rounded-xl border border-stroke mb-3">
+								<OptimizedImage
+									src={coverPreview}
+									alt="Cover preview"
+									fill
+									sizeContext="card"
+									objectFit="cover"
+									className="w-full"
+								/>
+							</div>
+						) : null}
 
 						<input
 							type="file"
 							accept="image/*"
 							onChange={onPickCover}
-							className="block w-full text-sm text-text file:mr-3 file:rounded-lg file:border file:border-stroke file:bg-bg file:px-3 file:py-2 file:text-sm file:font-semibold hover:file:bg-surface"
+							className="block w-full text-xs sm:text-sm text-text file:mr-2 sm:file:mr-3 file:rounded-lg file:border file:border-stroke file:bg-bg file:px-2 sm:file:px-3 file:py-1.5 sm:file:py-2 file:text-xs sm:file:text-sm file:font-semibold hover:file:bg-surface"
 						/>
 						<p className="text-xs text-text-muted mt-2">
 							Upload a cover image for your event. Recommended: 1:1 aspect
@@ -490,10 +517,10 @@ export default function EditEventDetailsPage() {
 					</div>
 
 					{/* Date & Time */}
-					<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
-						<div className="grid gap-4 sm:grid-cols-2">
+					<div className="rounded-xl sm:rounded-2xl bg-surface border border-stroke p-4 sm:p-5 lg:p-6 flex flex-col gap-4 sm:gap-5">
+						<div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
 							<div>
-								<label className="block text-sm text-text-muted mb-2">
+								<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 									Start <span className="text-cta">*</span>
 								</label>
 								<input
@@ -502,11 +529,11 @@ export default function EditEventDetailsPage() {
 									onChange={(e) =>
 										setV((prev) => ({ ...prev, startAt: e.target.value }))
 									}
-									className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								/>
 							</div>
 							<div>
-								<label className="block text-sm text-text-muted mb-2">
+								<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 									End <span className="text-cta">*</span>
 								</label>
 								<input
@@ -515,12 +542,12 @@ export default function EditEventDetailsPage() {
 									onChange={(e) =>
 										setV((prev) => ({ ...prev, endAt: e.target.value }))
 									}
-									className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								/>
 							</div>
 						</div>
 						<div>
-							<label className="block text-sm text-text-muted mb-2">
+							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 								Timezone <span className="text-cta">*</span>
 							</label>
 							<select
@@ -528,7 +555,7 @@ export default function EditEventDetailsPage() {
 								onChange={(e) =>
 									setV((prev) => ({ ...prev, timezone: e.target.value }))
 								}
-								className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+								className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent bg-surface"
 							>
 								{TIMEZONES.map((tz) => (
 									<option key={tz.value} value={tz.value}>
@@ -540,14 +567,14 @@ export default function EditEventDetailsPage() {
 					</div>
 
 					{/* Venue */}
-					<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
+					<div className="rounded-xl sm:rounded-2xl bg-surface border border-stroke p-4 sm:p-5 lg:p-6 flex flex-col gap-4 sm:gap-5">
 						<fieldset>
-							<legend className="px-1 text-sm text-text-muted">
+							<legend className="px-1 text-xs sm:text-sm text-text-muted mb-2">
 								Venue <span className="text-cta">*</span>
 							</legend>
-							<div className="grid gap-4 sm:grid-cols-2 mt-2">
+							<div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
 								<input
-									className="rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									className="rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 									placeholder="Venue name"
 									value={v.venue.name}
 									onChange={(e) =>
@@ -558,7 +585,7 @@ export default function EditEventDetailsPage() {
 									}
 								/>
 								<input
-									className="rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+									className="rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 									placeholder="Address"
 									value={v.venue.address}
 									onChange={(e) =>
@@ -569,7 +596,7 @@ export default function EditEventDetailsPage() {
 									}
 								/>
 								<select
-									className="rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+									className="rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent bg-surface"
 									value={v.venue.state}
 									onChange={(e) =>
 										setV((p) => ({
@@ -589,7 +616,7 @@ export default function EditEventDetailsPage() {
 									))}
 								</select>
 								<select
-									className="rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent bg-surface"
+									className="rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent bg-surface"
 									value={v.venue.country}
 									onChange={(e) => {
 										setV((p) => ({
@@ -610,10 +637,10 @@ export default function EditEventDetailsPage() {
 					</div>
 
 					{/* Capacity & Visibility */}
-					<div className="rounded-2xl bg-surface border border-stroke p-6 flex flex-col gap-5">
-						<div className="grid gap-4 sm:grid-cols-2">
+					<div className="rounded-xl sm:rounded-2xl bg-surface border border-stroke p-4 sm:p-5 lg:p-6 flex flex-col gap-4 sm:gap-5">
+						<div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
 							<div>
-								<label className="block text-sm text-text-muted mb-2">
+								<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 									Capacity mode <span className="text-cta">*</span>
 								</label>
 								<select
@@ -627,7 +654,7 @@ export default function EditEventDetailsPage() {
 												mode === "unlimited" ? null : prev.capacityTotal || 100,
 										}));
 									}}
-									className="w-full rounded-xl border border-stroke px-4 py-3 bg-surface text-text outline-none focus:border-accent"
+									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-surface text-text outline-none focus:border-accent"
 								>
 									<option value="limited">Limited</option>
 									<option value="unlimited">Unlimited</option>
@@ -635,7 +662,7 @@ export default function EditEventDetailsPage() {
 							</div>
 							{v.capacityMode === "limited" && (
 								<div>
-									<label className="block text-sm text-text-muted mb-2">
+									<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 										Capacity (when limited) <span className="text-cta">*</span>
 									</label>
 									<input
@@ -643,16 +670,16 @@ export default function EditEventDetailsPage() {
 										min={1}
 										value={capacityInput}
 										onChange={(e) => setCapacityInput(e.target.value)}
-										className="w-full rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
+										className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 									/>
 								</div>
 							)}
 						</div>
 						<div>
-							<label className="block text-sm text-text-muted mb-2">
+							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
 								Visibility <span className="text-cta">*</span>
 							</label>
-							<div className="flex gap-3">
+							<div className="flex flex-wrap gap-2 sm:gap-3">
 								{(["public", "unlisted"] as const).map((val) => (
 									<button
 										key={val}
@@ -661,10 +688,10 @@ export default function EditEventDetailsPage() {
 											setV((prev) => ({ ...prev, visibility: val }))
 										}
 										className={[
-											"px-3 py-1.5 rounded-full border",
+											"px-3 sm:px-4 py-1.5 sm:py-2 text-sm sm:text-base rounded-full border transition-colors",
 											v.visibility === val
-												? "border-accent text-accent"
-												: "border-stroke text-text",
+												? "border-accent text-accent bg-accent/10"
+												: "border-stroke text-text hover:border-accent/50",
 										].join(" ")}
 									>
 										{val[0].toUpperCase() + val.slice(1)}
@@ -676,18 +703,20 @@ export default function EditEventDetailsPage() {
 				</div>
 
 				{/* Actions */}
-				<div className="mt-8 flex items-center justify-between">
+				<div className="fixed inset-x-0 bottom-0 bg-bg/80 backdrop-blur border-t border-stroke px-3 sm:px-4 lg:px-6 py-3 sm:py-4 flex items-center justify-between max-w-2xl mx-auto">
 					<Button
 						text="Cancel"
 						variant="outline"
 						onClick={() => router.push(`/events/${eventIdString}`)}
 						outlineColor="text-text-muted"
+						className="!text-sm sm:!text-base !px-3 sm:!px-4 !py-2 sm:!py-2.5"
 					/>
 					<Button
 						text={saving ? "Saving…" : "Save Changes"}
 						variant={canSave && !err ? "primary" : "disabled"}
 						disabled={!canSave || saving || !!err}
 						onClick={saveChanges}
+						className="!text-sm sm:!text-base !px-3 sm:!px-4 !py-2 sm:!py-2.5"
 					/>
 				</div>
 			</div>

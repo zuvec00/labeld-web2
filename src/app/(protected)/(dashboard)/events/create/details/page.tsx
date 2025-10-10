@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/spinner";
 import Stepper from "@/components/ticketing/Stepper";
 import { slugify } from "@/lib/utils";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import { createEventDraft } from "@/lib/firebase/queries/event";
 import { eventDetailsSchema } from "@/lib/models/event.schema";
 import { z, ZodError } from "zod";
@@ -116,7 +117,7 @@ export default function EventDetailsPage() {
 			"Nigeria",
 			//"United States",
 			//"United Kingdom",
-			"Ghana",
+			// "Ghana",
 			//"South Africa",
 			//"Canada",
 		];
@@ -237,10 +238,31 @@ export default function EventDetailsPage() {
 			// If a new cover file is selected, upload it first
 			let finalCoverImageURL = v.coverImageURL;
 			if (coverFile) {
-				finalCoverImageURL = await uploadFileGetURL(
-					coverFile,
-					`events/covers/${crypto.randomUUID()}-${coverFile.name}`
-				);
+				try {
+					// Primary: Upload to Cloudinary
+					finalCoverImageURL = await uploadImageCloudinary(coverFile, {
+						folder: `events/covers`,
+						tags: ["event", "cover", uid],
+					});
+					console.log(
+						"✅ Event cover uploaded to Cloudinary:",
+						finalCoverImageURL
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					finalCoverImageURL = await uploadFileGetURL(
+						coverFile,
+						`events/covers/${crypto.randomUUID()}-${coverFile.name}`
+					);
+					console.log(
+						"✅ Event cover uploaded to Firebase Storage:",
+						finalCoverImageURL
+					);
+				}
 			}
 
 			// Validate the complete form data with the final cover image URL

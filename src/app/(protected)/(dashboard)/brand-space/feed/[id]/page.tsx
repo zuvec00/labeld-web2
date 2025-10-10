@@ -1,10 +1,10 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState, use } from "react";
 // import { useRouter } from "next/navigation";
 import DropStatusCapsule from "@/components/brand/brandspace/DropStatusCapsule";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import {
 	DropContent,
 	fetchBrandById,
@@ -83,13 +83,16 @@ export default function FeedDetailsPage({
 	return (
 		<div className="px-4 sm:px-6 py-6 max-w-4xl mx-auto">
 			{/* Top visual (rounded-20) with capsule bottom-left */}
-			<div className="relative rounded-2xl overflow-hidden">
-				<img
+			<div className="relative rounded-2xl overflow-hidden aspect-[4/3]">
+				<OptimizedImage
 					src={content.teaserImageUrl}
-					alt={content.momentName ?? ""}
-					className="w-full h-auto block"
+					alt={content.momentName ?? "Drop content"}
+					fill
+					priority
+					sizeContext="hero"
+					objectFit="cover"
 				/>
-				<div className="absolute left-3 bottom-3">
+				<div className="absolute left-3 bottom-3 z-10">
 					<DropStatusCapsule launchDate={product?.launchDate ?? null} />
 				</div>
 			</div>
@@ -114,11 +117,15 @@ export default function FeedDetailsPage({
 				{/* Brand logo/name (if you want it like Flutter when viewer ≠ brand, keep it simple here) */}
 				{brand && (
 					<div className="flex items-center gap-3 mb-3">
-						<img
-							src={brand.logoUrl}
-							alt={brand.brandName}
-							className="w-10 h-10 rounded-md object-cover"
-						/>
+						<div className="w-10 h-10 relative rounded-md overflow-hidden">
+							<OptimizedImage
+								src={brand.logoUrl}
+								alt={brand.brandName}
+								fill
+								sizeContext="thumbnail"
+								objectFit="cover"
+							/>
+						</div>
 						<div>
 							<div className="font-medium">{brand.brandName}</div>
 							<div className="text-text-muted text-sm">@{brand.username}</div>

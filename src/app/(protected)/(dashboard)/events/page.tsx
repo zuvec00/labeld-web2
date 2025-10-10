@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
 import Button from "@/components/ui/button";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { QrCode } from "lucide-react";
 import { listMyEventsLite } from "@/lib/firebase/queries/event";
 import {
@@ -185,7 +186,15 @@ function EventCard({
 
 	return (
 		<div className="rounded-2xl bg-surface border border-stroke overflow-hidden">
-			<img src={ev.coverImageURL} className="h-40 w-full object-cover" alt="" />
+			<div className="h-40 w-full relative">
+				<OptimizedImage
+					src={ev.coverImageURL}
+					alt={ev.title || "Event"}
+					fill
+					sizeContext="card"
+					objectFit="cover"
+				/>
+			</div>
 			<div className="p-4">
 				<div className="flex items-center gap-2">
 					<span className="text-xs px-2 py-0.5 rounded-full bg-bg border border-stroke text-text-muted">

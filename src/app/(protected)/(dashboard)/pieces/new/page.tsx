@@ -11,6 +11,7 @@ import { formatWithCommasDouble } from "@/lib/format";
 
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { sendNotificationCF } from "@/lib/firebase/callables/users";
 import { addDropProductCF } from "@/lib/firebase/queries/product";
@@ -187,19 +188,68 @@ export default function NewPiecePage() {
 				return;
 			}
 			// 1) upload main
-			const mainVisualUrl = await uploadFileGetURL(
-				mainFile!,
-				`productImages/${uid}/${Date.now()}-${mainFile!.name}`
-			);
+			let mainVisualUrl: string;
+			try {
+				// Primary: Upload to Cloudinary
+				mainVisualUrl = await uploadImageCloudinary(mainFile!, {
+					folder: `productImages/${uid}`,
+					tags: ["product", "main", uid],
+				});
+				console.log(
+					"✅ Main product image uploaded to Cloudinary:",
+					mainVisualUrl
+				);
+			} catch (cloudinaryError) {
+				// Fallback: Upload to Firebase Storage
+				console.warn(
+					"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+					cloudinaryError
+				);
+				mainVisualUrl = await uploadFileGetURL(
+					mainFile!,
+					`productImages/${uid}/${Date.now()}-${mainFile!.name}`
+				);
+				console.log(
+					"✅ Main product image uploaded to Firebase Storage:",
+					mainVisualUrl
+				);
+			}
+
 			// 2) upload gallery (optional, cap 4)
 			let galleryImageUrls: string[] | undefined;
 			if (galleryFiles.length) {
 				const take = galleryFiles.slice(0, 4);
-				galleryImageUrls = await Promise.all(
-					take.map((f) =>
-						uploadFileGetURL(f, `productImages/${uid}/${Date.now()}-${f.name}`)
-					)
-				);
+				galleryImageUrls = [];
+
+				for (const f of take) {
+					try {
+						// Primary: Upload to Cloudinary
+						const url = await uploadImageCloudinary(f, {
+							folder: `productImages/${uid}`,
+							tags: ["product", "gallery", uid],
+						});
+						galleryImageUrls.push(url);
+						console.log(
+							"✅ Gallery product image uploaded to Cloudinary:",
+							url
+						);
+					} catch (cloudinaryError) {
+						// Fallback: Upload to Firebase Storage
+						console.warn(
+							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
+							cloudinaryError
+						);
+						const url = await uploadFileGetURL(
+							f,
+							`productImages/${uid}/${Date.now()}-${f.name}`
+						);
+						galleryImageUrls.push(url);
+						console.log(
+							"✅ Gallery product image uploaded to Firebase Storage:",
+							url
+						);
+					}
+				}
 			}
 
 			// 3) launch date

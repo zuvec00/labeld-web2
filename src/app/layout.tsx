@@ -18,9 +18,9 @@ const manrope = Manrope({
 });
 
 export const metadata = {
-	title: "Labeld - For the Culture, Not the Clout",
+	title: "Labeld Studio - For the Culture, Not the Clout",
 	description:
-		"Your digital social marketplace for brands that move culture and the ones who wear it. Drop, discover, and connect with real fans.",
+		"Labeld Studio is the platform where brands can manage their brandspace, drops, content, and more. Brands and event organizers can create and manage events, handle orders, and access wallet features all in one place.",
 	manifest: "/manifest.webmanifest",
 	themeColor: "#FF5E2E",
 	viewport:

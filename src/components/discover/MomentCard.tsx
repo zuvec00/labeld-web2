@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Play, Image } from "lucide-react";
 import { useState, useEffect } from "react";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { fetchEventById } from "@/lib/firebase/queries/event";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import EventStatusCapsule from "@/components/ui/EventStatusCapsule";

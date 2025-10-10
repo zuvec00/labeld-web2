@@ -16,6 +16,7 @@ import {
 	addBrandCF,
 } from "@/lib/firebase/callables/brand";
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
+import { uploadBrandImageCloudinary } from "@/lib/storage/cloudinary";
 import { updateUserCF } from "@/lib/firebase/callables/users";
 
 export default function BrandSetupStep2() {
@@ -79,10 +80,39 @@ export default function BrandSetupStep2() {
 			}
 
 			// 2) Upload images
-			const logoUrl = await uploadBrandImageWeb(logoFile!, user.uid);
+			let logoUrl: string;
+			try {
+				// Primary: Upload logo to Cloudinary
+				logoUrl = await uploadBrandImageCloudinary(logoFile!, user.uid);
+				console.log("✅ Brand logo uploaded to Cloudinary:", logoUrl);
+			} catch (cloudinaryError) {
+				// Fallback: Upload to Firebase Storage
+				console.warn(
+					"⚠️ Cloudinary logo upload failed, falling back to Firebase Storage:",
+					cloudinaryError
+				);
+				logoUrl = await uploadBrandImageWeb(logoFile!, user.uid);
+				console.log("✅ Brand logo uploaded to Firebase Storage:", logoUrl);
+			}
+
 			let coverImageUrl: string | null = null;
 			if (coverFile) {
-				coverImageUrl = await uploadBrandImageWeb(coverFile, user.uid);
+				try {
+					// Primary: Upload cover to Cloudinary
+					coverImageUrl = await uploadBrandImageCloudinary(coverFile, user.uid);
+					console.log("✅ Brand cover uploaded to Cloudinary:", coverImageUrl);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary cover upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					coverImageUrl = await uploadBrandImageWeb(coverFile, user.uid);
+					console.log(
+						"✅ Brand cover uploaded to Firebase Storage:",
+						coverImageUrl
+					);
+				}
 			}
 
 			// 3) Create brand (doc id == uid is enforced server-side)

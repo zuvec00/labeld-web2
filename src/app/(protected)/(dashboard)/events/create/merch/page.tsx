@@ -6,6 +6,7 @@ import Stepper from "@/components/ticketing/Stepper";
 import Button from "@/components/ui/button";
 import { Plus, Package as PackageIcon, Sparkles } from "lucide-react";
 import { uploadFileGetURL } from "@/lib/storage/upload";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import {
 	listMerchForEvent,
 	createMerchItem,
@@ -246,10 +247,26 @@ function CreateMerchDialog({
 			// upload images (same uploader style as Details cover)
 			const uploaded: { url: string }[] = [];
 			for (const f of files) {
-				const url = await uploadFileGetURL(
-					f,
-					`merch/${user.uid}/${crypto.randomUUID()}-${f.name}`
-				);
+				let url: string;
+				try {
+					// Primary: Upload to Cloudinary
+					url = await uploadImageCloudinary(f, {
+						folder: `merch/${user.uid}`,
+						tags: ["merch", "event", eventId],
+					});
+					console.log("✅ Merch image uploaded to Cloudinary:", url);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					url = await uploadFileGetURL(
+						f,
+						`merch/${user.uid}/${crypto.randomUUID()}-${f.name}`
+					);
+					console.log("✅ Merch image uploaded to Firebase Storage:", url);
+				}
 				uploaded.push({ url });
 			}
 

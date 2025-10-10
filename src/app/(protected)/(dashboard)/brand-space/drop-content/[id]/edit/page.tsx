@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import {
 	fetchDropContentById,
 	deleteDropContent as deleteDropContentAPI,
@@ -16,6 +17,7 @@ import {
 	ProductLite,
 } from "@/lib/firebase/queries/product";
 import { uploadContentImageWeb } from "@/lib/storage/upload";
+import { uploadContentImageCloudinary } from "@/lib/storage/cloudinary";
 import { updateDropContentCF } from "@/lib/firebase/callables/dropContent";
 
 export default function EditDropContentPage({
@@ -117,7 +119,28 @@ export default function EditDropContentPage({
 			// upload if changed
 			let teaserImageUrl = content.teaserImageUrl;
 			if (teaserFile) {
-				teaserImageUrl = await uploadContentImageWeb(teaserFile, user.uid);
+				try {
+					// Primary: Upload to Cloudinary
+					teaserImageUrl = await uploadContentImageCloudinary(
+						teaserFile,
+						user.uid
+					);
+					console.log(
+						"✅ Teaser image uploaded to Cloudinary:",
+						teaserImageUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					teaserImageUrl = await uploadContentImageWeb(teaserFile, user.uid);
+					console.log(
+						"✅ Teaser image uploaded to Firebase Storage:",
+						teaserImageUrl
+					);
+				}
 			}
 
 			// find selected product launch date to match Flutter save
@@ -215,11 +238,17 @@ export default function EditDropContentPage({
 				</label>
 
 				{teaserPreview && (
-					<img
-						src={teaserPreview}
-						alt="Teaser preview"
-						className="w-full max-h-[60vh] object-cover rounded-xl border border-stroke mb-3"
-					/>
+					<div className="w-full max-h-[60vh] relative overflow-hidden rounded-xl border border-stroke mb-3">
+						<OptimizedImage
+							src={teaserPreview}
+							alt="Teaser preview"
+							width={800}
+							height={600}
+							sizeContext="card"
+							objectFit="cover"
+							className="w-full"
+						/>
+					</div>
 				)}
 
 				<input

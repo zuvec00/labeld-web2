@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useState, useEffect } from "react";
@@ -6,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DropStatusCapsule from "@/components/brand/brandspace/DropStatusCapsule";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { BrandModel } from "@/lib/stores/brandOnboard";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface DropContentCardProps {
 	dropContent: {
@@ -59,11 +59,12 @@ export default function DropContentCard({
 				<div className="relative aspect-[4/5] bg-surface rounded-2xl overflow-hidden border border-stroke hover:border-accent transition-all duration-300 hover:shadow-glow">
 					{/* Teaser Image */}
 					{dropContent.teaserImageUrl && !imageError ? (
-						<img
+						<OptimizedImage
 							src={dropContent.teaserImageUrl}
 							alt={dropContent.momentName || "Drop content"}
-							className="w-full h-full object-cover"
-							onError={() => setImageError(true)}
+							fill
+							sizeContext="card"
+							objectFit="cover"
 						/>
 					) : (
 						<div className="w-full h-full flex items-center justify-center text-gray-500">
@@ -103,12 +104,14 @@ export default function DropContentCard({
 			{brand && (
 				<div className="flex items-center justify-between mt-3">
 					<div className="flex items-center gap-2 flex-1 min-w-0">
-						<div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0">
+						<div className="w-7 h-7 rounded-md overflow-hidden flex-shrink-0 relative">
 							{brand.logoUrl ? (
-								<img
+								<OptimizedImage
 									src={brand.logoUrl}
 									alt={brand.brandName}
-									className="w-full h-full object-cover"
+									fill
+									sizeContext="thumbnail"
+									objectFit="cover"
 								/>
 							) : (
 								<div className="w-full h-full bg-stroke flex items-center justify-center">

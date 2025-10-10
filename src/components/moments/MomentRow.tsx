@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { useRef, useState, useEffect } from "react";
 import Button from "@/components/ui/button";
 import {
 	Image as ImageIcon,
@@ -17,7 +18,14 @@ export function MomentRow({
 	onDelete: () => void;
 	onEdit?: () => void;
 }) {
-	// const isMedia = m.type === "image" || m.type === "video";
+	const [videoReady, setVideoReady] = useState(false);
+	const videoRef = useRef<HTMLVideoElement | null>(null);
+
+	useEffect(() => {
+		// Reset videoReady if moment changes
+		setVideoReady(false);
+	}, [m.mediaURL, m.thumbURL, m.type]);
+
 	const badge =
 		m.visibility === "public" ? (
 			<span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-stroke">
@@ -29,10 +37,52 @@ export function MomentRow({
 			</span>
 		);
 
+	// --- Video preview logic ---
+	function VideoThumbPreview() {
+		const [isLoaded, setIsLoaded] = useState(false);
+
+		useEffect(() => {
+			setIsLoaded(false);
+		}, [m.mediaURL, m.thumbURL]);
+		
+		return (
+			<div className="w-full h-full relative">
+				{!videoReady && (m.thumbURL || m.mediaURL) && (
+					<img
+						src={m.thumbURL || m.mediaURL}
+						alt="Video thumbnail"
+						className="absolute inset-0 w-full h-full object-cover"
+						style={{ zIndex: 1, background: "#f9fafb" }}
+					/>
+				)}
+				<video
+					ref={videoRef}
+					src={m.mediaURL}
+					className="w-full h-full object-cover"
+					muted
+					playsInline
+					style={{
+						zIndex: 2,
+						position: !videoReady ? "relative" : "static",
+						opacity: videoReady ? 1 : 0,
+						transition: "opacity 0.25s",
+					}}
+					onCanPlay={() => setVideoReady(true)}
+					poster={m.thumbURL || undefined}
+				/>
+				{!videoReady && (
+					<div className="absolute inset-0 flex items-center justify-center z-10">
+						<VideoIcon className="w-8 h-8 text-text-muted opacity-60" />
+					</div>
+				)}
+			</div>
+		);
+	}
+
 	return (
 		<div className="rounded-2xl bg-surface border border-stroke p-4 flex gap-4">
 			{/* Preview */}
-			<div className="w-24 h-24 rounded-xl border border-stroke overflow-hidden bg-bg grid place-items-center">
+			<div className="w-24 h-24 rounded-xl border border-stroke overflow-hidden bg-bg grid place-items-center relative">
 				{m.type === "image" && (m.thumbURL || m.mediaURL) ? (
 					<img
 						src={m.thumbURL || m.mediaURL}
@@ -40,12 +90,7 @@ export function MomentRow({
 						className="w-full h-full object-cover"
 					/>
 				) : m.type === "video" && m.mediaURL ? (
-					<video
-						src={m.mediaURL}
-						className="w-full h-full object-cover"
-						muted
-						playsInline
-					/>
+					<VideoThumbPreview />
 				) : (
 					<div className="p-2 text-text-muted text-xs text-center line-clamp-5">
 						{m.type === "text" ? (

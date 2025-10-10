@@ -52,7 +52,7 @@ export default function Topbar() {
 					/>
 				</div>
 				<span className="font-heading font-semibold text-2xl text-cta">
-					LABELD
+					LABELD STUDIO
 				</span>
 			</div>
 			<div className="flex-1"></div>

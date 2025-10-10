@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 /* /app/brand-space/collection/[id]/page.tsx */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
@@ -7,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 import Button from "@/components/ui/button";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import { getAuth } from "firebase/auth";
 import {
 	fetchCollectionById,
@@ -112,11 +112,14 @@ function ImageCarousel({
 						className="relative w-full flex-shrink-0 snap-center"
 						style={{ height, minWidth: "100%" }}
 					>
-						<img
+						<OptimizedImage
 							src={src}
-							alt=""
-							className="h-full w-full object-cover"
+							alt="Collection image"
+							fill
+							sizeContext="hero"
+							priority={i === 0}
 							draggable={false}
+							objectFit="cover"
 						/>
 					</div>
 				))}
@@ -276,12 +279,13 @@ export default function CollectionDetailsPage() {
 								onClick={() => router.push(`/brand-space/piece/${p.id}`)}
 								className="text-left rounded-2xl  p-2 hover:border-accent transition"
 							>
-								<div className="aspect-[4/5] w-full overflow-hidden rounded-xl border border-stroke">
-									<img
+								<div className="aspect-[4/5] w-full overflow-hidden rounded-xl border border-stroke relative">
+									<OptimizedImage
 										src={(p as any).mainVisualUrl}
-										alt=""
-										className="h-full w-full object-cover"
-										loading="lazy"
+										alt={(p as any).dropName || "Product"}
+										fill
+										sizeContext="gallery"
+										objectFit="cover"
 										draggable={false}
 									/>
 								</div>

@@ -13,6 +13,7 @@ import {
 	updateUserCF,
 } from "@/lib/firebase/callables/users";
 import { uploadProfileImageWeb } from "@/lib/storage/upload";
+import { uploadProfileImageCloudinary } from "@/lib/storage/cloudinary";
 
 export default function ProfileSetupSplit() {
 	const router = useRouter();
@@ -69,10 +70,31 @@ export default function ProfileSetupSplit() {
 			// 4) upload profile image if provided
 			let profileImageUrl: string | null = null;
 			if (data.profileFile) {
-				profileImageUrl = await uploadProfileImageWeb(
-					data.profileFile,
-					user.uid
-				);
+				try {
+					// Primary: Upload to Cloudinary (optimized for images)
+					profileImageUrl = await uploadProfileImageCloudinary(
+						data.profileFile,
+						user.uid
+					);
+					console.log(
+						"✅ Profile image uploaded to Cloudinary:",
+						profileImageUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					profileImageUrl = await uploadProfileImageWeb(
+						data.profileFile,
+						user.uid
+					);
+					console.log(
+						"✅ Profile image uploaded to Firebase Storage:",
+						profileImageUrl
+					);
+				}
 			}
 
 			// 5) call updateUser callable (server sets timestamps & creates doc if needed)

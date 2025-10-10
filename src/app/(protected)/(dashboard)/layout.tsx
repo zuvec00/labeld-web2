@@ -3,6 +3,7 @@
 
 import Sidebar from "@/components/dashboard/SideBar";
 import Topbar from "@/components/dashboard/Topbar";
+import GlobalUploadIndicator from "@/components/ui/GlobalUploadIndicator";
 
 export default function DashboardLayout({
 	children,
@@ -31,6 +32,9 @@ export default function DashboardLayout({
 					<main className="min-h-[70vh]">{children}</main>
 				</div>
 			</div>
+
+			{/* Global Upload Indicator - shows across all dashboard pages */}
+			<GlobalUploadIndicator />
 		</div>
 	);
 }
