@@ -314,8 +314,8 @@ export default function EventDashboardPage() {
 										<div className="text-xs sm:text-sm text-text-muted mt-1 break-all">
 											URL:{" "}
 											{ev.slug
-												? `https://eventslabeldapp.vercel.app/${ev.id}-${ev.slug}`
-												: `https://labeld.app/events/${ev.id}`}
+												? `https://events.labeld.app/${ev.slug}`
+												: `https://events.labeld${ev.id}`}
 										</div>
 										<div className="text-xs sm:text-sm text-text-muted mt-2">
 											{formatDateTimeRange(ev.startAt, ev.endAt, ev.timezone)}

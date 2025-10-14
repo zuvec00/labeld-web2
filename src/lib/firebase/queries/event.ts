@@ -78,6 +78,24 @@ export async function updateEvent(eventId: string, data: Partial<EventModel>): P
 }
 
 /**
+ * Check if an event slug is already taken.
+ */
+export async function isEventSlugTaken(slug: string, excludeEventId?: string): Promise<boolean> {
+  const q = query(
+    collection(db, "events"),
+    where("slug", "==", slug)
+  );
+  const snap = await getDocs(q);
+  
+  // If we're excluding a specific event (for updates), filter it out
+  if (excludeEventId) {
+    return snap.docs.some(doc => doc.id !== excludeEventId);
+  }
+  
+  return snap.size > 0;
+}
+
+/**
  * Count the number of ticket types for a given event.
  */
 export async function countTicketTypes(eventId: string): Promise<number> {

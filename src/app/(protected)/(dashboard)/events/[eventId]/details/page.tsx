@@ -1,16 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { slugify } from "@/lib/utils";
 import { uploadFileGetURL } from "@/lib/storage/upload";
 import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
-import { fetchEventById, updateEvent } from "@/lib/firebase/queries/event";
+import {
+	fetchEventById,
+	updateEvent,
+	isEventSlugTaken,
+} from "@/lib/firebase/queries/event";
 import { eventDetailsSchema } from "@/lib/models/event.schema";
 import { z, ZodError } from "zod";
 import countriesJson from "@/data/countries_and_states.json";
@@ -34,7 +36,6 @@ type CountriesPayload = {
 function getSimpleErrorMessage(error: ZodError): string {
 	const firstError = error.issues[0];
 	const path = firstError?.path?.join(".") || "";
-	const code = firstError?.code;
 	const msg = firstError?.message || "";
 
 	// Custom mapping for known fields
@@ -100,7 +101,6 @@ export default function EditEventDetailsPage() {
 	const router = useRouter();
 	const { eventId } = useParams<{ eventId: string }>();
 	const eventIdString = eventId as string;
-	const auth = getAuth();
 
 	// Build countries and states data - only specific countries
 	const { COUNTRY_LIST, COUNTRY_TO_STATES } = useMemo(() => {
@@ -304,6 +304,29 @@ export default function EditEventDetailsPage() {
 			setSaving(true);
 			setErr(null);
 
+			// Check if slug is already taken (excluding current event) and suggest alternative if needed
+			let finalSlug = v.slug;
+			let slugTaken = await isEventSlugTaken(finalSlug, eventIdString);
+
+			if (slugTaken) {
+				// Try to find an available slug by adding a number suffix
+				let counter = 1;
+				do {
+					finalSlug = `${v.slug}-${counter}`;
+					slugTaken = await isEventSlugTaken(finalSlug, eventIdString);
+					counter++;
+				} while (slugTaken && counter <= 100); // Prevent infinite loop
+
+				if (slugTaken) {
+					throw new Error(
+						"This event URL is already taken. Please try a different title."
+					);
+				}
+
+				// Update the form with the available slug
+				setV((prev) => ({ ...prev, slug: finalSlug }));
+			}
+
 			// Validate form data BEFORE any Firebase operations
 			const capacityTotal =
 				v.capacityMode === "limited" && capacityInput
@@ -313,10 +336,7 @@ export default function EditEventDetailsPage() {
 					: 1;
 
 			// Convert local datetime strings to Date objects in the selected timezone
-			const convertLocalToTimezone = (
-				localDateTime: string,
-				timezone: string
-			) => {
+			const convertLocalToTimezone = (localDateTime: string) => {
 				if (!localDateTime) return null;
 
 				// Create a date object from the local datetime string
@@ -360,11 +380,12 @@ export default function EditEventDetailsPage() {
 				}
 			}
 
-			// Validate the complete form data with the final cover image URL
+			// Validate the complete form data with the final cover image URL and slug
 			const parsed = eventDetailsSchema.parse({
 				...v,
-				startAt: convertLocalToTimezone(v.startAt as string, v.timezone),
-				endAt: convertLocalToTimezone(v.endAt as string, v.timezone),
+				slug: finalSlug,
+				startAt: convertLocalToTimezone(v.startAt as string),
+				endAt: convertLocalToTimezone(v.endAt as string),
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
 			});
@@ -466,7 +487,7 @@ export default function EditEventDetailsPage() {
 								placeholder="e.g Labeld Nights: Live in Lagos"
 							/>
 							<p className="text-xs text-text-muted mt-1 break-all">
-								URL: {v.slug ? `https://labeld.app/${v.slug}` : "—"}
+								URL: {v.slug ? `https://events.labeld.app/${v.slug}` : "—"}
 							</p>
 						</div>
 						<div>

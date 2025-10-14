@@ -124,8 +124,8 @@ export default function ReviewPage() {
 			await publishEvent(event.id);
 			// After publishing, open the public event page in a new window
 			const publicUrl = event.slug
-				? `https://eventslabeldapp.vercel.app/${event.id}-${event.slug}`
-				: `https://eventslabeldapp.vercel.app/${event.id}`;
+				? `https://events.labeld.app/${event.id}-${event.slug}`
+				: `https://events.labeld.app/${event.id}`;
 			window.open(publicUrl, "_blank");
 			// Navigate back to events dashboard
 			router.push("/events");
@@ -146,8 +146,8 @@ export default function ReviewPage() {
 	}
 
 	const publicUrl = event.slug
-		? `https://eventslabeldapp.vercel.app/${event.id}-${event.slug}`
-		: `https://eventslabeldapp.vercel.app/${event.id}`;
+		? `https://events.labeld.app/${event.id}-${event.slug}`
+		: `https://events.labeld.app/${event.id}`;
 
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-4xl mx-auto">

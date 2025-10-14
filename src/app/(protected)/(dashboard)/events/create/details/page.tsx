@@ -1,19 +1,20 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
-import { Spinner } from "@/components/ui/spinner";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 import Stepper from "@/components/ticketing/Stepper";
 import { slugify } from "@/lib/utils";
 import { uploadFileGetURL } from "@/lib/storage/upload";
 import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
-import { createEventDraft } from "@/lib/firebase/queries/event";
+import {
+	createEventDraft,
+	isEventSlugTaken,
+} from "@/lib/firebase/queries/event";
 import { eventDetailsSchema } from "@/lib/models/event.schema";
 import { z, ZodError } from "zod";
-import { Upload } from "lucide-react";
 import countriesJson from "@/data/countries_and_states.json";
 import { TIMEZONES } from "@/lib/constants/location";
 
@@ -35,7 +36,6 @@ type CountriesPayload = {
 function getSimpleErrorMessage(error: ZodError): string {
 	const firstError = error.issues[0];
 	const path = firstError?.path?.join(".") || "";
-	const code = firstError?.code;
 	const msg = firstError?.message || "";
 
 	// Custom mapping for known fields
@@ -227,6 +227,29 @@ export default function EventDetailsPage() {
 			setSaving(true);
 			setErr(null);
 
+			// Check if slug is already taken and suggest alternative if needed
+			let finalSlug = v.slug;
+			let slugTaken = await isEventSlugTaken(finalSlug);
+
+			if (slugTaken) {
+				// Try to find an available slug by adding a number suffix
+				let counter = 1;
+				do {
+					finalSlug = `${v.slug}-${counter}`;
+					slugTaken = await isEventSlugTaken(finalSlug);
+					counter++;
+				} while (slugTaken && counter <= 100); // Prevent infinite loop
+
+				if (slugTaken) {
+					throw new Error(
+						"This event URL is already taken. Please try a different title."
+					);
+				}
+
+				// Update the form with the available slug
+				setV((prev) => ({ ...prev, slug: finalSlug }));
+			}
+
 			// Validate form data BEFORE any Firebase operations
 			const capacityTotal =
 				v.capacityMode === "limited" && capacityInput
@@ -265,9 +288,10 @@ export default function EventDetailsPage() {
 				}
 			}
 
-			// Validate the complete form data with the final cover image URL
+			// Validate the complete form data with the final cover image URL and slug
 			const parsed = eventDetailsSchema.parse({
 				...v,
+				slug: finalSlug,
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
 			});
@@ -341,7 +365,7 @@ export default function EventDetailsPage() {
 								placeholder="e.g Labeld Nights: Live in Lagos"
 							/>
 							<p className="text-xs text-text-muted mt-1">
-								URL: {v.slug ? `https://labeld.app/${v.slug}` : "—"}
+								URL: {v.slug ? `https://events.labeld.app/${v.slug}` : "—"}
 							</p>
 						</div>
 						<div>
@@ -367,11 +391,16 @@ export default function EventDetailsPage() {
 						</label>
 
 						{coverPreview && (
-							<img
-								src={coverPreview}
-								alt="Cover preview"
-								className="w-full max-h-[60vh] object-cover rounded-xl border border-stroke mb-3"
-							/>
+							<div className="relative w-full aspect-video max-h-[60vh] overflow-hidden rounded-xl border border-stroke mb-3">
+								<OptimizedImage
+									src={coverPreview}
+									alt="Cover preview"
+									fill
+									sizeContext="card"
+									objectFit="cover"
+									className="w-full"
+								/>
+							</div>
 						)}
 
 						<input
