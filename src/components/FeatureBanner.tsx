@@ -84,7 +84,7 @@ export function FeatureBanner({
 						{lockedFeatures.map((feature) => (
 							<div
 								key={feature}
-								className="flex items-center gap-1 px-2 py-1 rounded-full bg-background/50 border border-stroke/50"
+								className="flex items-center gap-1 px-2 py-1 rounded-full bg-bg/50 border border-stroke/50"
 							>
 								<span className="text-sm">{getFeatureIcon(feature)}</span>
 								<span className="text-xs text-text-muted">
@@ -98,7 +98,7 @@ export function FeatureBanner({
 				{onDismiss && (
 					<button
 						onClick={onDismiss}
-						className="p-1 rounded-full hover:bg-background/50 transition-colors"
+						className="p-1 rounded-full hover:bg-bg/50 transition-colors"
 						title="Dismiss"
 					>
 						<X className="w-4 h-4 text-text-muted" />

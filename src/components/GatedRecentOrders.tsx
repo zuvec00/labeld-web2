@@ -77,11 +77,11 @@ export default function GatedRecentOrders({
 				{[1, 2, 3, 4, 5].map((i) => (
 					<div
 						key={i}
-						className="flex items-center justify-between p-3 bg-background/50 border border-stroke/50 rounded-lg"
+						className="flex items-center justify-between p-3 bg-bg/50 border border-stroke/50 rounded-lg"
 					>
 						<div className="flex items-center gap-3 min-w-0 flex-1">
 							{/* Order ID */}
-							<div className="text-xs font-mono text-text-muted bg-background px-2 py-1 rounded border opacity-50">
+							<div className="text-xs font-mono text-text-muted bg-bg px-2 py-1 rounded border opacity-50">
 								—...
 							</div>
 
@@ -97,7 +97,7 @@ export default function GatedRecentOrders({
 
 						<div className="flex items-center gap-3">
 							{/* Fulfillment Status */}
-							<div className="text-xs px-2 py-1 rounded-full bg-background/50 border border-stroke/50 text-text-muted">
+							<div className="text-xs px-2 py-1 rounded-full bg-bg/50 border border-stroke/50 text-text-muted">
 								—
 							</div>
 

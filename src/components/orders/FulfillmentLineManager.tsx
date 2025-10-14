@@ -139,7 +139,7 @@ export default function FulfillmentLineManager({
 						return (
 							<div
 								key={lineKey}
-								className="p-3 bg-background rounded-lg border border-stroke/50"
+								className="p-3 bg-bg rounded-lg border border-stroke/50"
 							>
 								<div className="flex items-center justify-between mb-2">
 									<div className="flex items-center gap-2">

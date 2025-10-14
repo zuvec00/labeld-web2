@@ -81,10 +81,10 @@ export default function GatedUpcomingEvents({
 				{[1, 2, 3].map((i) => (
 					<div
 						key={i}
-						className="flex items-center justify-between p-3 bg-background/50 border border-stroke/50 rounded"
+						className="flex items-center justify-between p-3 bg-bg/50 border border-stroke/50 rounded"
 					>
 						<div className="flex items-center gap-3">
-							<div className="w-10 h-10 bg-background/50 border border-stroke/50 rounded flex items-center justify-center">
+							<div className="w-10 h-10 bg-bg/50 border border-stroke/50 rounded flex items-center justify-center">
 								<Calendar className="w-4 h-4 text-text-muted opacity-50" />
 							</div>
 							<div className="space-y-1">

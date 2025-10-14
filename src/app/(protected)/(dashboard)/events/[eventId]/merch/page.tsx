@@ -2,12 +2,21 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/firebaseConfig";
 import Stepper from "@/components/ticketing/Stepper";
 import Button from "@/components/ui/button";
-import { Plus, Package as PackageIcon, Sparkles } from "lucide-react";
+import OptimizedImage from "@/components/ui/OptimizedImage";
+import {
+	Plus,
+	Package as PackageIcon,
+	Sparkles,
+	Truck,
+	Settings,
+} from "lucide-react";
 
 // 🚧 Simple flag to enable/disable merch feature
-const MERCH_ENABLED = false; // Set to true when ready
+const MERCH_ENABLED = true; // Set to true when ready
 import { uploadFileGetURL } from "@/lib/storage/upload";
 import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import {
@@ -18,6 +27,14 @@ import {
 import type { MerchItemDoc } from "@/lib/models/merch";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
+
+interface ShippingSettings {
+	mode: "flat_all" | "flat_by_state";
+	flatAllFeeMinor?: number;
+	stateFeesMinor?: Record<string, number>;
+	pickupEnabled?: boolean;
+	pickupAddress?: string;
+}
 
 const STEPS = [
 	{ key: "details", label: "Details" },
@@ -36,15 +53,42 @@ export default function EventMerchPage() {
 	const [items, setItems] = useState<MerchItemDoc[]>([]);
 	const [open, setOpen] = useState(false);
 	const [loading, setLoading] = useState(true);
+	const [shippingSettings, setShippingSettings] =
+		useState<ShippingSettings | null>(null);
+	const [shippingLoading, setShippingLoading] = useState(true);
 
 	useEffect(() => {
 		let mounted = true;
 		(async () => {
 			try {
+				// Load merch items
 				const list = await listMerchForEvent(eventIdString);
 				if (mounted) setItems(list);
+
+				// Load shipping settings
+				const auth = getAuth();
+				if (auth.currentUser) {
+					const settingsRef = doc(
+						db,
+						"users",
+						auth.currentUser.uid,
+						"shippingRules",
+						"settings"
+					);
+					const settingsSnap = await getDoc(settingsRef);
+					if (mounted) {
+						setShippingSettings(
+							settingsSnap.exists()
+								? (settingsSnap.data() as ShippingSettings)
+								: null
+						);
+					}
+				}
 			} finally {
-				if (mounted) setLoading(false);
+				if (mounted) {
+					setLoading(false);
+					setShippingLoading(false);
+				}
 			}
 		})();
 		return () => {
@@ -73,7 +117,7 @@ export default function EventMerchPage() {
 						Optional: tees, caps, posters — sell alongside tickets.
 					</p>
 				</div>
-				{MERCH_ENABLED && (
+				{MERCH_ENABLED && shippingSettings && (
 					<Button
 						text="Add merch"
 						variant="primary"
@@ -82,6 +126,82 @@ export default function EventMerchPage() {
 					/>
 				)}
 			</div>
+
+			{/* Shipping Settings Check */}
+			{!shippingLoading && (
+				<div className="mt-6">
+					{!shippingSettings ? (
+						<div className="bg-cta/5 border border-cta/20 rounded-2xl p-6">
+							<div className="flex items-start gap-4">
+								<div className="w-12 h-12 rounded-xl bg-cta/10 flex items-center justify-center flex-shrink-0">
+									<Truck className="w-6 h-6 text-cta" />
+								</div>
+								<div className="flex-1">
+									<h3 className="font-medium text-text mb-2">
+										Shipping Settings Required
+									</h3>
+									<p className="text-text-muted text-sm mb-4">
+										You need to configure your shipping settings before adding
+										merchandise. This ensures customers can properly checkout
+										with shipping fees.
+									</p>
+									<Button
+										text="Configure Shipping Settings"
+										variant="primary"
+										leftIcon={<Settings className="w-4 h-4" />}
+										onClick={() => router.push("/settings?section=shipping")}
+									/>
+								</div>
+							</div>
+						</div>
+					) : (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<div className="flex items-start justify-between">
+								<div className="flex items-start gap-4 flex-1">
+									<div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+										<Truck className="w-6 h-6 text-accent" />
+									</div>
+									<div className="flex-1">
+										<h3 className="font-medium text-text mb-2">
+											Shipping Settings Configured
+										</h3>
+										<div className="text-text-muted text-sm space-y-1">
+											{shippingSettings.mode === "flat_all" ? (
+												<p>
+													Flat rate: ₦
+													{shippingSettings.flatAllFeeMinor
+														? (
+																shippingSettings.flatAllFeeMinor / 100
+														  ).toLocaleString()
+														: "0"}{" "}
+													for all locations
+												</p>
+											) : (
+												<p>
+													State-based rates:{" "}
+													{
+														Object.keys(shippingSettings.stateFeesMinor || {})
+															.length
+													}{" "}
+													states configured
+												</p>
+											)}
+											{shippingSettings.pickupEnabled && (
+												<p>Pickup option enabled</p>
+											)}
+										</div>
+									</div>
+								</div>
+								<Button
+									text="Edit"
+									variant="outline"
+									onClick={() => router.push("/settings?section=shipping")}
+								/>
+							</div>
+						</div>
+					)}
+				</div>
+			)}
 
 			{/* Merch list / empty state */}
 			<div className="mt-6">
@@ -94,6 +214,14 @@ export default function EventMerchPage() {
 						</h3>
 						<p className="text-text-muted text-sm mt-1">
 							Merch feature is dropping this season. Stay tuned!
+						</p>
+					</div>
+				) : !shippingSettings ? (
+					<div className="rounded-2xl bg-surface border border-stroke p-10 text-center opacity-60">
+						<PackageIcon className="mx-auto w-10 h-10 text-text-muted" />
+						<h3 className="mt-3 font-medium">Shipping Required</h3>
+						<p className="text-text-muted text-sm mt-1">
+							Configure shipping settings above to start adding merchandise.
 						</p>
 					</div>
 				) : items.length ? (
@@ -171,10 +299,14 @@ function MerchRow({
 	return (
 		<div className="rounded-2xl bg-surface border border-stroke p-4 flex gap-4">
 			{img ? (
-				<img
+				<OptimizedImage
 					src={img}
+					width={96}
+					height={96}
 					className="w-24 h-24 object-cover rounded-xl border border-stroke"
-					alt=""
+					alt={m.name || "Merch item"}
+					sizeContext="thumbnail"
+					quality={80}
 				/>
 			) : (
 				<div className="w-24 h-24 rounded-xl bg-bg border border-stroke" />
@@ -229,7 +361,7 @@ function CreateMerchDialog({
 	const auth = getAuth();
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState<string>("5000"); // NGN (display in naira)
-	const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+	const [currency] = useState<"NGN" | "USD">("NGN");
 	const [isFree, setIsFree] = useState(false);
 	const [stockMode, setStockMode] = useState<"limited" | "unlimited">(
 		"limited"
@@ -299,7 +431,7 @@ function CreateMerchDialog({
 
 			// Filter out undefined values to prevent Firestore errors
 			const cleanData = Object.fromEntries(
-				Object.entries(docIn).filter(([_, value]) => value !== undefined)
+				Object.entries(docIn).filter(([, value]) => value !== undefined)
 			) as Omit<MerchItemDoc, "id" | "createdAt" | "updatedAt">;
 
 			const id = await createMerchItem(cleanData);
@@ -382,7 +514,9 @@ function CreateMerchDialog({
 										setPrice("0");
 									}
 								}}
-								className={`w-4 h-4 border-stroke rounded focus:ring-accent focus:ring-2 ${isFree ? "bg-accent" : "bg-surface"} text-accent`}
+								className={`w-4 h-4 border-stroke rounded focus:ring-accent focus:ring-2 ${
+									isFree ? "bg-accent" : "bg-surface"
+								} text-accent`}
 							/>
 							<label htmlFor="free-merch" className="text-sm text-text-muted">
 								Free merch

@@ -70,7 +70,7 @@ export default function NoteModal({
 									onChange={(e) => setNote(e.target.value)}
 									placeholder={placeholder}
 									rows={4}
-									className="w-full px-3 py-2 bg-background border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta resize-none"
+									className="w-full px-3 py-2 bg-bg border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta resize-none"
 									required
 									disabled={loading}
 								/>

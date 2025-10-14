@@ -71,7 +71,7 @@ export default function TrackingModal({
 									value={trackingNumber}
 									onChange={(e) => setTrackingNumber(e.target.value)}
 									placeholder="Enter tracking number"
-									className="w-full px-3 py-2 bg-background border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
+									className="w-full px-3 py-2 bg-bg border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
 									required
 									disabled={loading}
 								/>
@@ -86,7 +86,7 @@ export default function TrackingModal({
 									value={carrier}
 									onChange={(e) => setCarrier(e.target.value)}
 									placeholder="e.g., DHL, FedEx, UPS"
-									className="w-full px-3 py-2 bg-background border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
+									className="w-full px-3 py-2 bg-bg border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
 									required
 									disabled={loading}
 								/>

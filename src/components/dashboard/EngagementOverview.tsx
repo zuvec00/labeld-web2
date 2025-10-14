@@ -116,7 +116,7 @@ export default function EngagementOverview({
 						<span className="text-sm text-text">Discovery</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-20 h-2 bg-background rounded-full overflow-hidden">
+						<div className="w-20 h-2 bg-bg rounded-full overflow-hidden">
 							<div
 								className="h-full bg-blue-500 transition-all"
 								style={{
@@ -139,7 +139,7 @@ export default function EngagementOverview({
 						<span className="text-sm text-text">Product intent</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-20 h-2 bg-background rounded-full overflow-hidden">
+						<div className="w-20 h-2 bg-bg rounded-full overflow-hidden">
 							<div
 								className="h-full bg-green-500 transition-all"
 								style={{
@@ -162,7 +162,7 @@ export default function EngagementOverview({
 						<span className="text-sm text-text">Social</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-20 h-2 bg-background rounded-full overflow-hidden">
+						<div className="w-20 h-2 bg-bg rounded-full overflow-hidden">
 							<div
 								className="h-full bg-purple-500 transition-all"
 								style={{
@@ -185,7 +185,7 @@ export default function EngagementOverview({
 						<span className="text-sm text-text">Link-outs</span>
 					</div>
 					<div className="flex items-center gap-2">
-						<div className="w-20 h-2 bg-background rounded-full overflow-hidden">
+						<div className="w-20 h-2 bg-bg rounded-full overflow-hidden">
 							<div
 								className="h-full bg-orange-500 transition-all"
 								style={{

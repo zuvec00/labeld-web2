@@ -121,10 +121,10 @@ export default function GatedTopPerformers({
 						{[1, 2, 3].map((i) => (
 							<div
 								key={i}
-								className="flex items-center justify-between p-2 bg-background/50 border border-stroke/50 rounded-lg"
+								className="flex items-center justify-between p-2 bg-bg/50 border border-stroke/50 rounded-lg"
 							>
 								<div className="flex items-center gap-2 min-w-0 flex-1">
-									<div className="text-xs font-medium text-text-muted bg-background px-1.5 py-0.5 rounded">
+									<div className="text-xs font-medium text-text-muted bg-bg px-1.5 py-0.5 rounded">
 										#{i}
 									</div>
 									<div className="text-sm text-text-muted truncate">—</div>
@@ -153,10 +153,10 @@ export default function GatedTopPerformers({
 						{[1, 2, 3].map((i) => (
 							<div
 								key={i}
-								className="flex items-center justify-between p-2 bg-background/50 border border-stroke/50 rounded-lg"
+								className="flex items-center justify-between p-2 bg-bg/50 border border-stroke/50 rounded-lg"
 							>
 								<div className="flex items-center gap-2 min-w-0 flex-1">
-									<div className="text-xs font-medium text-text-muted bg-background px-1.5 py-0.5 rounded">
+									<div className="text-xs font-medium text-text-muted bg-bg px-1.5 py-0.5 rounded">
 										#{i}
 									</div>
 									<div className="text-sm text-text-muted truncate">—</div>

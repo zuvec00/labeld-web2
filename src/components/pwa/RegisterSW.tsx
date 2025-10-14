@@ -109,7 +109,7 @@ export default function RegisterSW() {
 					</div>
 					<button
 						onClick={swState.updateServiceWorker}
-						className="ml-4 px-4 py-2 bg-background text-cta rounded-lg font-medium hover:bg-background/90 transition-colors"
+						className="ml-4 px-4 py-2 bg-bg text-cta rounded-lg font-medium hover:bg-bg/90 transition-colors"
 					>
 						Update
 					</button>

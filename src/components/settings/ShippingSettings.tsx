@@ -2,12 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { auth } from "@/lib/firebase/firebaseConfig";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Plus, Trash2, Save } from "lucide-react";
 
 interface ShippingSettings {
@@ -24,8 +25,10 @@ interface StateFee {
 }
 
 export default function ShippingSettings() {
+	const router = useRouter();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
+	const [saveSuccess, setSaveSuccess] = useState(false);
 	const [settings, setSettings] = useState<ShippingSettings>({
 		mode: "flat_all",
 		flatAllFeeMinor: 0,
@@ -79,6 +82,14 @@ export default function ShippingSettings() {
 				"settings"
 			);
 			await setDoc(settingsRef, settings, { merge: true });
+
+			// Show success message
+			setSaveSuccess(true);
+
+			// Auto navigate back after 1.5 seconds
+			setTimeout(() => {
+				router.back();
+			}, 1500);
 		} catch (error) {
 			console.error("Error saving shipping settings:", error);
 		} finally {
@@ -137,6 +148,33 @@ export default function ShippingSettings() {
 
 	return (
 		<div className="space-y-6">
+			{/* Success Message */}
+			{saveSuccess && (
+				<div className="bg-accent/10 border border-accent/20 rounded-lg p-4 flex items-center gap-3">
+					<div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
+						<svg
+							className="w-4 h-4 text-bg"
+							fill="currentColor"
+							viewBox="0 0 20 20"
+						>
+							<path
+								fillRule="evenodd"
+								d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+								clipRule="evenodd"
+							/>
+						</svg>
+					</div>
+					<div>
+						<p className="text-accent font-medium">
+							Settings saved successfully!
+						</p>
+						<p className="text-accent/80 text-sm">
+							Redirecting back to settings...
+						</p>
+					</div>
+				</div>
+			)}
+
 			<div>
 				<h2 className="text-xl font-heading font-semibold text-text mb-2">
 					Shipping Settings
@@ -210,20 +248,21 @@ export default function ShippingSettings() {
 						<Input
 							type="number"
 							value={
-								settings.flatAllFeeMinor ? settings.flatAllFeeMinor / 100 : 0
+								settings.flatAllFeeMinor ? settings.flatAllFeeMinor / 100 : ""
 							}
 							onChange={(e) =>
 								setSettings((prev) => ({
 									...prev,
-									flatAllFeeMinor: Math.round(
-										parseFloat(e.target.value || "0") * 100
-									),
+									flatAllFeeMinor:
+										e.target.value === ""
+											? 0
+											: Math.round(parseFloat(e.target.value || "0") * 100),
 								}))
 							}
 							placeholder="0.00"
 							min="0"
 							step="0.01"
-							className="max-w-xs"
+							className="max-w-xs bg-surface"
 						/>
 						<p className="text-xs text-text-muted mt-1">
 							This fee will be charged for all orders regardless of location
@@ -239,7 +278,7 @@ export default function ShippingSettings() {
 						</h3>
 
 						{/* Add New State Fee */}
-						<div className="flex items-center gap-3 mb-4 p-3 bg-background rounded-lg border border-stroke">
+						<div className="flex items-center gap-3 mb-4 p-3 bg-surface rounded-lg border border-stroke">
 							<Input
 								type="text"
 								placeholder="State name (e.g., Lagos)"
@@ -247,23 +286,24 @@ export default function ShippingSettings() {
 								onChange={(e) =>
 									setNewStateFee((prev) => ({ ...prev, state: e.target.value }))
 								}
-								className="flex-1"
+								className="w-32 bg-surface"
 							/>
 							<Input
 								type="number"
 								placeholder="Fee (₦)"
-								value={newStateFee.feeMinor ? newStateFee.feeMinor / 100 : 0}
+								value={newStateFee.feeMinor ? newStateFee.feeMinor / 100 : ""}
 								onChange={(e) =>
 									setNewStateFee((prev) => ({
 										...prev,
-										feeMinor: Math.round(
-											parseFloat(e.target.value || "0") * 100
-										),
+										feeMinor:
+											e.target.value === ""
+												? 0
+												: Math.round(parseFloat(e.target.value || "0") * 100),
 									}))
 								}
 								min="0"
 								step="0.01"
-								className="w-32"
+								className=" bg-surface"
 							/>
 							<Button
 								text=""
@@ -282,23 +322,27 @@ export default function ShippingSettings() {
 								([state, feeMinor]) => (
 									<div
 										key={state}
-										className="flex items-center gap-3 p-3 bg-background rounded-lg border border-stroke"
+										className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-stroke"
 									>
 										<span className="flex-1 font-medium text-text">
 											{state}
 										</span>
 										<Input
 											type="number"
-											value={feeMinor / 100}
+											value={feeMinor / 100 || ""}
 											onChange={(e) =>
 												updateStateFee(
 													state,
-													Math.round(parseFloat(e.target.value || "0") * 100)
+													e.target.value === ""
+														? 0
+														: Math.round(
+																parseFloat(e.target.value || "0") * 100
+														  )
 												)
 											}
 											min="0"
 											step="0.01"
-											className="w-32"
+											className="w-32 bg-bg"
 										/>
 										<Button
 											text=""
@@ -328,18 +372,29 @@ export default function ShippingSettings() {
 					<h3 className="text-lg font-medium text-text mb-4">Pickup Options</h3>
 					<div className="space-y-4">
 						<div className="flex items-center justify-between">
-							<div>
-								<div className="font-medium text-text">Enable Pickup</div>
-								<div className="text-sm text-text-muted">
-									Allow customers to pick up orders instead of shipping
-								</div>
+							<div className="flex items-center space-x-3">
+								<input
+									type="checkbox"
+									id="enable-pickup"
+									checked={settings.pickupEnabled || false}
+									onChange={(e) =>
+										setSettings((prev) => ({
+											...prev,
+											pickupEnabled: e.target.checked,
+										}))
+									}
+									className="w-4 h-4 text-accent bg-surface border-stroke rounded focus:ring-accent focus:ring-2"
+								/>
+								<Label
+									htmlFor="enable-pickup"
+									className="font-medium text-text cursor-pointer"
+								>
+									Enable Pickup
+								</Label>
 							</div>
-							<Switch
-								checked={settings.pickupEnabled || false}
-								onCheckedChange={(checked) =>
-									setSettings((prev) => ({ ...prev, pickupEnabled: checked }))
-								}
-							/>
+							<div className="text-sm text-text-muted">
+								Allow customers to pick up orders instead of shipping
+							</div>
 						</div>
 
 						{settings.pickupEnabled && (
@@ -357,7 +412,7 @@ export default function ShippingSettings() {
 										}))
 									}
 									placeholder="Enter pickup address"
-									className="max-w-md"
+									className="max-w-md bg-surface"
 								/>
 								<p className="text-xs text-text-muted mt-1">
 									This address will be shown to customers who choose pickup

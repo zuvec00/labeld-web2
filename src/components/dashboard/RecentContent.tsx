@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { ContentItem } from "@/hooks/useBrandSpace";
 import { useRouter } from "next/navigation";
+import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface RecentContentProps {
 	items: ContentItem[];
@@ -114,12 +115,15 @@ export default function RecentContent({
 						className="border border-stroke rounded-lg overflow-hidden hover:border-cta/20 transition-colors"
 					>
 						{/* Image */}
-						<div className="aspect-square bg-background relative overflow-hidden">
+						<div className="aspect-square bg-bg relative overflow-hidden">
 							{item.teaserImageUrl ? (
-								<img
+								<OptimizedImage
 									src={item.teaserImageUrl}
 									alt={item.caption || "Post content"}
+									fill
 									className="w-full h-full object-cover"
+									sizeContext="card"
+									quality={85}
 								/>
 							) : (
 								<div className="w-full h-full flex items-center justify-center">
@@ -130,11 +134,11 @@ export default function RecentContent({
 							{/* Status badges */}
 							<div className="absolute top-1 left-1 flex flex-col gap-1">
 								{item.visibility === "public" ? (
-									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-bg/80 text-text-muted border border-stroke/50 flex items-center gap-1">
 										<Eye className="w-2.5 h-2.5" />
 									</span>
 								) : (
-									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text-muted border border-stroke/50 flex items-center gap-1">
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-bg/80 text-text-muted border border-stroke/50 flex items-center gap-1">
 										<EyeOff className="w-2.5 h-2.5" />
 									</span>
 								)}
@@ -153,7 +157,7 @@ export default function RecentContent({
 							{/* Reactions count */}
 							{item.reactionsCount > 0 && (
 								<div className="absolute top-1 right-1">
-									<span className="text-xs px-1.5 py-0.5 rounded-full bg-background/80 text-text border border-stroke/50">
+									<span className="text-xs px-1.5 py-0.5 rounded-full bg-bg/80 text-text border border-stroke/50">
 										{item.reactionsCount}
 									</span>
 								</div>

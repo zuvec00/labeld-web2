@@ -107,7 +107,7 @@ export default function CatalogSnapshot({
 						className="flex items-center gap-3 p-2 border border-stroke rounded-lg hover:border-cta/20 transition-colors"
 					>
 						{/* Thumbnail */}
-						<div className="w-10 h-10 bg-background border border-stroke rounded flex items-center justify-center overflow-hidden">
+						<div className="w-10 h-10 bg-bg border border-stroke rounded flex items-center justify-center overflow-hidden">
 							{item.mainVisualUrl ? (
 								<img
 									src={item.mainVisualUrl}

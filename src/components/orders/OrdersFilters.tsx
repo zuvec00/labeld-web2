@@ -119,7 +119,7 @@ export default function OrdersFilters({
 						placeholder="Search orders or email..."
 						value={searchValue}
 						onChange={(e) => setSearchValue(e.target.value)}
-						className="w-full pl-10 pr-4 py-2 bg-background border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
+						className="w-full pl-10 pr-4 py-2 bg-bg border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
 						disabled={loading}
 					/>
 				</div>
@@ -130,7 +130,7 @@ export default function OrdersFilters({
 					onChange={(e) =>
 						handleDateRangeChange(e.target.value as OrderFilters["dateRange"])
 					}
-					className="px-3 py-2 bg-background border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
+					className="px-3 py-2 bg-bg border border-stroke rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta"
 					disabled={loading}
 				>
 					<option value="today">Today</option>
@@ -145,7 +145,7 @@ export default function OrdersFilters({
 					className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
 						showAdvanced || hasActiveFilters
 							? "bg-cta text-text"
-							: "bg-background border border-stroke text-text-muted hover:text-text"
+							: "bg-bg border border-stroke text-text-muted hover:text-text"
 					}`}
 					disabled={loading}
 				>
@@ -198,7 +198,7 @@ export default function OrdersFilters({
 									className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
 										filters.statuses.includes(status)
 											? "bg-cta text-text"
-											: "bg-background border border-stroke text-text-muted hover:text-text"
+											: "bg-bg border border-stroke text-text-muted hover:text-text"
 									}`}
 									disabled={loading}
 								>
@@ -221,7 +221,7 @@ export default function OrdersFilters({
 									className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
 										filters.types.includes(type)
 											? "bg-cta text-text"
-											: "bg-background border border-stroke text-text-muted hover:text-text"
+											: "bg-bg border border-stroke text-text-muted hover:text-text"
 									}`}
 									disabled={loading}
 								>
@@ -245,7 +245,7 @@ export default function OrdersFilters({
 										className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
 											filters.fulfillmentStatuses.includes(status)
 												? "bg-cta text-text"
-												: "bg-background border border-stroke text-text-muted hover:text-text"
+												: "bg-bg border border-stroke text-text-muted hover:text-text"
 										}`}
 										disabled={loading}
 									>

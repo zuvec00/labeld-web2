@@ -207,7 +207,7 @@ export default function OrdersTable({
 			{/* Table */}
 			<div className="overflow-x-auto">
 				<table className="w-full">
-					<thead className="bg-background border-b border-stroke">
+					<thead className="bg-bg border-b border-stroke">
 						<tr>
 							<th className="px-4 py-3 text-left">
 								<SortButton field="createdAt">Placed</SortButton>
@@ -296,7 +296,7 @@ export default function OrdersTable({
 								<tr
 									key={order.id}
 									onClick={() => onOrderClick(order)}
-									className="border-b border-stroke hover:bg-background/50 cursor-pointer transition-colors"
+									className="border-b border-stroke hover:bg-bg/50 cursor-pointer transition-colors"
 								>
 									{/* Placed */}
 									<td className="px-4 py-3">

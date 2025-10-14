@@ -108,7 +108,7 @@ export default function ReactionsVelocity({
 								className={`flex-1 rounded-sm transition-all ${
 									day.hasPost
 										? "bg-cta"
-										: "bg-background border border-stroke/50"
+										: "bg-bg border border-stroke/50"
 								}`}
 								style={{ height: day.hasPost ? "100%" : "20%" }}
 								title={`${day.date}: ${day.hasPost ? "Posted" : "No posts"}`}
@@ -129,7 +129,7 @@ export default function ReactionsVelocity({
 						<span>Posted</span>
 					</div>
 					<div className="flex items-center gap-1">
-						<div className="w-2 h-2 bg-background border border-stroke/50 rounded-sm"></div>
+						<div className="w-2 h-2 bg-bg border border-stroke/50 rounded-sm"></div>
 						<span>No posts</span>
 					</div>
 				</div>

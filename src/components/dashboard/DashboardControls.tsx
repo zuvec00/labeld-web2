@@ -117,7 +117,7 @@ export default function DashboardControls({
 								className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
 									filters.range === range
 										? "bg-cta text-text"
-										: "bg-background border border-stroke text-text-muted hover:text-text hover:border-stroke/70"
+										: "bg-bg border border-stroke text-text-muted hover:text-text hover:border-stroke/70"
 								}`}
 							>
 								{range === "custom"
@@ -144,7 +144,7 @@ export default function DashboardControls({
 								className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
 									filters.scope === scope
 										? "bg-cta text-text"
-										: "bg-background border border-stroke text-text-muted hover:text-text hover:border-stroke/70"
+										: "bg-bg border border-stroke text-text-muted hover:text-text hover:border-stroke/70"
 								}`}
 							>
 								{scope === "all"
@@ -169,7 +169,7 @@ export default function DashboardControls({
 									value={filters.eventId || "all"}
 									onChange={(e) => handleEventChange(e.target.value)}
 									disabled={loading}
-									className="px-3 py-1.5 text-xs bg-background border border-stroke rounded-full text-text focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta appearance-none pr-8"
+									className="px-3 py-1.5 text-xs bg-bg border border-stroke rounded-full text-text focus:outline-none focus:ring-2 focus:ring-cta/20 focus:border-cta appearance-none pr-8"
 								>
 									<option value="all">All Events</option>
 									{events.map((event) => (
@@ -205,7 +205,7 @@ export default function DashboardControls({
 										handleCustomDateChange(start, end);
 									}
 								}}
-								className="px-2 py-1 text-xs bg-background border border-stroke rounded text-text focus:outline-none focus:ring-1 focus:ring-cta/20"
+								className="px-2 py-1 text-xs bg-bg border border-stroke rounded text-text focus:outline-none focus:ring-1 focus:ring-cta/20"
 							/>
 							<span className="text-xs text-text-muted">to</span>
 							<input
@@ -220,7 +220,7 @@ export default function DashboardControls({
 										handleCustomDateChange(start, end);
 									}
 								}}
-								className="px-2 py-1 text-xs bg-background border border-stroke rounded text-text focus:outline-none focus:ring-1 focus:ring-cta/20"
+								className="px-2 py-1 text-xs bg-bg border border-stroke rounded text-text focus:outline-none focus:ring-1 focus:ring-cta/20"
 							/>
 						</div>
 						<button

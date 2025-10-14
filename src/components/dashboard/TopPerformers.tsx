@@ -106,7 +106,7 @@ export default function TopPerformers({
 									className="flex items-center justify-between p-2 border border-stroke rounded-lg"
 								>
 									<div className="flex items-center gap-2 min-w-0 flex-1">
-										<div className="text-xs font-medium text-text-muted bg-background px-1.5 py-0.5 rounded">
+										<div className="text-xs font-medium text-text-muted bg-bg px-1.5 py-0.5 rounded">
 											#{index + 1}
 										</div>
 										<div className="text-sm text-text truncate">{sku.name}</div>
@@ -139,7 +139,7 @@ export default function TopPerformers({
 									className="flex items-center justify-between p-2 border border-stroke rounded-lg"
 								>
 									<div className="flex items-center gap-2 min-w-0 flex-1">
-										<div className="text-xs font-medium text-text-muted bg-background px-1.5 py-0.5 rounded">
+										<div className="text-xs font-medium text-text-muted bg-bg px-1.5 py-0.5 rounded">
 											#{index + 1}
 										</div>
 										<div className="text-sm text-text truncate">

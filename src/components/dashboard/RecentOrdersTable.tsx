@@ -127,7 +127,7 @@ export default function RecentOrdersTable({
 						>
 							<div className="flex items-center gap-3 min-w-0 flex-1">
 								{/* Order ID */}
-								<div className="text-xs font-mono text-text-muted bg-background px-2 py-1 rounded border">
+								<div className="text-xs font-mono text-text-muted bg-bg px-2 py-1 rounded border">
 									{order.id.slice(0, 8)}...
 								</div>
 

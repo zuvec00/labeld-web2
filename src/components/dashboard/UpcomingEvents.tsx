@@ -156,7 +156,7 @@ export default function UpcomingEvents({
 
 								{/* Capacity bar */}
 								{capacityPercentage !== null && (
-									<div className="w-full bg-background rounded-full h-1.5 mt-2">
+									<div className="w-full bg-bg rounded-full h-1.5 mt-2">
 										<div
 											className="bg-cta h-1.5 rounded-full transition-all"
 											style={{ width: `${Math.min(capacityPercentage, 100)}%` }}

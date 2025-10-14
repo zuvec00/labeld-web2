@@ -1,8 +1,8 @@
 // app/(protected)/(dashboard)/settings/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Shield, Truck, User, Bell, CreditCard } from "lucide-react";
 import Button from "@/components/ui/button";
 import AccountSecurity from "@/components/settings/AccountSecurity";
@@ -13,6 +13,15 @@ type SettingsSection = "main" | "account-security" | "shipping";
 export default function SettingsPage() {
 	const [currentSection, setCurrentSection] = useState<SettingsSection>("main");
 	const router = useRouter();
+	const searchParams = useSearchParams();
+
+	// Handle URL parameter for direct navigation to shipping settings
+	useEffect(() => {
+		const section = searchParams.get("section");
+		if (section === "shipping") {
+			setCurrentSection("shipping");
+		}
+	}, [searchParams]);
 
 	const settingsItems = [
 		{
@@ -27,7 +36,7 @@ export default function SettingsPage() {
 			title: "Shipping Settings",
 			description: "Configure your shipping preferences and addresses",
 			icon: Truck,
-			available: false, // Will be enabled later
+			available: true, // Will be enabled later
 		},
 		{
 			id: "profile" as const,
@@ -63,15 +72,14 @@ export default function SettingsPage() {
 	if (currentSection === "account-security") {
 		return (
 			<div className="space-y-6">
-				{/* Back Button */}
-				<Button
-					text="Back to Settings"
-					variant="secondary"
+				{/* Back Arrow */}
+				<button
 					onClick={handleBackToMain}
-					className="flex items-center gap-2"
+					className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
 				>
 					<ArrowLeft className="w-4 h-4" />
-				</Button>
+					<span className="text-sm">Back to Settings</span>
+				</button>
 
 				{/* Account Security Component */}
 				<AccountSecurity />
@@ -82,15 +90,14 @@ export default function SettingsPage() {
 	if (currentSection === "shipping") {
 		return (
 			<div className="space-y-6">
-				{/* Back Button */}
-				<Button
-					text="Back to Settings"
-					variant="secondary"
+				{/* Back Arrow */}
+				<button
 					onClick={handleBackToMain}
-					className="flex items-center gap-2"
+					className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
 				>
 					<ArrowLeft className="w-4 h-4" />
-				</Button>
+					<span className="text-sm">Back to Settings</span>
+				</button>
 
 				{/* Shipping Settings Component */}
 				<ShippingSettings />
@@ -190,9 +197,7 @@ export default function SettingsPage() {
 					about your privacy and security, our support team is here to help.
 				</p>
 				<a
-					href="https://right-sovereign-3ae.notion.site/Labeld-Support-24dc26d3c24e80f1a74be4ea47e96866"
-					target="_blank"
-					rel="noopener noreferrer"
+					href="mailto:support@labeld.app?cc=labeldapp@gmail.com&subject=Support%20Request%20from%20Settings%20Page"
 					style={{ display: "inline-block" }}
 				>
 					<Button text="Contact Support" variant="secondary" />

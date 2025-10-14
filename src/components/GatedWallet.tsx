@@ -132,7 +132,7 @@ export default function GatedWallet({
 
 			<div className="space-y-3">
 				{/* Locked state for eligible */}
-				<div className="flex items-center justify-between p-3 bg-background/50 border border-stroke/50 rounded-lg">
+				<div className="flex items-center justify-between p-3 bg-bg/50 border border-stroke/50 rounded-lg">
 					<div className="flex items-center gap-2">
 						<CheckCircle className="w-4 h-4 text-text-muted opacity-50" />
 						<span className="text-sm font-medium text-text-muted">
@@ -148,7 +148,7 @@ export default function GatedWallet({
 				</div>
 
 				{/* Locked state for on hold */}
-				<div className="flex items-center justify-between p-3 bg-background/50 border border-stroke/50 rounded-lg">
+				<div className="flex items-center justify-between p-3 bg-bg/50 border border-stroke/50 rounded-lg">
 					<div className="flex items-center gap-2">
 						<Clock className="w-4 h-4 text-text-muted opacity-50" />
 						<span className="text-sm font-medium text-text-muted">On Hold</span>
@@ -162,7 +162,7 @@ export default function GatedWallet({
 				</div>
 
 				{/* Locked state for total */}
-				<div className="flex items-center justify-between p-3 bg-background/50 border border-stroke/50 rounded-lg">
+				<div className="flex items-center justify-between p-3 bg-bg/50 border border-stroke/50 rounded-lg">
 					<div className="flex items-center gap-2">
 						<Wallet className="w-4 h-4 text-text-muted opacity-50" />
 						<span className="text-sm font-medium text-text-muted">Total</span>
