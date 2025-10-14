@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 
 function VideoWithFallback({
-	src = "/videos/intro.MP4",
+	src = "/videos/intro2.MP4",
 	poster = "/images/onboarding.JPG",
 	className = "",
 }: {
@@ -75,7 +75,7 @@ function VideoWithFallback({
 			onError={() => setUseImage(true)}
 		>
 			<source src={src} type="video/mp4" />
-			<source src="/videos/intro.mp4" type="video/mp4" />
+			<source src="/videos/intro2.mp4" type="video/mp4" />
 			Your browser does not support the video tag.
 		</video>
 	);
@@ -98,12 +98,16 @@ export default function OnboardingSplit() {
 					<div className="absolute inset-0 flex items-end">
 						<div className="w-full px-6 pb-8">
 							<h1 className="font-heading font-semibold text-3xl leading-tight tracking-tight">
-								<span className="block">LABELD is Where</span>
-								<span className="block text-accent">Culture Drops</span>
+								<span className="block">
+									LABELD <span className="text-text">STUDIO</span>
+								</span>
+								<span className="block">
+									Your <span className="text-accent">Creative</span> Hub
+								</span>
 							</h1>
 							<p className="mt-3 text-sm text-text-muted">
-								From statement fits to bold ideas. Labeld is where culture
-								connects and comes alive.
+								Manage your brand, create events, and drop culture that
+								connects.
 							</p>
 						</div>
 					</div>
@@ -129,14 +133,16 @@ export default function OnboardingSplit() {
 					<div className="absolute inset-0 flex items-end">
 						<div className="w-full px-6 sm:px-10 pb-12 max-w-xl">
 							<h1 className="font-heading font-semibold text-4xl sm:text-5xl xl:text-[40px] leading-tight tracking-tight">
-								<span className="">LABELD is Where</span>
-								<span className="block text-accent">Culture Drops</span>
+								<span className="">
+									LABELD <span className="text-text">STUDIO</span>
+								</span>
+								<span className="block">
+									Your <span className="text-accent">Creative</span> Hub
+								</span>
 							</h1>
 							<p className="mt-4 text-base sm:text-lg text-text-muted max-w-md">
-								From statement fits to bold ideas.
-							</p>
-							<p className="text-base sm:text-lg text-text-muted max-w-md">
-								Labeld is where culture connects and comes alive.
+								Manage your brand, create events, and drop culture that
+								connects.
 							</p>
 						</div>
 					</div>

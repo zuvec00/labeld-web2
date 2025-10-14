@@ -230,6 +230,7 @@ function CreateMerchDialog({
 	const [name, setName] = useState("");
 	const [price, setPrice] = useState<string>("5000"); // NGN (display in naira)
 	const [currency, setCurrency] = useState<"NGN" | "USD">("NGN");
+	const [isFree, setIsFree] = useState(false);
 	const [stockMode, setStockMode] = useState<"limited" | "unlimited">(
 		"limited"
 	);
@@ -246,9 +247,9 @@ function CreateMerchDialog({
 		if (!files.length) return false;
 		if (stockMode === "limited" && (!stockTotal || parseInt(stockTotal) < 1))
 			return false;
-		if (!price || parseInt(price) < 50) return false;
+		if (!isFree && (!price || parseInt(price) < 50)) return false;
 		return true;
-	}, [name, files, stockMode, stockTotal, price]);
+	}, [name, files, stockMode, stockTotal, price, isFree]);
 
 	async function onSave() {
 		const user = auth.currentUser;
@@ -286,7 +287,7 @@ function CreateMerchDialog({
 				eventId,
 				name,
 				images: uploaded,
-				priceMinor: parseInt(price) * 100,
+				priceMinor: isFree ? 0 : parseInt(price) * 100,
 				currency,
 				stockTotal: stockMode === "limited" ? parseInt(stockTotal) : null,
 				stockRemaining: stockMode === "limited" ? parseInt(stockTotal) : null,
@@ -355,10 +356,37 @@ function CreateMerchDialog({
 							<input
 								type="number"
 								className="flex-1 rounded-xl border border-stroke px-4 py-3 text-text outline-none focus:border-accent"
-								value={price}
-								min={50}
-								onChange={(e) => setPrice(e.target.value)}
+								value={isFree ? "0" : price}
+								min={0}
+								disabled={isFree}
+								onChange={(e) => {
+									const value = e.target.value;
+									setPrice(value);
+									// Auto-check free if price is 0
+									if (value === "0") {
+										setIsFree(true);
+									} else if (isFree && value !== "0") {
+										setIsFree(false);
+									}
+								}}
 							/>
+						</div>
+						<div className="flex items-center gap-2 mt-2">
+							<input
+								type="checkbox"
+								id="free-merch"
+								checked={isFree}
+								onChange={(e) => {
+									setIsFree(e.target.checked);
+									if (e.target.checked) {
+										setPrice("0");
+									}
+								}}
+								className={`w-4 h-4 border-stroke rounded focus:ring-accent focus:ring-2 ${isFree ? "bg-accent" : "bg-surface"} text-accent`}
+							/>
+							<label htmlFor="free-merch" className="text-sm text-text-muted">
+								Free merch
+							</label>
 						</div>
 					</div>
 

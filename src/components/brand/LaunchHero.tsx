@@ -13,6 +13,7 @@ export default function LaunchHero({
 	loading = false, // NEW
 	isBrand,
 	onLaunch,
+	onCreateEvent,
 	dashboardPath = "/dashboard",
 }: {
 	previewFile: File | null;
@@ -21,6 +22,7 @@ export default function LaunchHero({
 	loading?: boolean; // NEW
 	isBrand: boolean;
 	onLaunch: () => void;
+	onCreateEvent: () => void;
 	dashboardPath?: string;
 }) {
 	const router = useRouter();
@@ -88,7 +90,7 @@ export default function LaunchHero({
 								className="mt-6"
 								variant="secondary"
 								disabled={loading} // let Skip work even if form invalid
-								onClick={() => router.push("/brand/setup")}
+								onClick={() => router.push("/dashboard")}
 								rightIcon={<ArrowRight className="ml-2 h-4 w-4" />}
 							/>
 						</div>
@@ -104,6 +106,18 @@ export default function LaunchHero({
 							/>
 						</div>
 					)}
+
+					{/* Create Event Button - Available for both brand and non-brand */}
+					<div className="flex justify-start mt-4">
+						<Button
+							text="Create your event"
+							className=""
+							variant="calmAccent2"
+							disabled={loading}
+							onClick={onCreateEvent}
+							rightIcon={<ArrowRight className="ml-2 h-4 w-4" />}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

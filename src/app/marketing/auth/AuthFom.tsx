@@ -470,8 +470,9 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 							and{" "}
 							<a
 								className="underline hover:text-accent text-cta"
-								href="/legal/privacy"
+								href="https://www.freeprivacypolicy.com/live/e26d176d-2fa5-429a-aeb4-eb9d8b2409c8"
 								target="_blank"
+								rel="noopener noreferrer"
 							>
 								Privacy Policy
 							</a>

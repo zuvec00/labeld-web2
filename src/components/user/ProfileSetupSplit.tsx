@@ -123,6 +123,87 @@ export default function ProfileSetupSplit() {
 		}
 	};
 
+	const handleCreateEvent = async () => {
+		if (loading) return;
+		setUsernameError(undefined);
+
+		// 1) basic guards
+		const user = auth.currentUser;
+		if (!user) {
+			// optionally route to login
+			alert("Please sign in first.");
+			return;
+		}
+
+		// 2) validate username with same Flutter rules
+		const { ok, normalized } = validateUsername(data.username);
+		if (!ok) {
+			setUsernameError(
+				"Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars."
+			);
+			return;
+		}
+
+		setLoading(true);
+		try {
+			// 3) check uniqueness via callable
+			const isFree = await checkUsernameUniqueCF(normalized);
+			if (!isFree) {
+				setUsernameError("This username is already taken");
+				return;
+			}
+
+			// 4) upload profile image if provided
+			let profileImageUrl: string | null = null;
+			if (data.profileFile) {
+				try {
+					// Primary: Upload to Cloudinary (optimized for images)
+					profileImageUrl = await uploadProfileImageCloudinary(
+						data.profileFile,
+						user.uid
+					);
+					console.log(
+						"✅ Profile image uploaded to Cloudinary:",
+						profileImageUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					profileImageUrl = await uploadProfileImageWeb(
+						data.profileFile,
+						user.uid
+					);
+					console.log(
+						"✅ Profile image uploaded to Firebase Storage:",
+						profileImageUrl
+					);
+				}
+			}
+
+			// 5) call updateUser callable (server sets timestamps & creates doc if needed)
+			await updateUserCF({
+				email: user.email ?? null,
+				username: normalized,
+				displayName: data.displayName.trim(),
+				profileImageUrl,
+				isBrand: data.isBrand,
+				brandSpaceSetupComplete: false,
+				profileSetupComplete: true,
+			});
+
+			// 6) navigate to events for both brand and non-brand
+			router.push("/events");
+		} catch (e) {
+			console.error(e);
+			alert(e || "Something went wrong saving your profile.");
+		} finally {
+			setLoading(false);
+		}
+	};
+
 	return (
 		<div className="min-h-dvh bg-bg text-text grid grid-cols-1 lg:grid-cols-2">
 			{/* LEFT */}
@@ -150,6 +231,7 @@ export default function ProfileSetupSplit() {
 					disabled={!isValid || loading} // keep your form validation guard
 					isBrand={data.isBrand}
 					onLaunch={handleLaunch}
+					onCreateEvent={handleCreateEvent}
 				/>
 			</section>
 		</div>
