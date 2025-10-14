@@ -172,7 +172,9 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 			getSourceLabel(entry.source),
 			formatEventId(entry.eventId),
 			formatOrderRef(entry.orderRef),
-			(entry.amountMinor / 100).toFixed(2), // Convert to major units
+			`${entry.type.startsWith("debit") ? "-" : "+"}${(
+				Math.abs(entry.amountMinor) / 100
+			).toFixed(2)}`, // Convert to major units with correct sign
 			entry.note || "",
 			formatEntryId(entry),
 		]);
@@ -377,10 +379,12 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 											</td>
 											<td
 												className={`py-3 px-2 text-sm font-medium ${
-													entry.amountMinor < 0 ? "text-alert" : "text-accent"
+													entry.type.startsWith("debit")
+														? "text-alert"
+														: "text-accent"
 												}`}
 											>
-												{entry.amountMinor < 0 ? "-" : "+"}
+												{entry.type.startsWith("debit") ? "-" : "+"}
 												{formatCurrency(Math.abs(entry.amountMinor))}
 											</td>
 											<td className="py-3 px-2 text-sm text-text-muted max-w-xs truncate">

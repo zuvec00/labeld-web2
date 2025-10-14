@@ -72,16 +72,23 @@ export default function EarningsOverview({ entries }: EarningsOverviewProps) {
 		};
 
 		entries.forEach((entry) => {
+			// Determine if this should be categorized as "event" or "store"
+			// Event merchandise sales (with eventId) should be categorized as "event"
+			// Standalone store sales (without eventId) should be categorized as "store"
+			const isEventEarning =
+				entry.eventId !== null && entry.eventId !== undefined;
+			const isStoreEarning = !isEventEarning;
+
 			if (entry.type === "credit_eligible") {
-				if (entry.source === "event") {
+				if (isEventEarning) {
 					result.event.eligibleMinor += entry.amountMinor;
-				} else if (entry.source === "store") {
+				} else if (isStoreEarning) {
 					result.store.eligibleMinor += entry.amountMinor;
 				}
 			} else if (entry.type === "debit_hold") {
-				if (entry.source === "event") {
+				if (isEventEarning) {
 					result.event.onHoldMinor += entry.amountMinor;
-				} else if (entry.source === "store") {
+				} else if (isStoreEarning) {
 					result.store.onHoldMinor += entry.amountMinor;
 				}
 			}
@@ -117,6 +124,9 @@ export default function EarningsOverview({ entries }: EarningsOverviewProps) {
 							</h4>
 							<div className="w-2 h-2 bg-cta rounded-full group-hover:scale-110 transition-transform"></div>
 						</div>
+						<p className="text-xs text-text-muted/70 mb-3">
+							Tickets & event merchandise
+						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">
 								<span className="text-xs text-text-muted">Eligible</span>
@@ -141,6 +151,9 @@ export default function EarningsOverview({ entries }: EarningsOverviewProps) {
 							</h4>
 							<div className="w-2 h-2 bg-calm-1 rounded-full group-hover:scale-110 transition-transform"></div>
 						</div>
+						<p className="text-xs text-text-muted/70 mb-3">
+							Standalone brand store sales
+						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">
 								<span className="text-xs text-text-muted">Eligible</span>

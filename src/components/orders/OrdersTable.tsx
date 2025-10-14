@@ -347,69 +347,19 @@ export default function OrdersTable({
 										<StatusBadge status={order.status} />
 									</td>
 
-									{/* Fulfillment (only if order has merch) */}
-									{hasMerch && (
+									{/* Fulfillment (show for all orders when any order has merch) */}
+									{orders.some((order) =>
+										order.lineItems.some((item) => item._type === "merch")
+									) && (
 										<td className="px-4 py-3">
-											{(() => {
-												if (!order.fulfillmentLines) {
-													return (
-														<FulfillmentStatusBadge
-															status={fulfillmentStatus}
-															type="aggregate"
-														/>
-													);
-												}
-
-												const fulfillmentLines = Object.values(
-													order.fulfillmentLines
-												);
-												const statuses = fulfillmentLines.map(
-													getLineFulfillmentStatus
-												);
-
-												// const counts = {
-												// 	unfulfilled: statuses.filter(
-												// 		(s) => s === "unfulfilled"
-												// 	).length,
-												// 	shipped: statuses.filter((s) => s === "shipped")
-												// 		.length,
-												// 	delivered: statuses.filter((s) => s === "delivered")
-												// 		.length,
-												// 	fulfilled: statuses.filter((s) => s === "fulfilled")
-												// 		.length,
-												// 	total: statuses.length,
-												// };
-
-												// Create count summary for overall fulfillment
-												// const countParts = [];
-												// if (counts.unfulfilled > 0)
-												// 	countParts.push(`${counts.unfulfilled} pending`);
-												// if (counts.shipped > 0)
-												// 	countParts.push(`${counts.shipped} shipped`);
-												// if (counts.delivered > 0)
-												// 	countParts.push(`${counts.delivered} delivered`);
-												// if (counts.fulfilled > 0)
-												// 	countParts.push(`${counts.fulfilled} fulfilled`);
-
-												// const countSummary =
-												// 	countParts.length > 0
-												// 		? ` (${countParts.join(", ")})`
-												// 		: "";
-
-												return (
-													<div className="flex flex-col gap-1">
-														<FulfillmentStatusBadge
-															status={fulfillmentStatus}
-															type="aggregate"
-														/>
-														{/* {countSummary && (
-															<span className="text-xs text-text-muted">
-																{countSummary}
-															</span>
-														)} */}
-													</div>
-												);
-											})()}
+											{hasMerch ? (
+												<FulfillmentStatusBadge
+													status={fulfillmentStatus}
+													type="aggregate"
+												/>
+											) : (
+												<span className="text-text-muted">—</span>
+											)}
 										</td>
 									)}
 
@@ -420,7 +370,7 @@ export default function OrdersTable({
 												const fulfillmentInfo = getVendorFulfillmentInfo(order);
 												if (!fulfillmentInfo) return null;
 
-												const { status, counts } = fulfillmentInfo;
+												const { status } = fulfillmentInfo;
 
 												const getBadgeColor = (status: string) => {
 													switch (status) {
@@ -456,22 +406,6 @@ export default function OrdersTable({
 													}
 												};
 
-												// Create count summary
-												const countParts = [];
-												if (counts.unfulfilled > 0)
-													countParts.push(`${counts.unfulfilled} pending`);
-												if (counts.shipped > 0)
-													countParts.push(`${counts.shipped} shipped`);
-												if (counts.delivered > 0)
-													countParts.push(`${counts.delivered} delivered`);
-												if (counts.fulfilled > 0)
-													countParts.push(`${counts.fulfilled} fulfilled`);
-
-												const countSummary =
-													countParts.length > 0
-														? ` (${countParts.join(", ")})`
-														: "";
-
 												return (
 													<div className="flex flex-col gap-1">
 														<span
@@ -481,11 +415,6 @@ export default function OrdersTable({
 														>
 															{getBadgeLabel(status)}
 														</span>
-														{/* {countSummary && (
-															<span className="text-xs text-text-muted">
-																{countSummary}
-															</span>
-														)} */}
 													</div>
 												);
 											})()}

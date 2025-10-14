@@ -77,7 +77,7 @@ export default function WalletPage() {
 	return (
 		<div className="space-y-8">
 			{/* Test Payout Panel - Comment out when going live */}
-			{/* <TestPayoutPanel /> */}
+			<TestPayoutPanel />
 
 			{/* Header Summary */}
 			<BalanceHeader summary={walletData.summary} />
