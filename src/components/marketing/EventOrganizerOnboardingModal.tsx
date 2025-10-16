@@ -34,7 +34,8 @@ type Step = 1 | 2 | 3 | "auth";
 // Progress calculation - counts both REQUIRED and OPTIONAL fields
 const calculateProgress = (
 	data: EventOnboardingData,
-	eventData: any
+	eventData: any,
+	skipProfileStep = false
 ): {
 	required: number;
 	optional: number;
@@ -42,7 +43,7 @@ const calculateProgress = (
 	optionalPercent: number;
 } => {
 	// Calculate total required fields based on skip status
-	let totalRequiredFields = 3; // Step 1: username, displayName, profileFile (required)
+	let totalRequiredFields = skipProfileStep ? 0 : 3; // Step 1: username, displayName, profileFile (required)
 	let totalOptionalFields = 0; // Optional fields
 
 	if (!data.skipEventSetup) {
@@ -53,10 +54,12 @@ const calculateProgress = (
 	let completedRequiredFields = 0;
 	let completedOptionalFields = 0;
 
-	// Step 1: Profile (3 REQUIRED fields)
-	if (data.profile.username.trim()) completedRequiredFields++;
-	if (data.profile.displayName.trim()) completedRequiredFields++;
-	if (data.profile.profileFile) completedRequiredFields++;
+	// Step 1: Profile (3 REQUIRED fields, only if not skipped)
+	if (!skipProfileStep) {
+		if (data.profile.username.trim()) completedRequiredFields++;
+		if (data.profile.displayName.trim()) completedRequiredFields++;
+		if (data.profile.profileFile) completedRequiredFields++;
+	}
 
 	// Step 2: Event Organizer (4 REQUIRED fields, only if not skipped)
 	if (!data.skipEventSetup) {
@@ -79,9 +82,10 @@ const calculateProgress = (
 	}
 
 	// Calculate percentages
-	const requiredPercent = Math.round(
-		(completedRequiredFields / totalRequiredFields) * 100
-	);
+	const requiredPercent =
+		totalRequiredFields > 0
+			? Math.round((completedRequiredFields / totalRequiredFields) * 100)
+			: 100;
 	const optionalPercent =
 		totalOptionalFields > 0
 			? Math.round((completedOptionalFields / totalOptionalFields) * 100)
@@ -98,30 +102,42 @@ const calculateProgress = (
 export default function EventOrganizerOnboardingModal({
 	isOpen,
 	onClose,
+	onComplete,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
+	onComplete?: () => void;
 }) {
 	const router = useRouter();
 	const auth = getAuth();
 	const eventData = useEventOrganizerOnboard();
 
-	const [currentStep, setCurrentStep] = useState<Step>(1);
+	const [currentStep, setCurrentStep] = useState<Step>(onComplete ? 2 : 1); // Start at step 2 if opened from events page
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// Initialize profile data from localStorage or defaults
+	// Initialize profile data from localStorage or defaults (only for initial signup)
 	const [profileData, setProfileData] = useState<ProfileFormData>(() => {
+		if (onComplete) {
+			// If opened from events page, user already has profile - use current user data
+			const user = auth.currentUser;
+			return {
+				username: user?.displayName || "",
+				displayName: user?.displayName || "",
+				profileFile: null,
+				isBrand: false,
+			};
+		}
+
 		if (typeof window !== "undefined") {
 			const saved = localStorage.getItem("eventOnboardingProfile");
 			if (saved) {
 				try {
 					const parsed = JSON.parse(saved);
-					// Ensure profileFile is null since File objects can't be serialized
 					return {
 						...parsed,
 						profileFile: null,
-						isBrand: false, // Always false for event organizer flow
+						isBrand: false,
 					};
 				} catch {
 					console.warn("Failed to parse saved profile data");
@@ -133,7 +149,7 @@ export default function EventOrganizerOnboardingModal({
 			username: "",
 			displayName: "",
 			profileFile: null,
-			isBrand: false, // Always false for event organizer flow
+			isBrand: false,
 		};
 	});
 
@@ -158,17 +174,21 @@ export default function EventOrganizerOnboardingModal({
 		() =>
 			calculateProgress(
 				{ profile: profileData, skipEventSetup },
-				eventData.data
+				eventData.data,
+				!!onComplete // Skip profile step if opened from events page
 			),
-		[profileData, skipEventSetup, eventData.data]
+		[profileData, skipEventSetup, eventData.data, onComplete]
 	);
 
 	// Validation for each step
 	const canProceedFromStep1 = useMemo(() => {
+		// If opened from events page, skip profile validation
+		if (onComplete) return true;
+
 		const { username, displayName } = profileData;
 		const { ok } = validateUsername(username);
 		return ok && displayName.trim().length > 0;
-	}, [profileData]);
+	}, [profileData, onComplete]);
 
 	const canProceedFromStep2 = useMemo(() => {
 		if (skipEventSetup) return true;
@@ -189,13 +209,23 @@ export default function EventOrganizerOnboardingModal({
 		} else if (currentStep === 2 && canProceedFromStep2) {
 			setCurrentStep(3);
 		} else if (currentStep === 3) {
-			setCurrentStep("auth");
+			// If opened from events page, skip auth step
+			if (onComplete) {
+				handleCompleteSignup();
+			} else {
+				setCurrentStep("auth");
+			}
 		}
 	};
 
 	const handleBack = () => {
 		if (currentStep === 2) {
-			setCurrentStep(1);
+			// If opened from events page, don't go back to step 1
+			if (onComplete) {
+				onClose();
+			} else {
+				setCurrentStep(1);
+			}
 		} else if (currentStep === 3) {
 			setCurrentStep(2);
 		} else if (currentStep === "auth") {
@@ -205,11 +235,18 @@ export default function EventOrganizerOnboardingModal({
 
 	const handleSkipEventSetup = () => {
 		setSkipEventSetup(true);
-		setCurrentStep("auth");
+		// If opened from events page, close modal directly
+		// Otherwise, go to auth step
+		if (onComplete) {
+			onClose();
+		} else {
+			setCurrentStep("auth");
+		}
 	};
 
-	const handleCompleteSignup = async (mode: "signup") => {
-		if (mode !== "signup") return;
+	const handleCompleteSignup = async (mode?: "signup") => {
+		// If called from events page (onComplete exists), don't require signup mode
+		if (!onComplete && mode !== "signup") return;
 
 		setLoading(true);
 		setError(null);
@@ -221,28 +258,30 @@ export default function EventOrganizerOnboardingModal({
 				return;
 			}
 
-			// 1. Create user profile
-			let profileImageUrl: string | null = null;
-			if (profileData.profileFile) {
-				try {
-					profileImageUrl = await uploadProfileImageCloudinary(
-						profileData.profileFile,
-						user.uid
-					);
-				} catch (cloudinaryError) {
-					console.warn("Profile image upload failed:", cloudinaryError);
+			// 1. Create user profile (only for initial signup)
+			if (!onComplete) {
+				let profileImageUrl: string | null = null;
+				if (profileData.profileFile) {
+					try {
+						profileImageUrl = await uploadProfileImageCloudinary(
+							profileData.profileFile,
+							user.uid
+						);
+					} catch (cloudinaryError) {
+						console.warn("Profile image upload failed:", cloudinaryError);
+					}
 				}
-			}
 
-			await updateUserCF({
-				email: user.email,
-				username: profileData.username,
-				displayName: profileData.displayName,
-				profileImageUrl,
-				isBrand: false, // Event organizers are not brands
-				brandSpaceSetupComplete: false,
-				profileSetupComplete: true,
-			});
+				await updateUserCF({
+					email: user.email,
+					username: profileData.username,
+					displayName: profileData.displayName,
+					profileImageUrl,
+					isBrand: false, // Event organizers are not brands
+					brandSpaceSetupComplete: false,
+					profileSetupComplete: true,
+				});
+			}
 
 			// 2. Create event organizer if not skipped
 			if (!skipEventSetup) {
@@ -296,10 +335,17 @@ export default function EventOrganizerOnboardingModal({
 				});
 			}
 
-			// 3. Clear saved data and redirect
+			// 3. Clear saved data and handle completion
 			localStorage.removeItem("eventOnboardingProfile");
 			eventData.reset();
-			router.push("/dashboard");
+
+			// If onComplete callback is provided, use it (for events page)
+			// Otherwise, redirect to dashboard (for initial signup)
+			if (onComplete) {
+				onComplete();
+			} else {
+				router.push("/dashboard");
+			}
 			onClose();
 		} catch (e) {
 			console.error(e);
@@ -333,17 +379,27 @@ export default function EventOrganizerOnboardingModal({
 						</button>
 						<div>
 							<h2 className="font-heading font-semibold text-xl">
-								{currentStep === 1 && "Set Up Your Profile"}
+								{currentStep === 1 && !onComplete && "Set Up Your Profile"}
 								{currentStep === 2 && "Build Your Event Brand"}
 								{currentStep === 3 && "Complete Your Details"}
-								{currentStep === "auth" && "Create Your Account"}
+								{currentStep === "auth" && !onComplete && "Create Your Account"}
 							</h2>
 							<p className="text-sm text-text-muted">
-								Step {currentStep === "auth" ? "Final" : currentStep} of 3
-								{!skipEventSetup && currentStep !== "auth" && " • Event Setup"}
-								{skipEventSetup &&
-									currentStep !== "auth" &&
-									" • Skip Event Setup"}
+								{onComplete ? (
+									// When opened from events page, only show event setup steps
+									<>Step {currentStep === 2 ? 1 : 2} of 2 • Event Setup</>
+								) : (
+									// When opened from initial signup, show all steps
+									<>
+										Step {currentStep === "auth" ? "Final" : currentStep} of 3
+										{!skipEventSetup &&
+											currentStep !== "auth" &&
+											" • Event Setup"}
+										{skipEventSetup &&
+											currentStep !== "auth" &&
+											" • Skip Event Setup"}
+									</>
+								)}
 							</p>
 						</div>
 					</div>
@@ -369,11 +425,25 @@ export default function EventOrganizerOnboardingModal({
 					<div className="w-full bg-stroke rounded-full h-3 overflow-hidden flex">
 						{/* Calculate proportional widths */}
 						{(() => {
-							const totalPossibleFields = skipEventSetup ? 3 : 11; // 3 required + 8 optional
-							const requiredWidth = (3 / totalPossibleFields) * 100;
-							const optionalWidth = skipEventSetup
-								? 0
-								: (8 / totalPossibleFields) * 100;
+							const skipProfileStep = !!onComplete;
+							const totalRequiredFields = skipProfileStep ? 0 : 3; // Profile fields
+							const totalEventRequiredFields = skipEventSetup ? 0 : 4; // Event organizer required fields
+							const totalOptionalFields = skipEventSetup ? 0 : 8; // Event organizer optional fields
+							const totalPossibleFields =
+								totalRequiredFields +
+								totalEventRequiredFields +
+								totalOptionalFields;
+
+							const requiredWidth =
+								totalPossibleFields > 0
+									? ((totalRequiredFields + totalEventRequiredFields) /
+											totalPossibleFields) *
+									  100
+									: 0;
+							const optionalWidth =
+								totalPossibleFields > 0
+									? (totalOptionalFields / totalPossibleFields) * 100
+									: 0;
 
 							return (
 								<>
@@ -424,7 +494,8 @@ export default function EventOrganizerOnboardingModal({
 						</div>
 					)}
 
-					{currentStep === 1 && (
+					{/* Only show profile form if NOT opened from events page */}
+					{currentStep === 1 && !onComplete && (
 						<ProfileForm
 							value={profileData}
 							onChange={setProfileData}
@@ -472,7 +543,8 @@ export default function EventOrganizerOnboardingModal({
 						</div>
 					)}
 
-					{currentStep === "auth" && (
+					{/* Only show auth form if NOT opened from events page */}
+					{currentStep === "auth" && !onComplete && (
 						<AuthForm mode="signup" onSignupComplete={handleCompleteSignup} />
 					)}
 				</div>
@@ -496,7 +568,14 @@ export default function EventOrganizerOnboardingModal({
 									(currentStep === 1 && !canProceedFromStep1) ||
 									(currentStep === 2 && !canProceedFromStep2)
 								}
-								text={currentStep === 3 ? "Create Account" : "Continue"}
+								text={
+									currentStep === 3
+										? onComplete
+											? "Complete Setup"
+											: "Create Account"
+										: "Continue"
+								}
+								isLoading={currentStep === 3 && onComplete && loading}
 							/>
 						</div>
 					</div>

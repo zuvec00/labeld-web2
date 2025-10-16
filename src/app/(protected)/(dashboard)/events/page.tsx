@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -13,6 +12,9 @@ import {
 	getMultipleEventTicketStats,
 	type TicketStats,
 } from "@/lib/firebase/queries/attendeeTickets";
+import { db } from "@/lib/firebase/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import EventOrganizerOnboardingModal from "@/components/marketing/EventOrganizerOnboardingModal";
 
 type TabKey = "all" | "published" | "drafts" | "ended";
 const TABS: { key: TabKey; label: string }[] = [
@@ -28,11 +30,14 @@ export default function EventsIndexPage() {
 
 	const [tab, setTab] = useState<TabKey>("all");
 	const [loading, setLoading] = useState(true);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [err, setErr] = useState<string | null>(null);
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [events, setEvents] = useState<any[]>([]);
 	const [ticketStats, setTicketStats] = useState<Record<string, TicketStats>>(
 		{}
 	);
+	const [showEventOrganizerModal, setShowEventOrganizerModal] = useState(false);
 
 	useEffect(() => {
 		let mounted = true;
@@ -41,7 +46,21 @@ export default function EventsIndexPage() {
 				const uid = auth.currentUser?.uid;
 				if (!uid) return router.push("/");
 
-				// Load events first
+				// Check if user has event organizer profile
+				const eventOrganizerRef = doc(db, "eventOrganizers", uid);
+				const eventOrganizerSnap = await getDoc(eventOrganizerRef);
+				const hasProfile = eventOrganizerSnap.exists();
+
+				if (!mounted) return;
+
+				// If no event organizer profile, show the modal
+				if (!hasProfile) {
+					setShowEventOrganizerModal(true);
+					setLoading(false);
+					return;
+				}
+
+				// Load events only if user has event organizer profile
 				const data = await listMyEventsLite(uid);
 				if (!mounted) return;
 				setEvents(data);
@@ -55,9 +74,9 @@ export default function EventsIndexPage() {
 				}
 
 				setErr(null);
-			} catch (e: any) {
+			} catch (e) {
 				if (!mounted) return;
-				setErr(e?.message ?? "Failed to load events");
+				setErr((e as Error)?.message ?? "Failed to load events");
 			} finally {
 				if (mounted) setLoading(false);
 			}
@@ -66,6 +85,12 @@ export default function EventsIndexPage() {
 			mounted = false;
 		};
 	}, [router, auth.currentUser]);
+
+	const handleEventOrganizerComplete = () => {
+		setShowEventOrganizerModal(false);
+		// Refresh the page to reload events
+		window.location.reload();
+	};
 
 	const filtered = useMemo(() => {
 		if (tab === "all") return events;
@@ -158,6 +183,13 @@ export default function EventsIndexPage() {
 					</div>
 				)}
 			</div>
+
+			{/* Event Organizer Onboarding Modal */}
+			<EventOrganizerOnboardingModal
+				isOpen={showEventOrganizerModal}
+				onClose={() => setShowEventOrganizerModal(false)}
+				onComplete={handleEventOrganizerComplete}
+			/>
 		</div>
 	);
 }
@@ -168,8 +200,10 @@ function EventCard({
 	router,
 	onOpen,
 }: {
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	ev: any;
 	ticketStats?: TicketStats;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	router: any;
 	onOpen: () => void;
 }) {
