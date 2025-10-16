@@ -18,9 +18,25 @@ const manrope = Manrope({
 });
 
 export const metadata = {
-	title: "Labeld Studio - For the Culture, Not the Clout",
+	title: {
+		default: "Labeld Studio - For the Culture, Not the Clout",
+		template: "%s | Labeld",
+	},
 	description:
 		"Labeld Studio is the platform where brands can manage their brandspace, drops, content, and more. Brands and event organizers can create and manage events, handle orders, and access wallet features all in one place.",
+	keywords: [
+		"streetwear",
+		"fashion brands",
+		"event management",
+		"african fashion",
+		"brand studio",
+		"merch drops",
+		"ticketing platform",
+		"culture",
+	],
+	authors: [{ name: "Labeld" }],
+	creator: "Labeld",
+	publisher: "Labeld",
 	manifest: "/manifest.webmanifest",
 	themeColor: "#FF5E2E",
 	viewport:
@@ -39,6 +55,42 @@ export const metadata = {
 			{ url: "/labeld_logo.png", sizes: "152x152", type: "image/png" },
 			{ url: "/labeld_logo.png", sizes: "192x192", type: "image/png" },
 		],
+	},
+	openGraph: {
+		type: "website",
+		locale: "en_US",
+		url: "https://studio.labeld.app",
+		siteName: "Labeld Studio",
+		title: "Labeld Studio - For the Culture, Not the Clout",
+		description:
+			"The platform where brands and event organizers manage their creative space, drops, and events. For the culture, not the clout.",
+		images: [
+			{
+				url: "/images/labeld_logo.png",
+				width: 1200,
+				height: 630,
+				alt: "Labeld Studio",
+			},
+		],
+	},
+	twitter: {
+		card: "summary_large_image",
+		title: "Labeld Studio - For the Culture, Not the Clout",
+		description:
+			"The platform where brands and event organizers manage their creative space, drops, and events.",
+		images: ["/images/labeld_logo.png"],
+		creator: "@labeld",
+	},
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			"max-video-preview": -1,
+			"max-image-preview": "large",
+			"max-snippet": -1,
+		},
 	},
 };
 

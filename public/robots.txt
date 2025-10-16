@@ -1,0 +1,30 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /events/create
+Disallow: /events/create/*
+Disallow: /brand/setup
+Disallow: /brand/setup/*
+Disallow: /user/setup
+Disallow: /user/setup/*
+Disallow: /scan
+Disallow: /scan/*
+Disallow: /brand-space/*
+Disallow: /collections/*
+Disallow: /pieces/*
+Disallow: /orders/*
+Disallow: /settings
+Disallow: /settings/*
+Disallow: /staff/*
+Disallow: /tickets
+Disallow: /wallet
+Disallow: /radar/*
+Disallow: /auth/*
+
+# Host
+Host: https://studio.labeld.app
+
+# Sitemaps
+Sitemap: https://studio.labeld.app/sitemap.xml
