@@ -1,6 +1,8 @@
 "use client";
 
 import AuthForm from "@/app/marketing/auth/AuthFom";
+import BrandOnboardingModal from "./BrandOnboardingModal";
+import EventOrganizerOnboardingModal from "./EventOrganizerOnboardingModal";
 import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 
@@ -97,14 +99,7 @@ function ActionCard({
 	className?: string;
 	hoverBorderColor?: string; // accepts a tailwind color key, e.g., 'accent', 'cta', or custom color class
 }) {
-	const hoverBorderClass =
-		hoverBorderColor === "accent"
-			? "hover:border-accent"
-			: hoverBorderColor === "cta"
-			? "hover:border-cta"
-			: hoverBorderColor === "events"
-			? "hover:border-events"
-			: "hover:border-accent";
+	// Note: hoverBorderColor prop is available for future use
 
 	return (
 		<button
@@ -187,17 +182,17 @@ function AuthModal({
 export default function OnboardingSplit() {
 	const [mode, setMode] = useState<"login" | "signup">("login");
 	const [showAuthModal, setShowAuthModal] = useState(false);
+	const [showBrandModal, setShowBrandModal] = useState(false);
+	const [showEventModal, setShowEventModal] = useState(false);
 
 	const handleLaunchBrand = () => {
-		// Set to signup mode for new users wanting to launch brand
-		setMode("signup");
-		setShowAuthModal(true);
+		// Show brand onboarding modal instead of auth modal
+		setShowBrandModal(true);
 	};
 
 	const handleDropEvents = () => {
-		// Set to signup mode for new users wanting to drop events
-		setMode("signup");
-		setShowAuthModal(true);
+		// Show event organizer onboarding modal instead of auth modal
+		setShowEventModal(true);
 	};
 
 	const handleLoginClick = () => {
@@ -270,7 +265,7 @@ export default function OnboardingSplit() {
 									Log In
 								</button>
 							</p>
-							<p className="text-sm text-text-muted">
+							{/* <p className="text-sm text-text-muted">
 								New here?{" "}
 								<button
 									onClick={handleSignupClick}
@@ -278,7 +273,7 @@ export default function OnboardingSplit() {
 								>
 									Join the Culture
 								</button>
-							</p>
+							</p> */}
 						</div>
 					</div>
 				</section>
@@ -357,7 +352,7 @@ export default function OnboardingSplit() {
 									Log In
 								</button>
 							</p>
-							<p className="text-sm text-text-muted">
+							{/* <p className="text-sm text-text-muted">
 								New here?{" "}
 								<button
 									onClick={handleSignupClick}
@@ -365,7 +360,7 @@ export default function OnboardingSplit() {
 								>
 									Join the Culture
 								</button>
-							</p>
+							</p> */}
 						</div>
 					</div>
 				</section>
@@ -377,6 +372,18 @@ export default function OnboardingSplit() {
 				onClose={() => setShowAuthModal(false)}
 				mode={mode}
 				onModeChange={setMode}
+			/>
+
+			{/* Brand Onboarding Modal */}
+			<BrandOnboardingModal
+				isOpen={showBrandModal}
+				onClose={() => setShowBrandModal(false)}
+			/>
+
+			{/* Event Organizer Onboarding Modal */}
+			<EventOrganizerOnboardingModal
+				isOpen={showEventModal}
+				onClose={() => setShowEventModal(false)}
 			/>
 		</div>
 	);

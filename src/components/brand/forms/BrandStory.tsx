@@ -24,7 +24,7 @@ export default function BrandStoryForm() {
 
 	return (
 		<div>
-			<h3 className="font-heading font-semibold text-2xl">Tell Your Story</h3>
+			{/* <h3 className="font-heading font-semibold text-2xl">Tell Your Story</h3> */}
 			<p className="text-text-muted mt-1">
 				Sum up your brand’s vibe in one sentence.
 			</p>

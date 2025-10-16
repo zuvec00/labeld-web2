@@ -30,3 +30,28 @@ export async function addBrandCF(args: AddBrandArgs): Promise<void> {
   const { data } = await callable(args);
   if (!(data as any)?.success) throw new Error("addBrand failed");
 }
+
+type AddEventOrganizerArgs = {
+  uid: string;
+  organizerName: string;
+  username: string;           // normalized (lowercase)
+  bio?: string | null;
+  eventCategory: string;
+  logoUrl: string;            // required
+  coverImageUrl?: string | null;
+  baseCity?: string | null;
+  activeSince?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  instagram?: string | null;
+  tiktok?: string | null;
+  twitter?: string | null;
+  website?: string | null;
+};
+
+export async function addEventOrganizerCF(args: AddEventOrganizerArgs): Promise<void> {
+  const functions = getFunctions(getApp());
+  const callable = httpsCallable(functions, "addEventOrganizer");
+  const { data } = await callable(args);
+  if (!(data as any)?.success) throw new Error("addEventOrganizer failed");
+}

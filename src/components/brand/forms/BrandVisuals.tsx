@@ -41,31 +41,36 @@ export default function BrandVisualsForm() {
 			<div className="grid grid-cols-1 gap-4">
 				<div>
 					<label className="block text-sm text-text-muted mb-1">
-						Instagram
+						Instagram{" "}
+						<span className="text-xs text-text-muted">(optional)</span>
 					</label>
 					<input
 						value={instagram}
 						onChange={(e) => set("instagram", e.target.value)}
 						placeholder="Instagram profile link"
-						className="w-full rounded-xl bg-bg border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
+						className="w-full rounded-xl bg-surface border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
 					/>
 				</div>
 				<div>
-					<label className="block text-sm text-text-muted mb-1">YouTube</label>
+					<label className="block text-sm text-text-muted mb-1">
+						YouTube <span className="text-xs text-text-muted">(optional)</span>
+					</label>
 					<input
 						value={youtube}
 						onChange={(e) => set("youtube", e.target.value)}
 						placeholder="YouTube channel link"
-						className="w-full rounded-xl bg-bg border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
+						className="w-full rounded-xl bg-surface border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
 					/>
 				</div>
 				<div>
-					<label className="block text-sm text-text-muted mb-1">TikTok</label>
+					<label className="block text-sm text-text-muted mb-1">
+						TikTok <span className="text-xs text-text-muted">(optional)</span>
+					</label>
 					<input
 						value={tiktok}
 						onChange={(e) => set("tiktok", e.target.value)}
 						placeholder="TikTok profile link"
-						className="w-full rounded-xl bg-bg border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
+						className="w-full rounded-xl bg-surface border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
 					/>
 				</div>
 			</div>

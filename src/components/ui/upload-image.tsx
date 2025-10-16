@@ -39,10 +39,14 @@ export default function UploadImage({
 	const [dragOver, setDragOver] = useState(false);
 
 	// preview url from File
-	const preview = useMemo(
-		() => (value ? URL.createObjectURL(value) : null),
-		[value]
-	);
+	const preview = useMemo(() => {
+		try {
+			return value && value instanceof File ? URL.createObjectURL(value) : null;
+		} catch (error) {
+			console.warn("Failed to create object URL:", error);
+			return null;
+		}
+	}, [value]);
 
 	// token fallbacks = CTA like your Flutter defaults
 	const tint = backgroundColor ?? "var(--color-cta)";

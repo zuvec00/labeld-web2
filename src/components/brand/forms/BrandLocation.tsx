@@ -38,7 +38,7 @@ export default function BrandLocationForm() {
 
 	return (
 		<div>
-			<h3 className="font-heading font-semibold text-2xl">Location</h3>
+			{/* <h3 className="font-heading font-semibold text-2xl">Location</h3> */}
 			<p className="text-text-muted mt-1">
 				Let fans find{" "}
 				<span className="text-cta font-semibold">

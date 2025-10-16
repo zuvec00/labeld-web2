@@ -16,6 +16,7 @@ type Mode = "login" | "signup";
 interface Props {
 	mode: Mode;
 	onModeChange?: (mode: Mode) => void;
+	onSignupComplete?: (mode: "signup") => Promise<void>;
 }
 
 interface FirebaseError {
@@ -23,7 +24,11 @@ interface FirebaseError {
 	message?: string;
 }
 
-export default function AuthForm({ mode, onModeChange }: Props) {
+export default function AuthForm({
+	mode,
+	onModeChange,
+	onSignupComplete,
+}: Props) {
 	const router = useRouter();
 	const {
 		user,
@@ -43,6 +48,10 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 	// if already logged in, bounce
 	useEffect(() => {
 		if (!user) return; // not logged in → stay on auth page
+
+		// If custom signup completion handler is provided, don't auto-route
+		// Let the custom handler manage the user creation and routing
+		if (onSignupComplete) return;
 
 		let cancelled = false;
 
@@ -86,7 +95,7 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 		return () => {
 			cancelled = true;
 		};
-	}, [user, router]);
+	}, [user, router, onSignupComplete]);
 
 	useEffect(() => {
 		if (typeof navigator !== "undefined") {
@@ -109,6 +118,13 @@ export default function AuthForm({ mode, onModeChange }: Props) {
 
 				await auth.currentUser?.getIdToken(true);
 
+				// If custom signup completion handler is provided, use it
+				if (onSignupComplete) {
+					await onSignupComplete("signup");
+					return; // Don't continue with default signup logic
+				}
+
+				// Default signup logic (for regular auth modal)
 				// create user doc via your callable (server sets createdAt/updatedAt)
 				await addUserCF({
 					email: u.email,
