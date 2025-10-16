@@ -27,6 +27,15 @@
   --color-edit: #FFD335;
   --color-stroke: #2A2A2A;
 
+    /* Tab Colors */
+  --color-explore: #00B2E3;
+  --color-events: #9B5CFF;
+  --color-events-darker: #6C2ED9;
+  --color-events-darker2: #4B1AA8;
+  --color-insp: #B18EFF;
+  --color-radar: #C4FF30;
+  --color-energy: #FF5E2E;
+
   /* HeatColors */
   --color-heat-gray: #A6A6A6;     /* 0–29  */
   --color-heat-orange: #FF6F00;   /* 30–59 */

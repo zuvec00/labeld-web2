@@ -81,8 +81,134 @@ function VideoWithFallback({
 	);
 }
 
+// Action Card Component
+function ActionCard({
+	title,
+	description,
+	backgroundImage,
+	onClick,
+	className = "",
+	hoverBorderColor = "accent",
+}: {
+	title: string;
+	description: string;
+	backgroundImage: string;
+	onClick: () => void;
+	className?: string;
+	hoverBorderColor?: string; // accepts a tailwind color key, e.g., 'accent', 'cta', or custom color class
+}) {
+	const hoverBorderClass =
+		hoverBorderColor === "accent"
+			? "hover:border-accent"
+			: hoverBorderColor === "cta"
+			? "hover:border-cta"
+			: hoverBorderColor === "events"
+			? "hover:border-events"
+			: "hover:border-accent";
+
+	return (
+		<button
+			onClick={onClick}
+			className={`group relative aspect-[3/2] w-full rounded-[20px] overflow-hidden border border-stroke bg-surface transition-all duration-300 hover:border-accent ${className}`}
+		>
+			{/* Background Image */}
+			<div className="absolute inset-0">
+				<Image
+					src={backgroundImage}
+					alt={title}
+					fill
+					className="object-cover group-hover:scale-105 transition-transform duration-300"
+				/>
+				{/* Overlay */}
+				<div className="absolute inset-0 bg-gradient-to-t from-bg/90 via-bg/50 to-transparent" />
+			</div>
+
+			{/* Content */}
+			<div className="absolute inset-0 flex flex-col justify-end p-6">
+				<h3 className="font-heading font-semibold text-xl text-white mb-2">
+					{title}
+				</h3>
+				<p className="text-sm text-white/80">{description}</p>
+			</div>
+		</button>
+	);
+}
+
+// Auth Modal Component
+function AuthModal({
+	isOpen,
+	onClose,
+	mode,
+	onModeChange,
+}: {
+	isOpen: boolean;
+	onClose: () => void;
+	mode: "login" | "signup";
+	onModeChange: (mode: "login" | "signup") => void;
+}) {
+	if (!isOpen) return null;
+
+	return (
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+			{/* Backdrop */}
+			<div
+				className="absolute inset-0 bg-bg/80 backdrop-blur-sm"
+				onClick={onClose}
+			/>
+
+			{/* Modal Content */}
+			<div className="relative bg-bg border border-stroke rounded-2xl p-8 max-w-md w-full max-h-[90vh] overflow-y-auto">
+				{/* Close Button */}
+				<button
+					onClick={onClose}
+					className="absolute top-4 right-4 text-text-muted hover:text-text transition-colors"
+				>
+					<svg
+						className="w-6 h-6"
+						fill="none"
+						stroke="currentColor"
+						viewBox="0 0 24 24"
+					>
+						<path
+							strokeLinecap="round"
+							strokeLinejoin="round"
+							strokeWidth={2}
+							d="M6 18L18 6M6 6l12 12"
+						/>
+					</svg>
+				</button>
+
+				<AuthForm mode={mode} onModeChange={onModeChange} />
+			</div>
+		</div>
+	);
+}
+
 export default function OnboardingSplit() {
 	const [mode, setMode] = useState<"login" | "signup">("login");
+	const [showAuthModal, setShowAuthModal] = useState(false);
+
+	const handleLaunchBrand = () => {
+		// Set to signup mode for new users wanting to launch brand
+		setMode("signup");
+		setShowAuthModal(true);
+	};
+
+	const handleDropEvents = () => {
+		// Set to signup mode for new users wanting to drop events
+		setMode("signup");
+		setShowAuthModal(true);
+	};
+
+	const handleLoginClick = () => {
+		setMode("login");
+		setShowAuthModal(true);
+	};
+
+	const handleSignupClick = () => {
+		setMode("signup");
+		setShowAuthModal(true);
+	};
 
 	return (
 		<div className="min-h-dvh bg-bg text-text">
@@ -113,10 +239,47 @@ export default function OnboardingSplit() {
 					</div>
 				</section>
 
-				{/* Mobile Auth Section */}
+				{/* Mobile Action Cards Section */}
 				<section className="px-4 py-8 bg-bg">
-					<div className="w-full max-w-sm mx-auto">
-						<AuthForm mode={mode} onModeChange={setMode} />
+					<div className="w-full max-w-sm mx-auto space-y-4">
+						{/* Action Cards */}
+						<div className="space-y-4">
+							<ActionCard
+								title="Launch Your Brand"
+								description="Set up your brand space, upload merch, manage orders, and track your sales."
+								backgroundImage="/images/cerenity.jpg"
+								onClick={handleLaunchBrand}
+							/>
+							<ActionCard
+								title="Drop Events"
+								// hoverBorderColor="accent"
+								description="Create ticketed events, sell merch, and manage attendee check-ins."
+								backgroundImage="/images/dj.jpg"
+								onClick={handleDropEvents}
+							/>
+						</div>
+
+						{/* Auth CTA */}
+						<div className="mt-6 text-center space-y-2">
+							<p className="text-sm text-text-muted">
+								Already have an account?{" "}
+								<button
+									onClick={handleLoginClick}
+									className="text-cta font-semibold hover:underline"
+								>
+									Log In
+								</button>
+							</p>
+							<p className="text-sm text-text-muted">
+								New here?{" "}
+								<button
+									onClick={handleSignupClick}
+									className="text-cta font-semibold hover:underline"
+								>
+									Join the Culture
+								</button>
+							</p>
+						</div>
 					</div>
 				</section>
 			</div>
@@ -148,13 +311,73 @@ export default function OnboardingSplit() {
 					</div>
 				</section>
 
-				{/* RIGHT: Auth */}
+				{/* RIGHT: Action Cards */}
 				<section className="flex justify-center m-8 py-16 px-4 sm:px-8 bg-bg">
 					<div className="w-full max-w-md">
-						<AuthForm mode={mode} onModeChange={setMode} />
+						{/* Logo */}
+						<div className="mb-8 flex items-center gap-2">
+							<Image
+								src="/labeld_logo.png"
+								alt="Labeld"
+								width={60}
+								height={60}
+								className="h-15 w-15"
+								priority
+							/>
+							<h2 className="font-heading font-semibold text-cta text-2xl">
+								LABELD
+							</h2>
+						</div>
+
+						{/* Action Cards */}
+						<div className="space-y-4 mb-8">
+							<ActionCard
+								title="Launch Your Brand"
+								description="Set up your brand space, upload merch, manage orders, and track your sales."
+								backgroundImage="/images/cerenity.jpg"
+								onClick={handleLaunchBrand}
+							/>
+							<ActionCard
+								title="Drop Events"
+								// hoverBorderColor="cta"
+								description="Create ticketed events, sell merch, and manage attendee check-ins."
+								backgroundImage="/images/dj.jpg"
+								onClick={handleDropEvents}
+							/>
+						</div>
+
+						{/* Auth CTA */}
+						<div className="text-center space-y-2">
+							<p className="text-sm text-text-muted">
+								Already have an account?{" "}
+								<button
+									onClick={handleLoginClick}
+									className="text-cta font-semibold hover:underline"
+								>
+									Log In
+								</button>
+							</p>
+							<p className="text-sm text-text-muted">
+								New here?{" "}
+								<button
+									onClick={handleSignupClick}
+									className="text-cta font-semibold hover:underline"
+								>
+									Join the Culture
+								</button>
+							</p>
+						</div>
 					</div>
 				</section>
 			</div>
+
+			{/* Auth Modal */}
+			<AuthModal
+				isOpen={showAuthModal}
+				onClose={() => setShowAuthModal(false)}
+				mode={mode}
+				onModeChange={setMode}
+			/>
 		</div>
 	);
 }
