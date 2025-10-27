@@ -4,6 +4,7 @@
 import Sidebar from "@/components/dashboard/SideBar";
 import Topbar from "@/components/dashboard/Topbar";
 import GlobalUploadIndicator from "@/components/ui/GlobalUploadIndicator";
+import { Toaster } from "@/components/ui/toast";
 
 export default function DashboardLayout({
 	children,
@@ -35,6 +36,9 @@ export default function DashboardLayout({
 
 			{/* Global Upload Indicator - shows across all dashboard pages */}
 			<GlobalUploadIndicator />
+
+			{/* Toast notifications */}
+			<Toaster />
 		</div>
 	);
 }

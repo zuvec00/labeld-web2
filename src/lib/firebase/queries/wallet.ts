@@ -14,15 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebaseConfig";
 import { WalletSummary, WalletLedgerEntry, EarningsBySource } from "@/types/wallet";
-
-// Helper to convert Firestore timestamp to number
-function toMillis(v: any): number {
-  if (!v) return Date.now();
-  if (typeof v === "number") return v;
-  if (v.toMillis) return v.toMillis();
-  if (v.seconds) return v.seconds * 1000;
-  return Date.now();
-}
+import { toMillis } from "../utils";
 
 // Helper to parse wallet summary from user document
 function parseWalletSummary(userData: any): WalletSummary | null {
@@ -41,6 +33,14 @@ function parseWalletSummary(userData: any): WalletSummary | null {
       payoutHourLocal: wallet.payout?.payoutHourLocal || 14,
       nextPayoutAt: wallet.payout?.nextPayoutAt ? toMillis(wallet.payout.nextPayoutAt) : undefined,
       lastPayoutAt: wallet.payout?.lastPayoutAt ? toMillis(wallet.payout.lastPayoutAt) : undefined,
+      schedule: wallet.payout?.schedule ? {
+        type: wallet.payout.schedule.type,
+        feePercent: wallet.payout.schedule.feePercent || 0,
+        feeCapMinor: wallet.payout.schedule.feeCapMinor || 0,
+        timelineDays: wallet.payout.schedule.timelineDays || 7,
+        label: wallet.payout.schedule.label || "Standard",
+        updatedAt: wallet.payout.schedule.updatedAt,
+      } : undefined,
       bank: wallet.payout?.bank ? {
         bankName: wallet.payout.bank.bankName,
         accountNumber: wallet.payout.bank.accountNumber,

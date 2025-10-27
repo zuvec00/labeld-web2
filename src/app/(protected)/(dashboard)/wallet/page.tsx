@@ -9,7 +9,8 @@ import LedgerTable from "@/components/wallet/LedgerTable";
 import PayoutsTable from "@/components/wallet/PayoutsTable";
 import HelpPanel from "@/components/wallet/HelpPanel";
 import BankAccountBanner from "@/components/wallet/BankAccountBanner";
-import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
+// import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
+import TestStorePayoutPanel from "@/components/wallet/TestStorePayoutPanel";
 import { useWallet } from "@/hooks/useWallet";
 import { usePayouts } from "@/hooks/usePayouts";
 
@@ -76,17 +77,22 @@ export default function WalletPage() {
 
 	return (
 		<div className="space-y-8">
-			{/* Test Payout Panel - Comment out when going live */}
+			{/* Test Payout Panels - Comment out when going live */}
 			{/* <TestPayoutPanel /> */}
+			{/* <TestStorePayoutPanel /> */}
 
 			{/* Header Summary */}
+
 			<BalanceHeader summary={walletData.summary} />
 
 			{/* Bank Account Status Banner */}
 			{walletData.summary && <BankAccountBanner summary={walletData.summary} />}
 
 			{/* Earnings Overview */}
-			<EarningsOverview entries={walletData.entries} />
+			<EarningsOverview
+				entries={walletData.entries}
+				walletSummary={walletData.summary}
+			/>
 
 			{/* Filters Bar */}
 			<FiltersBar onFiltersChange={setFilters} />
@@ -95,7 +101,7 @@ export default function WalletPage() {
 			<LedgerTable entries={walletData.entries} filters={filters} />
 
 			{/* Payouts */}
-			<PayoutsTable payouts={payouts} />
+			<PayoutsTable payouts={payouts} walletSummary={walletData.summary} />
 
 			{/* Help Panel */}
 			<HelpPanel />

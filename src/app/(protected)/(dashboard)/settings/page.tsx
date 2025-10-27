@@ -3,23 +3,34 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, Shield, Truck, User, Bell, CreditCard } from "lucide-react";
+import {
+	ArrowLeft,
+	Shield,
+	Truck,
+	User,
+	Bell,
+	CreditCard,
+	DollarSign,
+} from "lucide-react";
 import Button from "@/components/ui/button";
 import AccountSecurity from "@/components/settings/AccountSecurity";
 import ShippingSettings from "@/components/settings/ShippingSettings";
+import PayoutSettings from "@/components/settings/PayoutSettings";
 
-type SettingsSection = "main" | "account-security" | "shipping";
+type SettingsSection = "main" | "account-security" | "shipping" | "payout";
 
 export default function SettingsPage() {
 	const [currentSection, setCurrentSection] = useState<SettingsSection>("main");
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
-	// Handle URL parameter for direct navigation to shipping settings
+	// Handle URL parameter for direct navigation to settings sections
 	useEffect(() => {
 		const section = searchParams.get("section");
 		if (section === "shipping") {
 			setCurrentSection("shipping");
+		} else if (section === "payout") {
+			setCurrentSection("payout");
 		}
 	}, [searchParams]);
 
@@ -29,6 +40,13 @@ export default function SettingsPage() {
 			title: "Account Security",
 			description: "Manage your email, password, and authentication settings",
 			icon: Shield,
+			available: true,
+		},
+		{
+			id: "payout" as const,
+			title: "Payout Settings",
+			description: "Configure how quickly you receive your earnings",
+			icon: DollarSign,
 			available: true,
 		},
 		{
@@ -83,6 +101,24 @@ export default function SettingsPage() {
 
 				{/* Account Security Component */}
 				<AccountSecurity />
+			</div>
+		);
+	}
+
+	if (currentSection === "payout") {
+		return (
+			<div className="space-y-6">
+				{/* Back Arrow */}
+				<button
+					onClick={handleBackToMain}
+					className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
+				>
+					<ArrowLeft className="w-4 h-4" />
+					<span className="text-sm">Back to Settings</span>
+				</button>
+
+				{/* Payout Settings Component */}
+				<PayoutSettings />
 			</div>
 		);
 	}

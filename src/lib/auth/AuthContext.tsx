@@ -135,7 +135,7 @@ export function AuthGuard({
 	if (loading)
 		return (
 			<div className="flex h-[60vh] items-center justify-center">
-				<Spinner size="md" className="mr-2" />;
+				<Spinner size="md" className="mr-2" />
 			</div>
 		);
 	if (!user) return null;

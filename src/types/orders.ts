@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // types/orders.ts
 export type Currency = "NGN";
 export type AdmitType = "general" | "vip" | "backstage";
@@ -33,7 +32,20 @@ export interface MerchLineItem {
   subtotalMinor: number;
 }
 
-export type LineItem = TicketLineItem | MerchLineItem;
+export interface ProductLineItem {
+  _type: "product";
+  productId: string;
+  name: string;
+  unitPriceMinor: number;
+  currency: Currency;
+  qty: number;
+  size: string | null;
+  color: string | null;
+  subtotalMinor: number;
+  absorbTransactionFee: boolean;
+}
+
+export type LineItem = TicketLineItem | MerchLineItem | ProductLineItem;
 
 export interface OrderDoc {
   id: string;
@@ -69,6 +81,46 @@ export interface OrderDoc {
   };
   hasTickets: boolean;
   ticketQtyByType?: Record<string, number>;
+  createdAt: any; // Firestore Timestamp
+  updatedAt?: any;
+  paidAt?: any;
+  cancelledAt?: any;
+}
+
+export interface StoreOrderDoc {
+  id: string;
+  brandId: string;
+  buyerUserId?: string | null;
+  status: OrderStatus;
+  lineItems: ProductLineItem[];
+  amount: {
+    currency: Currency;
+    itemsSubtotalMinor: number;
+    feesMinor: number;
+    shippingMinor?: number;
+    totalMinor: number;
+  };
+  fees?: {
+    brandTransactionFeesMinor?: number;
+    consumerServiceFeesMinor?: number;
+    labeldBuyerFeesMinor?: number;
+    labeldAbsorbedFeesMinor?: number;
+  };
+  provider: PaymentProvider | null;
+  providerRef?: { initRef?: string; verifyRef?: string };
+  deliverTo?: { fullName?: string; email?: string; phone?: string };
+  shipping?: {
+    method: "delivery" | "pickup";
+    address?: {
+      name?: string;
+      phone?: string;
+      address?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+    };
+    pickupAddress?: string;
+  };
   createdAt: any; // Firestore Timestamp
   updatedAt?: any;
   paidAt?: any;
@@ -165,4 +217,13 @@ export interface OrderWithVendorStatus extends OrderDoc {
   eventTitle?: string;
   visibleLineItems?: LineItem[];
   visibilityReason?: "organizer" | "brand" | "both";
+}
+
+export interface StoreOrderWithVendorStatus extends StoreOrderDoc {
+  vendorLineStatuses?: Record<string, VendorLineStatus>;
+  fulfillmentStatuses?: Record<string, FulfillmentStatus>;
+  fulfillmentAggregateStatus?: FulfillmentAggregateStatus;
+  fulfillmentLines?: Record<string, FulfillmentLine>;
+  visibleLineItems?: ProductLineItem[];
+  visibilityReason?: "brand";
 }

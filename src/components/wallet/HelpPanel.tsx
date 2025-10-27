@@ -77,13 +77,13 @@ export default function HelpPanel() {
 				<div className="pt-4 border-t border-stroke/60">
 					<div className="flex items-center gap-2 text-xs text-text-muted">
 						<span>Need help?</span>
-						<button
-							disabled
-							className="text-cta hover:underline cursor-not-allowed opacity-50"
-							title="Coming soon"
+						<a
+							href="mailto:support@labeld.app?cc=labeldapp@gmail.com&subject=Support%20Request"
+							className="text-cta hover:underline"
+							title="Contact Support"
 						>
 							Contact Support
-						</button>
+						</a>
 					</div>
 				</div>
 			</div>

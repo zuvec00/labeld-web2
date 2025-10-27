@@ -83,7 +83,7 @@ export default function NewPiecePage() {
 	const [saving, setSaving] = useState(false);
 	const [err, setErr] = useState<string | null>(null);
 
-	const [brandIG, setBrandIG] = useState<string | null>(null);
+	// const [brandIG, setBrandIG] = useState<string | null>(null);
 	const [brandSnap, setBrandSnap] = useState<any>(null);
 
 	const [collections, setCollections] = useState<
@@ -104,12 +104,24 @@ export default function NewPiecePage() {
 
 	const [mainFile, setMainFile] = useState<File | null>(null);
 	const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+	const [sizeGuideFile, setSizeGuideFile] = useState<File | null>(null);
 
 	const [description, setDescription] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
 	const [sizes, setSizes] = useState<string[]>([]);
-	const [copLink, setCopLink] = useState("");
-	const [useInstagramLink, setUseInstagramLink] = useState(false);
+	// const [copLink, setCopLink] = useState("");
+	// const [useInstagramLink, setUseInstagramLink] = useState(false);
+
+	// Stock management
+	const [unlimitedStock, setUnlimitedStock] = useState(true);
+	const [stockQuantity, setStockQuantity] = useState("");
+
+	// Discount
+	const [hasDiscount, setHasDiscount] = useState(false);
+	const [discountPercent, setDiscountPercent] = useState("");
+
+	// Fee Settings
+	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(true);
 
 	// Radar promotion popup
 	const [showRadarPopup, setShowRadarPopup] = useState(false);
@@ -141,7 +153,7 @@ export default function NewPiecePage() {
 						launchDate: asDate(c.launchDate),
 					}))
 				);
-				setBrandIG(brand?.instagram ?? null);
+				// setBrandIG(brand?.instagram ?? null);
 				setBrandSnap(serializeBrandSnapshot(brand));
 			} catch (e: any) {
 				if (!mounted) return;
@@ -166,15 +178,15 @@ export default function NewPiecePage() {
 		!(availableNow ? true : !!launchDate);
 
 	// auto-fill IG link toggle
-	useEffect(() => {
-		if (!brandIG) return;
-		if (useInstagramLink) {
-			const igUrl = brandIG.startsWith("http")
-				? brandIG
-				: `https://instagram.com/${brandIG}`;
-			setCopLink(igUrl);
-		}
-	}, [useInstagramLink, brandIG]);
+	// useEffect(() => {
+	// 	if (!brandIG) return;
+	// 	if (useInstagramLink) {
+	// 		const igUrl = brandIG.startsWith("http")
+	// 			? brandIG
+	// 			: `https://instagram.com/${brandIG}`;
+	// 		setCopLink(igUrl);
+	// 	}
+	// }, [useInstagramLink, brandIG]);
 
 	/* -------------------------------- actions ------------------------------- */
 	async function onCreate() {
@@ -252,10 +264,40 @@ export default function NewPiecePage() {
 				}
 			}
 
-			// 3) launch date
+			// 3) upload size guide (optional)
+			let sizeGuideUrl: string | undefined;
+			if (sizeGuideFile) {
+				try {
+					// Primary: Upload to Cloudinary
+					sizeGuideUrl = await uploadImageCloudinary(sizeGuideFile, {
+						folder: `productImages/${uid}`,
+						tags: ["product", "size-guide", uid],
+					});
+					console.log(
+						"✅ Size guide image uploaded to Cloudinary:",
+						sizeGuideUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed for size guide, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					sizeGuideUrl = await uploadFileGetURL(
+						sizeGuideFile,
+						`productImages/${uid}/${Date.now()}-${sizeGuideFile.name}`
+					);
+					console.log(
+						"✅ Size guide image uploaded to Firebase Storage:",
+						sizeGuideUrl
+					);
+				}
+			}
+
+			// 4) launch date
 			const launch: Date = availableNow ? new Date() : (launchDate as Date);
 
-			// 4) build payload (Flutter parity + denormalized brand)
+			// 5) build payload (Flutter parity + denormalized brand)
 			const productData: Record<string, any> = {
 				brandId: uid,
 				userId: uid,
@@ -271,12 +313,26 @@ export default function NewPiecePage() {
 					: null,
 				launchDate: launch.toISOString(),
 				isAvailableNow: availableNow,
+				isActive: true,
+				stockRemaining: unlimitedStock
+					? null
+					: Number.isFinite(Number(stockQuantity))
+					? Number(stockQuantity)
+					: null,
 				mainVisualUrl,
 				galleryImages: galleryImageUrls,
+				sizeGuideUrl: sizeGuideUrl || null,
 				description: description.trim() ? description.trim() : null,
 				styleTags: tags.length ? tags : null,
 				sizeOptions: sizes.length ? sizes : null,
-				copLink: copLink.trim() ? copLink.trim() : null,
+				copLink: null, // Set to null for store orders
+				discountPercent:
+					hasDiscount && Number.isFinite(Number(discountPercent))
+						? Number(discountPercent)
+						: null,
+				feeSettings: {
+					absorbTransactionFee: absorbTransactionFee,
+				},
 				// ⭐ denormalized brand snapshot
 				brand: brandSnap ?? undefined,
 			};
@@ -284,13 +340,13 @@ export default function NewPiecePage() {
 				(k) => productData[k] == null && delete productData[k]
 			);
 
-			// 5) write via CF
+			// 6) write via CF
 			const result = await addDropProductCF(productData);
 			console.log("addDropProductCF result:", result);
 
 			const { id } = result;
 
-			// 6) optional notif (parity with Flutter)
+			// 7) optional notif (parity with Flutter)
 			try {
 				// await sendNotificationCF({
 				// 	title: "New drop 👀",
@@ -301,7 +357,7 @@ export default function NewPiecePage() {
 				/* non-fatal */
 			}
 
-			// 7) Show radar promotion popup with piece data
+			// 8) Show radar promotion popup with piece data
 			if (!id) {
 				console.error(
 					"No product ID returned from addDropProductCF. Result:",
@@ -335,6 +391,11 @@ export default function NewPiecePage() {
 				<Spinner size="lg" />
 			</div>
 		);
+	}
+
+	// Divider component for enhanced visibility between settings
+	function FieldDivider() {
+		return <hr className="my-6 border-t border-edit/20" />;
 	}
 
 	return (
@@ -405,7 +466,155 @@ export default function NewPiecePage() {
 						</div>
 					</div>
 
-					<div className="mt-3">
+					{/* Size Options */}
+					<div className="mt-4">
+						<Label text="Size Options" />
+						<div className="flex flex-wrap gap-2 mb-2">
+							{predefinedSizes.map((s) => {
+								const isSelected = sizes.includes(s);
+								const oneSizeSelected = sizes.includes("One Size");
+								const isDisabled =
+									(s !== "One Size" && oneSizeSelected) ||
+									(s === "One Size" && sizes.length > 0 && !isSelected);
+								return (
+									<button
+										key={s}
+										type="button"
+										disabled={isDisabled}
+										onClick={() => {
+											if (s === "One Size")
+												setSizes(isSelected ? [] : ["One Size"]);
+											else {
+												if (oneSizeSelected) return;
+												setSizes((prev) =>
+													isSelected
+														? prev.filter((x) => x !== s)
+														: [...prev, s]
+												);
+											}
+										}}
+										className={[
+											"px-3 py-1.5 rounded-full text-sm border",
+											isSelected
+												? "bg-text text-bg border-text"
+												: "bg-surface border-stroke",
+											isDisabled ? "opacity-50 cursor-not-allowed" : "",
+										].join(" ")}
+									>
+										{s}
+									</button>
+								);
+							})}
+							{sizes.length > 1 && (
+								<button
+									type="button"
+									className="text-alert text-sm border border-alert/30 rounded-lg px-2.5"
+									onClick={() => setSizes([])}
+								>
+									Clear All
+								</button>
+							)}
+						</div>
+						{sizes.includes("One Size") && (
+							<Hint text={`Only "One Size" can be selected at a time.`} />
+						)}
+						<TagsInput
+							value={sizes}
+							onChange={setSizes}
+							placeholder="e.g. S, M, L, XL ..."
+						/>
+					</div>
+
+					{/* Stock Management */}
+					<FieldDivider />
+					<div className="mt-4">
+						<Label text="Stock Management" />
+						<div className="space-y-3">
+							<Toggle
+								checked={unlimitedStock}
+								onChange={(v) => {
+									setUnlimitedStock(v);
+									if (v) setStockQuantity("");
+								}}
+								label="Unlimited Stock"
+							/>
+							{!unlimitedStock && (
+								<div>
+									<Label text="Stock Quantity" required />
+									<Input
+										type="number"
+										value={stockQuantity}
+										onChange={setStockQuantity}
+										placeholder="Enter available quantity"
+									/>
+									<Hint text="Set how many units are available for purchase" />
+								</div>
+							)}
+							{unlimitedStock && (
+								<Hint text="This piece will always be available for purchase" />
+							)}
+						</div>
+					</div>
+					<FieldDivider />
+
+					{/* Discount */}
+					<div className="mt-4">
+						<Label text="Discount" />
+						<div className="space-y-3">
+							<Toggle
+								checked={hasDiscount}
+								onChange={(v) => {
+									setHasDiscount(v);
+									if (!v) setDiscountPercent("");
+								}}
+								label="Apply Discount"
+							/>
+							{hasDiscount && (
+								<div>
+									<Label text="Discount Percentage" required />
+									<Input
+										type="number"
+										value={discountPercent}
+										onChange={setDiscountPercent}
+										placeholder="e.g. 10, 20, 50"
+									/>
+									<Hint text="Enter discount percentage (0-100)" />
+									{discountPercent &&
+										Number.isFinite(Number(discountPercent)) && (
+											<div className="text-text-muted text-sm mt-1">
+												Discounted price: {selectedCurrency?.abbreviation || ""}{" "}
+												{formatWithCommasDouble(
+													parsedPrice * (1 - Number(discountPercent) / 100)
+												)}{" "}
+												<span className="text-green-600">
+													({discountPercent}% off)
+												</span>
+											</div>
+										)}
+								</div>
+							)}
+						</div>
+					</div>
+					<FieldDivider />
+
+					{/* Fee Settings */}
+					<div className="mt-4">
+						<Label text="Transaction Fee Settings" />
+						<div className="space-y-3">
+							<Toggle
+								checked={absorbTransactionFee}
+								onChange={setAbsorbTransactionFee}
+								label="Absorb Transaction Fees"
+							/>
+							<div className="space-y-2">
+								<Hint text="When enabled, you pay the 5% transaction fee instead of your customers. This makes checkout more attractive to buyers." />
+								<Hint text="When disabled, customers pay the 5% fee on top of your listed price (e.g., ₦1,000 item becomes ₦1,050 at checkout)." />
+							</div>
+						</div>
+					</div>
+					<FieldDivider />
+
+					<div className="mt-4">
 						<Label text="Launch Date" required />
 						<DateTimePicker value={launchDate} onChange={setLaunchDate} />
 						{!!collectionId &&
@@ -437,6 +646,11 @@ export default function NewPiecePage() {
 						<Label text="Gallery Shots" />
 						<MultiImagePicker files={galleryFiles} onPick={setGalleryFiles} />
 					</div>
+					<div className="mt-4">
+						<Label text="Size Guide" />
+						<SingleImagePicker file={sizeGuideFile} onPick={setSizeGuideFile} />
+						<Hint text="Upload a size guide image to help customers choose the right size" />
+					</div>
 				</Group>
 
 				{/* Description */}
@@ -460,65 +674,8 @@ export default function NewPiecePage() {
 					<Hint text="Used in explore, search and trends" />
 				</Group>
 
-				{/* Sizes (chips + free input) */}
-				<Group>
-					<Label text="Size Options" />
-					<div className="flex flex-wrap gap-2 mb-2">
-						{predefinedSizes.map((s) => {
-							const isSelected = sizes.includes(s);
-							const oneSizeSelected = sizes.includes("One Size");
-							const isDisabled =
-								(s !== "One Size" && oneSizeSelected) ||
-								(s === "One Size" && sizes.length > 0 && !isSelected);
-							return (
-								<button
-									key={s}
-									type="button"
-									disabled={isDisabled}
-									onClick={() => {
-										if (s === "One Size")
-											setSizes(isSelected ? [] : ["One Size"]);
-										else {
-											if (oneSizeSelected) return;
-											setSizes((prev) =>
-												isSelected ? prev.filter((x) => x !== s) : [...prev, s]
-											);
-										}
-									}}
-									className={[
-										"px-3 py-1.5 rounded-full text-sm border",
-										isSelected
-											? "bg-text text-bg border-text"
-											: "bg-surface border-stroke",
-										isDisabled ? "opacity-50 cursor-not-allowed" : "",
-									].join(" ")}
-								>
-									{s}
-								</button>
-							);
-						})}
-						{sizes.length > 1 && (
-							<button
-								type="button"
-								className="text-alert text-sm border border-alert/30 rounded-lg px-2.5"
-								onClick={() => setSizes([])}
-							>
-								Clear All
-							</button>
-						)}
-					</div>
-					{sizes.includes("One Size") && (
-						<Hint text={`Only "One Size" can be selected at a time.`} />
-					)}
-					<TagsInput
-						value={sizes}
-						onChange={setSizes}
-						placeholder="e.g. S, M, L, XL ..."
-					/>
-				</Group>
-
-				{/* Cop link (+ IG helper) */}
-				<Group>
+				{/* Cop link (+ IG helper) - COMMENTED OUT FOR STORE ORDERS */}
+				{/* <Group>
 					<Label text="Cop Link" />
 					<Input
 						value={copLink}
@@ -538,7 +695,7 @@ export default function NewPiecePage() {
 							<span>Use my Instagram profile link</span>
 						</label>
 					)}
-				</Group>
+				</Group> */}
 
 				<div className="h-16" />
 			</div>

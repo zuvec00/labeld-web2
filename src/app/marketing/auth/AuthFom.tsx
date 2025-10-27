@@ -539,13 +539,13 @@ export default function AuthForm({
 				<p className="mt-4 text-center text-sm text-text-muted">
 					{mode === "login" ? (
 						<>
-							New here?{" "}
+							{/* New here?{" "}
 							<button
 								onClick={() => onModeChange?.("signup")}
 								className="text-cta font-semibold"
 							>
 								Join the Culture
-							</button>
+							</button> */}
 						</>
 					) : (
 						<>

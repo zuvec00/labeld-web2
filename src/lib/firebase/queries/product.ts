@@ -34,10 +34,16 @@ export type Product = {
   isAvailableNow?: boolean;
   mainVisualUrl: string;
   galleryImages?: string[] | null;
+  sizeGuideUrl?: string | null;
   description?: string | null;
   styleTags?: string[] | null;
   sizeOptions?: string[] | null;
   copLink?: string | null;
+  stockRemaining?: number | null;
+  discountPercent?: number | null;
+  feeSettings?: {
+    absorbTransactionFee: boolean;
+  } | null;
 
   // denormalized brand fields (optional)
   brandName?: string | null;
@@ -65,10 +71,16 @@ function toProduct(id: string, d: DocumentData): Product {
     isAvailableNow: !!d.isAvailableNow,
     mainVisualUrl: d.mainVisualUrl ?? "",
     galleryImages: Array.isArray(d.galleryImages) ? d.galleryImages.map(String) : null,
+    sizeGuideUrl: d.sizeGuideUrl ?? null,
     description: d.description ?? null,
     styleTags: Array.isArray(d.styleTags) ? d.styleTags.map(String) : null,
     sizeOptions: Array.isArray(d.sizeOptions) ? d.sizeOptions.map(String) : null,
     copLink: d.copLink ?? null,
+    stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
+    discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
+    feeSettings: d.feeSettings ? {
+      absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
+    } : null,
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,
@@ -105,10 +117,16 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     isAvailableNow: !!d.isAvailableNow,
     mainVisualUrl: d.mainVisualUrl ?? "",
     galleryImages: Array.isArray(d.galleryImages) ? d.galleryImages.map(String) : [],
+    sizeGuideUrl: d.sizeGuideUrl ?? null,
     description: d.description ?? "",
     styleTags: Array.isArray(d.styleTags) ? d.styleTags.map(String) : [],
     sizeOptions: Array.isArray(d.sizeOptions) ? d.sizeOptions.map(String) : [],
     copLink: d.copLink ?? "",
+    stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
+    discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
+    feeSettings: d.feeSettings ? {
+      absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
+    } : null,
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,

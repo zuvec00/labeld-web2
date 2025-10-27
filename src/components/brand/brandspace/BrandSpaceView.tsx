@@ -11,6 +11,7 @@ import { useEffect, useState } from "react";
 import CoverAndLogo from "./CoverAndLogo";
 import BrandHeader from "./Header";
 import BrandTabs from "./Tabs";
+import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 
 export function BrandSpaceView({ uid }: { uid: string }) {
 	const router = useRouter();
@@ -71,6 +72,11 @@ export function BrandSpaceView({ uid }: { uid: string }) {
 				isOwner={true}
 				onEdit={() => router.push("/brand-space/profile/edit")}
 			/>
+
+			{/* Store Toggle */}
+			<div className="px-4 sm:px-6 py-4 border-b border-stroke">
+				<BrandStoreToggle />
+			</div>
 
 			<BrandTabs uid={uid} />
 		</div>

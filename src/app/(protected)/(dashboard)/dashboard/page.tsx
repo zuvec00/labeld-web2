@@ -17,6 +17,7 @@ import GatedFulfillmentSnapshot from "@/components/GatedFulfillmentSnapshot";
 import GatedRecentOrders from "@/components/GatedRecentOrders";
 import GatedTopPerformers from "@/components/GatedTopPerformers";
 import GatedUpcomingEvents from "@/components/GatedUpcomingEvents";
+import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 
 export default function DashboardPage() {
 	const [filters, setFilters] = React.useState<BrandSpaceFilters>({
@@ -335,19 +336,22 @@ export default function DashboardPage() {
 		<FeatureProvider>
 			<div className="space-y-6">
 				{/* Header */}
-				<div className="flex items-center justify-between">
+				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 					<div>
 						<h1 className="font-heading text-2xl font-semibold">Dashboard</h1>
 						<p className="text-text-muted mt-1">
 							Your brand&apos;s performance overview
 						</p>
 					</div>
-					<button
-						onClick={refresh}
-						className="px-4 py-2 bg-bg border border-stroke text-text rounded-lg hover:bg-surface transition-colors"
-					>
-						Refresh
-					</button>
+					<div className="flex items-center gap-3">
+						<BrandStoreToggle />
+						<button
+							onClick={refresh}
+							className="px-4 py-2 bg-bg border border-stroke text-text rounded-lg hover:bg-surface transition-colors"
+						>
+							Refresh
+						</button>
+					</div>
 				</div>
 
 				{/* Controls */}

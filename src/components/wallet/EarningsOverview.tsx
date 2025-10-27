@@ -1,16 +1,24 @@
 // components/wallet/EarningsOverview.tsx
 import { useState } from "react";
-import { EarningsBySource, WalletLedgerEntry } from "@/types/wallet";
+import {
+	EarningsBySource,
+	WalletLedgerEntry,
+	WalletSummary,
+} from "@/types/wallet";
 import { formatCurrency } from "@/lib/wallet/mock";
 import Card from "@/components/dashboard/Card";
 
 interface EarningsOverviewProps {
 	entries: WalletLedgerEntry[];
+	walletSummary?: WalletSummary;
 }
 
 type PeriodType = "today" | "7days" | "30days" | "custom";
 
-export default function EarningsOverview({ entries }: EarningsOverviewProps) {
+export default function EarningsOverview({
+	entries,
+	walletSummary,
+}: EarningsOverviewProps) {
 	const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>("7days");
 
 	// Calculate date ranges
@@ -125,7 +133,7 @@ export default function EarningsOverview({ entries }: EarningsOverviewProps) {
 							<div className="w-2 h-2 bg-cta rounded-full group-hover:scale-110 transition-transform"></div>
 						</div>
 						<p className="text-xs text-text-muted/70 mb-3">
-							Tickets & event merchandise
+							Tickets & event merchandise • Weekly payout
 						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">
@@ -152,7 +160,14 @@ export default function EarningsOverview({ entries }: EarningsOverviewProps) {
 							<div className="w-2 h-2 bg-calm-1 rounded-full group-hover:scale-110 transition-transform"></div>
 						</div>
 						<p className="text-xs text-text-muted/70 mb-3">
-							Standalone brand store sales
+							Standalone brand store sales •{" "}
+							{walletSummary?.payout?.schedule?.label || "Standard"} payout (
+							{walletSummary?.payout?.schedule?.timelineDays
+								? `${walletSummary.payout.schedule.timelineDays} business day${
+										walletSummary.payout.schedule.timelineDays !== 1 ? "s" : ""
+								  }`
+								: "7 business days"}
+							)
 						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">

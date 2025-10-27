@@ -75,13 +75,26 @@ export default function EditPiecePage() {
 
 	const [mainFile, setMainFile] = useState<File | null>(null);
 	const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
+	const [sizeGuideFile, setSizeGuideFile] = useState<File | null>(null);
 	const [onlineMain, setOnlineMain] = useState<string>("");
 	const [onlineGallery, setOnlineGallery] = useState<string[]>([]);
+	const [onlineSizeGuide, setOnlineSizeGuide] = useState<string>("");
 
 	const [description, setDescription] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
 	const [sizes, setSizes] = useState<string[]>([]);
-	const [copLink, setCopLink] = useState("");
+	// const [copLink, setCopLink] = useState("");
+
+	// Stock management
+	const [unlimitedStock, setUnlimitedStock] = useState(true);
+	const [stockQuantity, setStockQuantity] = useState("");
+
+	// Discount
+	const [hasDiscount, setHasDiscount] = useState(false);
+	const [discountPercent, setDiscountPercent] = useState("");
+
+	// Fee Settings
+	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(true);
 
 	// load
 	useEffect(() => {
@@ -119,11 +132,43 @@ export default function EditPiecePage() {
 
 				setOnlineMain(p.mainVisualUrl || "");
 				setOnlineGallery(p.galleryImages ?? []);
+				setOnlineSizeGuide((p as any).sizeGuideUrl || "");
 
 				setDescription(p.description ?? "");
 				setTags(p.styleTags ?? []);
 				setSizes(p.sizeOptions ?? []);
-				setCopLink(p.copLink ?? "");
+				// setCopLink(p.copLink ?? "");
+
+				// Stock management
+				const stockRem = (p as any).stockRemaining;
+				if (stockRem === null || stockRem === undefined) {
+					setUnlimitedStock(true);
+					setStockQuantity("");
+				} else {
+					setUnlimitedStock(false);
+					setStockQuantity(String(stockRem));
+				}
+
+				// Discount
+				const discount = (p as any).discountPercent;
+				if (discount !== null && discount !== undefined && discount > 0) {
+					setHasDiscount(true);
+					setDiscountPercent(String(discount));
+				} else {
+					setHasDiscount(false);
+					setDiscountPercent("");
+				}
+
+				// Fee Settings
+				const feeSettings = (p as any).feeSettings;
+				if (
+					feeSettings &&
+					typeof feeSettings.absorbTransactionFee === "boolean"
+				) {
+					setAbsorbTransactionFee(feeSettings.absorbTransactionFee);
+				} else {
+					setAbsorbTransactionFee(true); // Default to true
+				}
 			} catch (e: any) {
 				setErr(e?.message ?? "Failed to load piece.");
 			} finally {
@@ -219,6 +264,36 @@ export default function EditPiecePage() {
 				galleryImageUrls = [...onlineGallery];
 			}
 
+			// upload size guide if replaced
+			let sizeGuideUrl = onlineSizeGuide;
+			if (sizeGuideFile) {
+				try {
+					// Primary: Upload to Cloudinary
+					sizeGuideUrl = await uploadImageCloudinary(sizeGuideFile, {
+						folder: `productImages/${userId}`,
+						tags: ["product", "size-guide", userId],
+					});
+					console.log(
+						"✅ Size guide image uploaded to Cloudinary:",
+						sizeGuideUrl
+					);
+				} catch (cloudinaryError) {
+					// Fallback: Upload to Firebase Storage
+					console.warn(
+						"⚠️ Cloudinary upload failed for size guide, falling back to Firebase Storage:",
+						cloudinaryError
+					);
+					sizeGuideUrl = await uploadFileGetURL(
+						sizeGuideFile,
+						`productImages/${userId}/${Date.now()}-${sizeGuideFile.name}`
+					);
+					console.log(
+						"✅ Size guide image uploaded to Firebase Storage:",
+						sizeGuideUrl
+					);
+				}
+			}
+
 			const launch: Date = availableNow ? new Date() : (launchDate as Date);
 
 			const updatedData: Record<string, any> = {
@@ -236,12 +311,26 @@ export default function EditPiecePage() {
 					: null,
 				launchDate: launch,
 				isAvailableNow: availableNow,
+				isActive: true,
+				stockRemaining: unlimitedStock
+					? null
+					: Number.isFinite(Number(stockQuantity))
+					? Number(stockQuantity)
+					: null,
 				mainVisualUrl,
 				galleryImages: galleryImageUrls ?? null,
+				sizeGuideUrl: sizeGuideUrl || null,
 				description: description.trim() ? description.trim() : null,
 				styleTags: tags.length ? tags : null,
 				sizeOptions: sizes.length ? sizes : null,
-				copLink: copLink.trim() ? copLink.trim() : null,
+				copLink: null, // Set to null for store orders
+				discountPercent:
+					hasDiscount && Number.isFinite(Number(discountPercent))
+						? Number(discountPercent)
+						: null,
+				feeSettings: {
+					absorbTransactionFee: absorbTransactionFee,
+				},
 			};
 
 			Object.keys(updatedData).forEach((k) => {
@@ -271,6 +360,8 @@ export default function EditPiecePage() {
 			setDeleting(false);
 		}
 	}
+
+	const Divider = () => <div className="my-7 border-t border-stroke/40" />;
 
 	if (loading) {
 		return (
@@ -355,7 +446,106 @@ export default function EditPiecePage() {
 						</div>
 					</div>
 
-					<div className="mt-3">
+					{/* Size Options */}
+					<div className="mt-4">
+						<Label text="Size Options" />
+						<TagsInput
+							value={sizes}
+							onChange={setSizes}
+							placeholder="e.g. S, M, L, XL..."
+						/>
+					</div>
+
+					{/* Stock Management */}
+					<Divider />
+					<div className="mt-4">
+						<Label text="Stock Management" />
+						<div className="space-y-3">
+							<Toggle
+								checked={unlimitedStock}
+								onChange={(v) => {
+									setUnlimitedStock(v);
+									if (v) setStockQuantity("");
+								}}
+								label="Unlimited Stock"
+							/>
+							{!unlimitedStock && (
+								<div>
+									<Label text="Stock Quantity" required />
+									<Input
+										type="number"
+										value={stockQuantity}
+										onChange={setStockQuantity}
+										placeholder="Enter available quantity"
+									/>
+									<Hint text="Set how many units are available for purchase" />
+								</div>
+							)}
+							{unlimitedStock && (
+								<Hint text="This piece will always be available for purchase" />
+							)}
+						</div>
+					</div>
+
+					{/* Discount */}
+					<Divider />
+					<div className="mt-4">
+						<Label text="Discount" />
+						<div className="space-y-3">
+							<Toggle
+								checked={hasDiscount}
+								onChange={(v) => {
+									setHasDiscount(v);
+									if (!v) setDiscountPercent("");
+								}}
+								label="Apply Discount"
+							/>
+							{hasDiscount && (
+								<div>
+									<Label text="Discount Percentage" required />
+									<Input
+										type="number"
+										value={discountPercent}
+										onChange={setDiscountPercent}
+										placeholder="e.g. 10, 20, 50"
+									/>
+									<Hint text="Enter discount percentage (0-100)" />
+									{discountPercent &&
+										Number.isFinite(Number(discountPercent)) && (
+											<div className="text-text-muted text-sm mt-1">
+												Discounted price: {selectedCurrency?.abbreviation || ""}{" "}
+												{formatWithCommasDouble(
+													parsedPrice * (1 - Number(discountPercent) / 100)
+												)}{" "}
+												<span className="text-green-600">
+													({discountPercent}% off)
+												</span>
+											</div>
+										)}
+								</div>
+							)}
+						</div>
+					</div>
+
+					{/* Fee Settings */}
+					<Divider />
+					<div className="mt-4">
+						<Label text="Transaction Fee Settings" />
+						<div className="space-y-3">
+							<Toggle
+								checked={absorbTransactionFee}
+								onChange={setAbsorbTransactionFee}
+								label="Absorb Transaction Fees"
+							/>
+							<div className="space-y-2">
+								<Hint text="When enabled, you pay the 5% transaction fee instead of your customers. This makes checkout more attractive to buyers." />
+								<Hint text="When disabled, customers pay the 5% fee on top of your listed price (e.g., ₦1,000 item becomes ₦1,050 at checkout)." />
+							</div>
+						</div>
+					</div>
+
+					<Divider />
+					<div className="mt-4">
 						<Label text="Launch Date" required />
 						<DateTimePicker value={launchDate} onChange={setLaunchDate} />
 						{!!collectionId &&
@@ -404,6 +594,20 @@ export default function EditPiecePage() {
 							}
 						/>
 					</div>
+
+					<div className="mt-4">
+						<Label text="Size Guide" />
+						<SingleImagePicker
+							existingUrl={onlineSizeGuide}
+							file={sizeGuideFile}
+							onPick={(f) => setSizeGuideFile(f)}
+							onClear={() => {
+								setSizeGuideFile(null);
+								setOnlineSizeGuide("");
+							}}
+						/>
+						<Hint text="Upload a size guide image to help customers choose the right size" />
+					</div>
 				</Group>
 
 				{/* Description */}
@@ -427,25 +631,15 @@ export default function EditPiecePage() {
 					<Hint text="Used in explore, search and trends" />
 				</Group>
 
-				{/* Sizes */}
-				<Group>
-					<Label text="Size Options" />
-					<TagsInput
-						value={sizes}
-						onChange={setSizes}
-						placeholder="e.g. S, M, L, XL..."
-					/>
-				</Group>
-
-				{/* Cop link */}
-				<Group>
+				{/* Cop link - COMMENTED OUT FOR STORE ORDERS */}
+				{/* <Group>
 					<Label text="Cop Link" />
 					<Input
 						value={copLink}
 						onChange={setCopLink}
 						placeholder="Paste the link where fans can cop this piece"
 					/>
-				</Group>
+				</Group> */}
 
 				<div className="h-16" />
 			</div>
@@ -662,12 +856,12 @@ function SingleImagePicker({
 }) {
 	return (
 		<div className="flex flex-col gap-3">
-			{existingUrl ? (
+			{file ? (
 				<div className="relative w-full">
 					<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
 						<OptimizedImage
-							src={existingUrl}
-							alt="Current image"
+							src={URL.createObjectURL(file)}
+							alt="Preview"
 							width={800}
 							height={600}
 							sizeContext="card"
@@ -681,23 +875,51 @@ function SingleImagePicker({
 							className={
 								baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
 							}
-							onClick={onClear}
+							onClick={() => onPick(null)}
 						>
-							Remove current
+							Remove
 						</button>
 					</div>
 				</div>
-			) : file ? (
-				<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
-					<OptimizedImage
-						src={URL.createObjectURL(file)}
-						alt="Preview"
-						width={800}
-						height={600}
-						sizeContext="card"
-						objectFit="cover"
-						className="w-full"
-					/>
+			) : existingUrl ? (
+				<div className="relative w-full">
+					<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
+						<OptimizedImage
+							src={existingUrl}
+							alt="Current image"
+							width={800}
+							height={600}
+							sizeContext="card"
+							objectFit="cover"
+							className="w-full"
+						/>
+					</div>
+					<div className="mt-2 flex gap-2">
+						<label className="cursor-pointer">
+							<span
+								className={
+									baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
+								}
+							>
+								Replace
+							</span>
+							<input
+								type="file"
+								accept="image/*"
+								className="sr-only"
+								onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+							/>
+						</label>
+						<button
+							type="button"
+							className={
+								baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
+							}
+							onClick={onClear}
+						>
+							Remove
+						</button>
+					</div>
 				</div>
 			) : (
 				<label className="block cursor-pointer">

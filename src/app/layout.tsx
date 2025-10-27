@@ -48,12 +48,12 @@ export const metadata = {
 	},
 	icons: {
 		icon: [
-			{ url: "/labeld_logo.png", sizes: "192x192", type: "image/png" },
-			{ url: "/labeld_logo.png", sizes: "512x512", type: "image/png" },
+			{ url: "/labeld_logo.ico", sizes: "192x192", type: "image/x-icon" },
+			{ url: "/labeld_logo.ico", sizes: "512x512", type: "image/x-icon" },
 		],
 		apple: [
-			{ url: "/labeld_logo.png", sizes: "152x152", type: "image/png" },
-			{ url: "/labeld_logo.png", sizes: "192x192", type: "image/png" },
+			{ url: "/labeld_logo.ico", sizes: "152x152", type: "image/x-icon" },
+			{ url: "/labeld_logo.ico", sizes: "192x192", type: "image/x-icon" },
 		],
 	},
 	openGraph: {
@@ -66,7 +66,7 @@ export const metadata = {
 			"The platform where brands and event organizers manage their creative space, drops, and events. For the culture, not the clout.",
 		images: [
 			{
-				url: "/images/labeld_logo.png",
+				url: "/labeld_logo.ico",
 				width: 1200,
 				height: 630,
 				alt: "Labeld Studio",
@@ -78,7 +78,7 @@ export const metadata = {
 		title: "Labeld Studio - For the Culture, Not the Clout",
 		description:
 			"The platform where brands and event organizers manage their creative space, drops, and events.",
-		images: ["/images/labeld_logo.png"],
+		images: ["/labeld_logo.ico"],
 		creator: "@labeld",
 	},
 	robots: {

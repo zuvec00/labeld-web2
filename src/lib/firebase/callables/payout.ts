@@ -78,6 +78,43 @@ export interface PayoutRetryResult {
   error?: string;
 }
 
+export interface StorePayoutTestResult {
+  success: boolean;
+  message: string;
+  results: {
+    totalVendors: number;
+    successful: number;
+    failed: number;
+    skipped: number;
+    totalAmount: number;
+    batchId?: string;
+    dryRun: boolean;
+  };
+  details?: {
+    vendorsWithBank: Array<{
+      vendorId: string;
+      vendorName: string;
+      amount: string;
+      hasBankDetails: boolean;
+    }>;
+    vendorsWithoutBank: Array<{
+      vendorId: string;
+      vendorName: string;
+      amount: string;
+      hasBankDetails: boolean;
+    }>;
+    payoutResults: Array<{
+      vendorId: string;
+      vendorName: string;
+      success: boolean;
+      amount: string;
+      transferCode?: string;
+      error?: string;
+    }>;
+  };
+  error?: string;
+}
+
 // Test payout processor
 export const testPayoutProcessor = httpsCallable<
   { testMode?: boolean; dryRun?: boolean },
@@ -95,6 +132,12 @@ export const testRetryFailedPayouts = httpsCallable<
   { dryRun?: boolean },
   PayoutRetryResult
 >(functions, "testRetryFailedPayouts");
+
+// Test store payout processor
+export const testStorePayoutProcessor = httpsCallable<
+  { testMode?: boolean; dryRun?: boolean },
+  StorePayoutTestResult
+>(functions, "testStorePayoutProcessor");
 
 // Helper functions
 export async function runTestPayout(
@@ -130,6 +173,20 @@ export async function runTestRetryFailedPayouts(
     return result.data;
   } catch (error) {
     console.error("Error running test retry failed payouts:", error);
+    throw error;
+  }
+}
+
+export async function runTestStorePayout(
+  testMode: boolean = true,
+  dryRun: boolean = false
+): Promise<StorePayoutTestResult> {
+  try {
+    const result = await testStorePayoutProcessor({ testMode, dryRun });
+    console.log("Test store payout result:", result.data);
+    return result.data;
+  } catch (error) {
+    console.error("Error running test store payout:", error);
     throw error;
   }
 }

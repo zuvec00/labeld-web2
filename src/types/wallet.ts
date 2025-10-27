@@ -23,6 +23,14 @@ export interface WalletSummary {
     payoutHourLocal: number; // 14
     nextPayoutAt?: number; // millis UTC
     lastPayoutAt?: number; // millis UTC
+    schedule?: {
+      type: "weekly" | "5days" | "3days" | "2days" | "1day";
+      feePercent: number;
+      feeCapMinor: number;
+      timelineDays: number;
+      label: string;
+      updatedAt?: any; // Firestore Timestamp
+    };
      bank?: {
       bankName: string;           
       accountNumber: string;      
@@ -38,7 +46,7 @@ export interface WalletLedgerEntry {
   vendorId: string;
   currency: Currency;
   source: LedgerSource; // "event" for these flows
-  orderRef: { collection: "orders"; id: string };
+  orderRef: { collection: "orders" | "storeOrders"; id: string };
   eventId?: string | null;
   amountMinor: number; // positive int
   type: LedgerType; // here: "credit_eligible" at payment

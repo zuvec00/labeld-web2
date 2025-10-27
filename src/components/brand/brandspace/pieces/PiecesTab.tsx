@@ -167,9 +167,20 @@ function PieceCard({
 
 			<div className="px-2 mt-2">
 				<div className="font-heading font-light">{piece.dropName}</div>
-				<div className="mt-1 font-semibold text-sm">
-					{currency ? `${currency} ` : ""}
-					{formatWithCommasDouble(piece.price)}
+				<div className="mt-1 space-y-1">
+					{/* Original price */}
+					<div className="font-semibold text-sm">
+						{currency ? `${currency} ` : ""}
+						{formatWithCommasDouble(piece.price)}
+					</div>
+					{/* Show final price with fee if fee is transferred to consumer */}
+					{piece.feeSettings?.absorbTransactionFee === false && (
+						<div className="text-xs text-text-muted">
+							Final For Consumer: {currency ? `${currency} ` : ""}
+							{formatWithCommasDouble(piece.price * 1.05)}
+							<span className="text-alert ml-1">(+5% fee)</span>
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

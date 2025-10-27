@@ -78,7 +78,7 @@ export default function BankAccountBanner({ summary }: BankAccountBannerProps) {
 							</p>
 							<p className="text-text-muted mb-4">
 								Once verified, you&apos;ll be able to receive payouts
-								automatically every Friday.
+								automatically.
 							</p>
 							<div className="flex items-center gap-3">
 								<Button
@@ -110,28 +110,20 @@ export default function BankAccountBanner({ summary }: BankAccountBannerProps) {
 		);
 	}
 
-	// Bank account is verified - show success state
+	// Bank account is verified - show minimal success state
 	return (
 		<>
-			<div className="rounded-[20px] bg-accent/10 border border-accent/20 p-6">
-				<div className="flex items-start gap-4">
-					<div className="w-6 h-6 bg-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-						<span className="text-bg text-sm font-bold">✓</span>
+			<div className="rounded-xl bg-accent/5 border border-accent/20 p-4">
+				<div className="flex items-center gap-3">
+					<div className="w-4 h-4 bg-accent rounded-full flex items-center justify-center flex-shrink-0">
+						<span className="text-white text-xs font-bold">✓</span>
 					</div>
 					<div className="flex-1">
-						<h3 className="text-lg font-semibold text-accent mb-2">
-							Bank Account Verified
-						</h3>
-						<p className="text-text-muted mb-2">
-							Your bank account{" "}
-							<strong>
+						<p className="text-sm text-text-muted">
+							Bank account verified:{" "}
+							<span className="font-medium text-text">
 								{bank.bankName} ••••{bank.accountNumber.slice(-4)}
-							</strong>{" "}
-							is verified and ready for payouts.
-						</p>
-						<p className="text-text-muted">
-							You&apos;ll receive your earnings automatically every Friday at
-							2:00 PM.
+							</span>
 						</p>
 					</div>
 				</div>

@@ -1,10 +1,11 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Button from "@/components/ui/button";
 import HeatGlow from "./HeatGlow";
 import { getHeatColor } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { Copy, ExternalLink } from "lucide-react";
 
 /* --- Header --- */
 export default function BrandHeader({
@@ -29,6 +30,23 @@ export default function BrandHeader({
 	const heatInt = Math.max(0, Math.floor(Number.isFinite(heat) ? heat : 0));
 	const color = getHeatColor(80);
 	const router = useRouter();
+	const [copied, setCopied] = useState(false);
+
+	const brandWebsiteUrl = `https://shop.labeld.app/${username}`;
+
+	const handleCopyLink = async () => {
+		try {
+			await navigator.clipboard.writeText(brandWebsiteUrl);
+			setCopied(true);
+			setTimeout(() => setCopied(false), 2000);
+		} catch (err) {
+			console.error("Failed to copy link:", err);
+		}
+	};
+
+	const handleOpenWebsite = () => {
+		window.open(brandWebsiteUrl, "_blank");
+	};
 
 	return (
 		<div className="px-4 sm:px-6">
@@ -81,7 +99,7 @@ export default function BrandHeader({
 
 			{bio ? <p className="mt-3">{bio}</p> : null}
 
-			<div className="mt-4 flex items-center gap-3">
+			<div className="mt-4 flex items-center gap-3 flex-wrap">
 				{isOwner && (
 					<Button
 						text="Edit profile"
@@ -90,6 +108,24 @@ export default function BrandHeader({
 						className="px-4 py-2"
 					/>
 				)}
+
+				{/* Share Brand Website */}
+				<div className="flex items-center gap-2">
+					<Button
+						text={copied ? "Copied!" : "Copy Link"}
+						variant="outline"
+						onClick={handleCopyLink}
+						leftIcon={<Copy className="w-4 h-4" />}
+						className="px-3 py-2 text-sm"
+					/>
+					<Button
+						text="Visit Store"
+						variant="primary"
+						onClick={handleOpenWebsite}
+						leftIcon={<ExternalLink className="w-4 h-4" />}
+						className="px-3 py-2 text-sm"
+					/>
+				</div>
 			</div>
 		</div>
 	);

@@ -63,8 +63,13 @@ export function formatLagosDate(ts: Timestamp | number | Date): string {
 export function getLineKey(line: LineItem): string {
   if (line._type === "merch") {
     return `merch:${line.merchItemId}`;
-  } else {
+  } else if (line._type === "ticket") {
     return `ticket:${line.ticketTypeId}`;
+  } else if (line._type === "product") {
+    return `product:${line.productId}`;
+  } else {
+    // Fallback - should not happen with proper typing
+    throw new Error(`Unknown line item type: ${(line as any)._type}`);
   }
 }
 
@@ -76,9 +81,14 @@ export function getLineItemSummary(line: LineItem): string {
     const size = line.size ? ` (${line.size})` : "";
     const color = line.color ? ` ${line.color}` : "";
     return `${qty}× ${name}${size}${color}`;
-  } else {
+  } else if (line._type === "ticket") {
     const admitType = line.admitType ? ` (${line.admitType.toUpperCase()})` : "";
     return `${qty}× ${name}${admitType}`;
+  } else if (line._type === "product") {
+    return `${qty}× ${name}`;
+  } else {
+    // Fallback - should not happen with proper typing
+    return `${qty}× ${name}`;
   }
 }
 

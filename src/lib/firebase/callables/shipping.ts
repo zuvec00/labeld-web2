@@ -48,6 +48,59 @@ export interface AddTimelineNoteRequest {
   note: string;
 }
 
+// Store Order Types
+export interface CreateStoreFulfillmentLinesRequest {
+  orderId: string;
+  lineItems: Array<{
+    productId: string;
+    qty: number;
+    brandId: string;
+  }>;
+  shipping: {
+    method: ShippingMethod;
+    address?: any;
+    feeMinor: number;
+  };
+}
+
+export interface CreateStoreFulfillmentLinesResponse {
+  success: boolean;
+  linesCreated: number;
+}
+
+export interface GetStoreFulfillmentLinesRequest {
+  orderId: string;
+}
+
+export interface GetStoreFulfillmentLinesResponse {
+  success: boolean;
+  lines: any[];
+}
+
+export interface UpdateStoreFulfillmentStatusRequest {
+  orderId: string;
+  lineKey: string;
+  status: FulfillmentStatus;
+  qtyFulfilled?: number;
+  trackingNumber?: string;
+  carrier?: string;
+  note?: string;
+}
+
+export interface UpdateStoreFulfillmentStatusResponse {
+  success: boolean;
+  emailSent: boolean;
+}
+
+export interface GetStoreOrderTimelineRequest {
+  orderId: string;
+}
+
+export interface GetStoreOrderTimelineResponse {
+  success: boolean;
+  timeline: any[];
+}
+
 // Callable functions
 export const quoteShipping = httpsCallable<ShippingQuoteRequest, ShippingQuoteResponse>(
   functions,
@@ -67,4 +120,25 @@ export const setFulfillmentStatus = httpsCallable<SetFulfillmentStatusRequest, {
 export const addTimelineNote = httpsCallable<AddTimelineNoteRequest, { success: boolean }>(
   functions,
   'addTimelineNote'
+);
+
+// Store Order Callable Functions
+export const createStoreFulfillmentLines = httpsCallable<CreateStoreFulfillmentLinesRequest, CreateStoreFulfillmentLinesResponse>(
+  functions,
+  'createStoreFulfillmentLines'
+);
+
+export const getStoreFulfillmentLines = httpsCallable<GetStoreFulfillmentLinesRequest, GetStoreFulfillmentLinesResponse>(
+  functions,
+  'getStoreFulfillmentLines'
+);
+
+export const updateStoreFulfillmentStatus = httpsCallable<UpdateStoreFulfillmentStatusRequest, UpdateStoreFulfillmentStatusResponse>(
+  functions,
+  'updateStoreFulfillmentStatus'
+);
+
+export const getStoreOrderTimeline = httpsCallable<GetStoreOrderTimelineRequest, GetStoreOrderTimelineResponse>(
+  functions,
+  'getStoreOrderTimeline'
 );

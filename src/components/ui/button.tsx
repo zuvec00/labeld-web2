@@ -101,8 +101,6 @@ export type ButtonProps2 = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 	rightIcon?: React.ReactNode;
 };
 
-
-
 export function Button2({
 	text,
 	variant = "primary",

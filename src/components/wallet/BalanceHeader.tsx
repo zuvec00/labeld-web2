@@ -2,12 +2,15 @@
 import { WalletSummary } from "@/types/wallet";
 import { formatCurrency, formatDate } from "@/lib/wallet/mock";
 import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface BalanceHeaderProps {
 	summary: WalletSummary;
 }
 
 export default function BalanceHeader({ summary }: BalanceHeaderProps) {
+	const router = useRouter();
 	return (
 		<div className="space-y-6">
 			{/* Header */}
@@ -19,12 +22,20 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 					</p>
 				</div>
 				<Button
+					text="Payout Settings"
+					variant="secondary"
+					onClick={() => router.push("/settings?section=payout")}
+					className="flex items-center gap-2"
+				>
+					<Settings className="w-4 h-4" />
+				</Button>
+				{/* <Button
 					text="Withdraw"
 					variant="disabled"
 					disabled
 					className="cursor-not-allowed"
 					title="Coming soon"
-				/>
+				/> */}
 			</div>
 
 			{/* Balance Cards */}
@@ -69,6 +80,40 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 						{formatCurrency(summary.eligibleBalanceMinor + summary.onHoldMinor)}
 					</div>
 					<p className="text-xs text-text-muted">Eligible + On Hold</p>
+				</div>
+			</div>
+
+			{/* Payout Schedule Info */}
+			<div className="bg-surface rounded-2xl p-4 border border-stroke">
+				<h3 className="text-sm font-medium text-text mb-3">Payout Schedules</h3>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+					<div>
+						<div className="flex items-center gap-2 mb-1">
+							<div className="w-2 h-2 bg-accent rounded-full"></div>
+							<span className="font-medium text-text">Event Earnings</span>
+						</div>
+						<p className="text-text-muted">
+							Weekly (Every Friday at 2 PM) - No fees
+						</p>
+					</div>
+					<div>
+						<div className="flex items-center gap-2 mb-1">
+							<div className="w-2 h-2 bg-cta rounded-full"></div>
+							<span className="font-medium text-text">Store Earnings</span>
+						</div>
+						<p className="text-text-muted">
+							{summary.payout?.schedule?.label || "Standard"} -
+							{summary.payout?.schedule?.timelineDays
+								? ` ${summary.payout.schedule.timelineDays} business day${
+										summary.payout.schedule.timelineDays !== 1 ? "s" : ""
+								  }`
+								: " 7 business days"}{" "}
+							-
+							{summary.payout?.schedule?.feePercent
+								? ` ${summary.payout.schedule.feePercent}% fee`
+								: " No fees"}
+						</p>
+					</div>
 				</div>
 			</div>
 

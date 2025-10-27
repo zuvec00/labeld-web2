@@ -92,9 +92,10 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 		return source.charAt(0).toUpperCase() + source.slice(1);
 	};
 
-	const formatOrderRef = (orderRef: WalletLedgerEntry["orderRef"]) => {
-		if (!orderRef) return "—";
-		return `ORD-${orderRef.id.slice(-6)}`;
+	const formatStoreId = (orderRef: WalletLedgerEntry["orderRef"]) => {
+		if (!orderRef || orderRef.collection !== "storeOrders") return "—";
+		// For store orders, use the actual store order ID
+		return `ST-${orderRef.id.slice(-6)}`;
 	};
 
 	const formatEventId = (eventId: string | null | undefined) => {
@@ -102,11 +103,13 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 		return `EV-${eventId.slice(-6)}`;
 	};
 
-	const formatEntryId = (entry: WalletLedgerEntry) => {
-		// Use a combination of vendorId and createdAt for a unique identifier
-		return `${entry.vendorId.slice(-4)}-${entry.createdAt
-			.toString()
-			.slice(-6)}`;
+	const getRelevantId = (entry: WalletLedgerEntry) => {
+		if (entry.source === "store") {
+			return formatStoreId(entry.orderRef);
+		} else if (entry.source === "event") {
+			return formatEventId(entry.eventId);
+		}
+		return "—";
 	};
 
 	const handleSort = (field: "date" | "amount" | "type") => {
@@ -155,28 +158,17 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 
 	// CSV Export functionality
 	const exportToCSV = () => {
-		const headers = [
-			"Date",
-			"Type",
-			"Source",
-			"Event ID",
-			"Order Ref",
-			"Amount (₦)",
-			"Note",
-			"Entry ID",
-		];
+		const headers = ["Date", "Type", "Source", "ID", "Amount (₦)", "Note"];
 
 		const csvData = sortedEntries.map((entry) => [
 			formatDate(entry.createdAt),
 			getTypeLabel(entry.type),
 			getSourceLabel(entry.source),
-			formatEventId(entry.eventId),
-			formatOrderRef(entry.orderRef),
+			getRelevantId(entry),
 			`${entry.type.startsWith("debit") ? "-" : "+"}${(
 				Math.abs(entry.amountMinor) / 100
 			).toFixed(2)}`, // Convert to major units with correct sign
 			entry.note || "",
-			formatEntryId(entry),
 		]);
 
 		const csvContent = [
@@ -328,10 +320,7 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 											Source
 										</th>
 										<th className="text-left py-3 px-2 text-sm font-medium text-text-muted">
-											Event ID
-										</th>
-										<th className="text-left py-3 px-2 text-sm font-medium text-text-muted">
-											Order Ref
+											ID
 										</th>
 										<th
 											className="text-left py-3 px-2 text-sm font-medium text-text-muted cursor-pointer hover:text-text"
@@ -344,9 +333,6 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 										</th>
 										<th className="text-left py-3 px-2 text-sm font-medium text-text-muted">
 											Note
-										</th>
-										<th className="text-left py-3 px-2 text-sm font-medium text-text-muted">
-											Entry ID
 										</th>
 									</tr>
 								</thead>
@@ -372,10 +358,7 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 												{getSourceLabel(entry.source)}
 											</td>
 											<td className="py-3 px-2 text-sm text-text-muted font-mono">
-												{formatEventId(entry.eventId)}
-											</td>
-											<td className="py-3 px-2 text-sm text-text-muted font-mono">
-												{formatOrderRef(entry.orderRef)}
+												{getRelevantId(entry)}
 											</td>
 											<td
 												className={`py-3 px-2 text-sm font-medium ${
@@ -389,9 +372,6 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 											</td>
 											<td className="py-3 px-2 text-sm text-text-muted max-w-xs truncate">
 												{entry.note || "—"}
-											</td>
-											<td className="py-3 px-2 text-sm text-text-muted font-mono">
-												{formatEntryId(entry)}
 											</td>
 										</tr>
 									))}

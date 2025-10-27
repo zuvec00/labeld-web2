@@ -20,6 +20,8 @@ export interface BrandModel {
   youtube?: string | null;
   tiktok?: string | null;
 
+  isOpen?: boolean;            // store open/closed status
+
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }

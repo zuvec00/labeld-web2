@@ -1,13 +1,18 @@
 // components/wallet/PayoutsTable.tsx
 import { PayoutEntry } from "@/hooks/usePayouts";
+import { WalletSummary } from "@/types/wallet";
 import { formatCurrency, formatDate } from "@/lib/wallet/mock";
 import Card from "@/components/dashboard/Card";
 
 interface PayoutsTableProps {
 	payouts: PayoutEntry[];
+	walletSummary?: WalletSummary;
 }
 
-export default function PayoutsTable({ payouts }: PayoutsTableProps) {
+export default function PayoutsTable({
+	payouts,
+	walletSummary,
+}: PayoutsTableProps) {
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "pending":
@@ -41,22 +46,58 @@ export default function PayoutsTable({ payouts }: PayoutsTableProps) {
 	return (
 		<Card title="Payouts">
 			<div className="space-y-4">
-				{/* Automatic Payout Info */}
-				<div className="rounded-lg bg-accent/10 border border-accent/20 p-4">
-					<div className="flex items-start gap-3">
-						<div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
-						<div>
-							<h4 className="text-sm font-medium text-accent mb-1">
-								Automatic Weekly Payouts
-							</h4>
-							<p className="text-xs text-text-muted mb-2">
-								Your eligible earnings are automatically paid out every Friday
-								at 2:00 PM.
-							</p>
-							<p className="text-xs text-text-muted">
-								<strong>Cutoff:</strong> Sales made after Thursday 12:00 PM are
-								included in the following week&apos;s payout.
-							</p>
+				{/* Payout Schedule Info */}
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+					{/* Event Payouts */}
+					<div className="rounded-lg bg-accent/10 border border-accent/20 p-4">
+						<div className="flex items-start gap-3">
+							<div className="w-2 h-2 bg-accent rounded-full mt-2 flex-shrink-0"></div>
+							<div>
+								<h4 className="text-sm font-medium text-accent mb-1">
+									Event Earnings Payouts
+								</h4>
+								<p className="text-xs text-text-muted mb-2">
+									Event earnings are automatically paid out every Friday at 2:00
+									PM.
+								</p>
+								<p className="text-xs text-text-muted">
+									<strong>Schedule:</strong> Weekly • <strong>Fees:</strong>{" "}
+									None
+								</p>
+							</div>
+						</div>
+					</div>
+
+					{/* Store Payouts */}
+					<div className="rounded-lg bg-cta/10 border border-cta/20 p-4">
+						<div className="flex items-start gap-3">
+							<div className="w-2 h-2 bg-cta rounded-full mt-2 flex-shrink-0"></div>
+							<div>
+								<h4 className="text-sm font-medium text-cta mb-1">
+									Store Earnings Payouts
+								</h4>
+								<p className="text-xs text-text-muted mb-2">
+									Store earnings follow your custom payout schedule.
+								</p>
+								<p className="text-xs text-text-muted">
+									<strong>Schedule:</strong>{" "}
+									{walletSummary?.payout?.schedule?.label || "Standard"} •{" "}
+									<strong>Timeline:</strong>{" "}
+									{walletSummary?.payout?.schedule?.timelineDays
+										? `${
+												walletSummary.payout.schedule.timelineDays
+										  } business day${
+												walletSummary.payout.schedule.timelineDays !== 1
+													? "s"
+													: ""
+										  }`
+										: "7 business days"}{" "}
+									• <strong>Fees:</strong>{" "}
+									{walletSummary?.payout?.schedule?.feePercent
+										? `${walletSummary.payout.schedule.feePercent}%`
+										: "None"}
+								</p>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -123,20 +164,33 @@ export default function PayoutsTable({ payouts }: PayoutsTableProps) {
 					</table>
 				</div>
 
-				{/* Payout Schedule Info */}
+				{/* Additional Info */}
 				<div className="mt-6 p-4 rounded-lg bg-stroke/30 border border-stroke">
 					<div className="flex items-start gap-3">
 						<div className="w-2 h-2 bg-cta rounded-full mt-2 flex-shrink-0"></div>
 						<div>
 							<h4 className="text-sm font-medium text-text mb-1">
-								Payout Schedule
+								Payout Processing
 							</h4>
 							<div className="text-xs text-text-muted space-y-1">
 								<p>
-									<strong>Payout Day:</strong> Every Friday at 2:00 PM
+									<strong>Event Payouts:</strong> Every Friday at 2:00 PM
+									(cutoff: Thursday 12:00 PM)
 								</p>
 								<p>
-									<strong>Cutoff Time:</strong> Thursday at 12:00 PM
+									<strong>Store Payouts:</strong>{" "}
+									{walletSummary?.payout?.schedule?.label || "Standard"}{" "}
+									schedule (
+									{walletSummary?.payout?.schedule?.timelineDays
+										? `${
+												walletSummary.payout.schedule.timelineDays
+										  } business day${
+												walletSummary.payout.schedule.timelineDays !== 1
+													? "s"
+													: ""
+										  }`
+										: "7 business days"}
+									)
 								</p>
 								<p>
 									<strong>Processing:</strong> Automatic transfer to your
