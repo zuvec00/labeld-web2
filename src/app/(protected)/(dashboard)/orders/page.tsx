@@ -18,7 +18,7 @@ import StoreOrderDetailDrawer from "@/components/orders/StoreOrderDetailDrawer";
 import Card from "@/components/dashboard/Card";
 
 export default function OrdersPage() {
-	const [activeTab, setActiveTab] = useState<OrderTab>("event");
+	const [activeTab, setActiveTab] = useState<OrderTab>("store"); // Default to "store"
 	const [selectedOrder, setSelectedOrder] =
 		useState<OrderWithVendorStatus | null>(null);
 	const [selectedStoreOrder, setSelectedStoreOrder] =
