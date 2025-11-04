@@ -13,6 +13,7 @@ import BankAccountBanner from "@/components/wallet/BankAccountBanner";
 import TestStorePayoutPanel from "@/components/wallet/TestStorePayoutPanel";
 import { useWallet } from "@/hooks/useWallet";
 import { usePayouts } from "@/hooks/usePayouts";
+import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
 
 export default function WalletPage() {
 	const { user, loading, walletData, error } = useWallet();

@@ -64,6 +64,14 @@ function getSimpleErrorMessage(error: ZodError): string {
 			return "Venue country is required.";
 		case "capacityTotal":
 			return "Capacity must be at least 1.";
+		case "frequency":
+			return "Please select a frequency for recurring events.";
+		case "recurringEndMode":
+			return "Please select how the recurring event should end.";
+		case "recurringEndDate":
+			return "Please select an end date for the recurring event.";
+		case "recurringEndOccurrences":
+			return "Please enter a valid number of occurrences (at least 1).";
 		default:
 			// Fallback for unknown fields
 			if (msg.toLowerCase().includes("required"))
@@ -146,8 +154,14 @@ export default function EditEventDetailsPage() {
 		capacityMode: "limited",
 		capacityTotal: 100,
 		visibility: "public",
+		isRecurring: false,
+		frequency: undefined,
+		recurringEndMode: undefined,
+		recurringEndDate: "",
+		recurringEndOccurrences: undefined,
 	});
 	const [capacityInput, setCapacityInput] = useState<string>("100");
+	const [isSlugManuallyEdited, setIsSlugManuallyEdited] = useState(false);
 
 	// For cover image upload
 	const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -173,9 +187,9 @@ export default function EditEventDetailsPage() {
 				setEvent(eventData);
 
 				// Convert Firestore Timestamps to local datetime strings for datetime-local inputs
+
 				const convertToLocalDateTime = (date: any) => {
 					if (!date) return "";
-
 					let dateObj: Date;
 					if (date instanceof Date) {
 						dateObj = date;
@@ -198,6 +212,24 @@ export default function EditEventDetailsPage() {
 				const startAt = convertToLocalDateTime(eventData.startAt);
 				const endAt = convertToLocalDateTime(eventData.endAt);
 				console.log(eventData);
+
+				// Convert recurring end date to local date string if it exists
+				const convertRecurringEndDate = (date: any) => {
+					if (!date) return "";
+					let dateObj: Date;
+					if (date instanceof Date) {
+						dateObj = date;
+					} else if (date?.toDate) {
+						dateObj = date.toDate();
+					} else {
+						return "";
+					}
+					const year = dateObj.getFullYear();
+					const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+					const day = String(dateObj.getDate()).padStart(2, "0");
+					return `${year}-${month}-${day}`;
+				};
+
 				// Populate form with existing data
 				setV({
 					title: eventData.title || "",
@@ -220,7 +252,18 @@ export default function EditEventDetailsPage() {
 					capacityMode: eventData.capacityMode || "limited",
 					capacityTotal: eventData.capacityTotal || 100,
 					visibility: eventData.visibility || "public",
+					isRecurring: eventData.isRecurring || false,
+					frequency: eventData.frequency || undefined,
+					recurringEndMode: eventData.recurringEndMode || undefined,
+					recurringEndDate: convertRecurringEndDate(eventData.recurringEndDate),
+					recurringEndOccurrences:
+						eventData.recurringEndOccurrences || undefined,
 				});
+
+				// If slug exists in the event data, it means it was manually set, so mark it as edited
+				if (eventData.slug) {
+					setIsSlugManuallyEdited(true);
+				}
 
 				setCapacityInput(eventData.capacityTotal?.toString() || "100");
 
@@ -237,10 +280,11 @@ export default function EditEventDetailsPage() {
 		};
 	}, [eventIdString, router]);
 
+	// Auto-generate slug from title only if user hasn't manually edited it
 	useEffect(() => {
-		if (!v.title) return;
+		if (!v.title || isSlugManuallyEdited) return;
 		setV((prev) => ({ ...prev, slug: slugify(prev.title) }));
-	}, [v.title]);
+	}, [v.title, isSlugManuallyEdited]);
 
 	// Handle coverPreview: show picked file if present, else show URL if present
 	useEffect(() => {
@@ -254,6 +298,55 @@ export default function EditEventDetailsPage() {
 			setCoverPreview(v.coverImageURL || "");
 		}
 	}, [coverFile, v.coverImageURL]);
+
+	// Calculate end date from occurrences
+	const calculatedEndDate = useMemo(() => {
+		if (
+			!v.isRecurring ||
+			v.recurringEndMode !== "occurrences" ||
+			!v.recurringEndOccurrences ||
+			!v.startAt ||
+			!v.frequency
+		) {
+			return null;
+		}
+
+		try {
+			if (!v.startAt || typeof v.startAt !== "string") return null;
+			const startDate = new Date(v.startAt);
+			if (isNaN(startDate.getTime())) return null;
+
+			const occurrences = v.recurringEndOccurrences;
+			const endDate = new Date(startDate);
+
+			switch (v.frequency) {
+				case "daily":
+					endDate.setDate(endDate.getDate() + (occurrences - 1));
+					break;
+				case "weekly":
+					endDate.setDate(endDate.getDate() + (occurrences - 1) * 7);
+					break;
+				case "biweekly":
+					endDate.setDate(endDate.getDate() + (occurrences - 1) * 14);
+					break;
+				case "monthly":
+					endDate.setMonth(endDate.getMonth() + (occurrences - 1));
+					break;
+				default:
+					return null;
+			}
+
+			return endDate;
+		} catch {
+			return null;
+		}
+	}, [
+		v.isRecurring,
+		v.recurringEndMode,
+		v.recurringEndOccurrences,
+		v.startAt,
+		v.frequency,
+	]);
 
 	const canSave = useMemo(() => {
 		try {
@@ -309,7 +402,14 @@ export default function EditEventDetailsPage() {
 			let slugTaken = await isEventSlugTaken(finalSlug, eventIdString);
 
 			if (slugTaken) {
-				// Try to find an available slug by adding a number suffix
+				// If user manually edited the slug, don't auto-suggest alternatives
+				if (isSlugManuallyEdited) {
+					throw new Error(
+						`The URL "events.labeld.app/${v.slug}" is already taken. Please choose a different custom URL.`
+					);
+				}
+
+				// Try to find an available slug by adding a number suffix (only for auto-generated slugs)
 				let counter = 1;
 				do {
 					finalSlug = `${v.slug}-${counter}`;
@@ -319,7 +419,7 @@ export default function EditEventDetailsPage() {
 
 				if (slugTaken) {
 					throw new Error(
-						"This event URL is already taken. Please try a different title."
+						"This event URL is already taken. Please try a different title or use a custom URL."
 					);
 				}
 
@@ -385,9 +485,25 @@ export default function EditEventDetailsPage() {
 				...v,
 				slug: finalSlug,
 				startAt: convertLocalToTimezone(v.startAt as string),
-				endAt: convertLocalToTimezone(v.endAt as string),
+				// For recurring events, endAt should be undefined/null
+				endAt: v.isRecurring
+					? undefined
+					: v.endAt
+					? convertLocalToTimezone(v.endAt as string)
+					: undefined,
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
+				isRecurring: v.isRecurring || false,
+				frequency: v.isRecurring ? v.frequency : undefined,
+				recurringEndMode: v.isRecurring ? v.recurringEndMode : undefined,
+				recurringEndDate:
+					v.isRecurring && v.recurringEndMode === "date" && v.recurringEndDate
+						? new Date(v.recurringEndDate + "T00:00:00")
+						: undefined,
+				recurringEndOccurrences:
+					v.isRecurring && v.recurringEndMode === "occurrences"
+						? v.recurringEndOccurrences
+						: undefined,
 			});
 
 			// Additional validation for capacity input
@@ -403,11 +519,21 @@ export default function EditEventDetailsPage() {
 			const finalCapacityTotal =
 				parsed.capacityMode === "unlimited" ? null : parsed.capacityTotal!;
 
-			// Update the event
-			await updateEvent(eventIdString, {
+			// Filter out undefined values - Firestore doesn't accept undefined
+			const updateData: Record<string, any> = {
 				...parsed,
 				capacityTotal: finalCapacityTotal,
+			};
+
+			// Remove undefined fields
+			Object.keys(updateData).forEach((key) => {
+				if (updateData[key] === undefined) {
+					delete updateData[key];
+				}
 			});
+
+			// Update the event
+			await updateEvent(eventIdString, updateData);
 
 			// Navigate back to event dashboard
 			router.push(`/events/${eventIdString}`);
@@ -486,8 +612,31 @@ export default function EditEventDetailsPage() {
 								className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								placeholder="e.g Labeld Nights: Live in Lagos"
 							/>
-							<p className="text-xs text-text-muted mt-1 break-all">
-								URL: {v.slug ? `https://events.labeld.app/${v.slug}` : "—"}
+						</div>
+						<div>
+							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
+								Use custom URL
+							</label>
+							<div className="flex items-center gap-2">
+								<span className="text-xs sm:text-sm text-text-muted whitespace-nowrap">
+									events.labeld.app/
+								</span>
+								<input
+									type="text"
+									value={v.slug || ""}
+									onChange={(e) => {
+										const newSlug = slugify(e.target.value);
+										setV((prev) => ({ ...prev, slug: newSlug }));
+										setIsSlugManuallyEdited(true);
+									}}
+									className="flex-1 rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
+									placeholder="custom-url"
+									pattern="[a-z0-9-]+"
+									title="Only lowercase letters, numbers, and hyphens are allowed"
+								/>
+							</div>
+							<p className="text-xs text-text-muted mt-1">
+								Special characters like &^%$_# are not allowed
 							</p>
 						</div>
 						<div>
@@ -553,19 +702,21 @@ export default function EditEventDetailsPage() {
 									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								/>
 							</div>
-							<div>
-								<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
-									End <span className="text-cta">*</span>
-								</label>
-								<input
-									type="datetime-local"
-									value={v.endAt as unknown as string}
-									onChange={(e) =>
-										setV((prev) => ({ ...prev, endAt: e.target.value }))
-									}
-									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
-								/>
-							</div>
+							{!v.isRecurring && (
+								<div>
+									<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
+										End <span className="text-cta">*</span>
+									</label>
+									<input
+										type="datetime-local"
+										value={v.endAt as unknown as string}
+										onChange={(e) =>
+											setV((prev) => ({ ...prev, endAt: e.target.value }))
+										}
+										className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
+									/>
+								</div>
+							)}
 						</div>
 						<div>
 							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
@@ -584,6 +735,180 @@ export default function EditEventDetailsPage() {
 									</option>
 								))}
 							</select>
+						</div>
+
+						{/* Recurring Event */}
+						<div className="pt-4 border-t border-stroke flex flex-col gap-4 sm:gap-5">
+							<div className="flex items-center gap-3">
+								<input
+									type="checkbox"
+									id="isRecurring"
+									checked={v.isRecurring || false}
+									onChange={(e) =>
+										setV((prev) => ({
+											...prev,
+											isRecurring: e.target.checked,
+											frequency: e.target.checked
+												? prev.frequency || "weekly"
+												: undefined,
+											recurringEndMode: e.target.checked
+												? prev.recurringEndMode || "occurrences"
+												: undefined,
+											recurringEndDate: e.target.checked
+												? prev.recurringEndDate
+												: "",
+											recurringEndOccurrences: e.target.checked
+												? prev.recurringEndOccurrences
+												: undefined,
+											// Clear endAt when recurring is enabled
+											endAt: e.target.checked ? "" : prev.endAt,
+										}))
+									}
+									className="w-4 h-4 rounded border-stroke text-accent focus:ring-accent focus:ring-2"
+								/>
+								<label
+									htmlFor="isRecurring"
+									className="text-xs sm:text-sm text-text cursor-pointer"
+								>
+									This is a recurring event
+								</label>
+							</div>
+							{v.isRecurring && (
+								<>
+									<div>
+										<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
+											Event frequency <span className="text-cta">*</span>
+										</label>
+										<select
+											value={v.frequency || ""}
+											onChange={(e) =>
+												setV((prev) => ({
+													...prev,
+													frequency: e.target.value as
+														| "daily"
+														| "weekly"
+														| "biweekly"
+														| "monthly",
+												}))
+											}
+											className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base bg-surface text-text outline-none focus:border-accent"
+										>
+											<option value="">Select frequency</option>
+											<option value="daily">Every day</option>
+											<option value="weekly">Every week</option>
+											<option value="biweekly">Every two weeks</option>
+											<option value="monthly">Every month</option>
+										</select>
+									</div>
+									<div>
+										<label className="block text-xs sm:text-sm text-text-muted mb-2 sm:mb-3">
+											When does your event end?{" "}
+											<span className="text-cta">*</span>
+										</label>
+										<div className="flex flex-col gap-3 sm:gap-4">
+											<div className="flex items-center gap-3">
+												<input
+													type="radio"
+													id="recurringEndDate"
+													name="recurringEndMode"
+													checked={v.recurringEndMode === "date"}
+													onChange={() =>
+														setV((prev) => ({
+															...prev,
+															recurringEndMode: "date",
+															recurringEndOccurrences: undefined,
+														}))
+													}
+													className="w-4 h-4 border-stroke text-accent focus:ring-accent focus:ring-2"
+												/>
+												<label
+													htmlFor="recurringEndDate"
+													className="text-xs sm:text-sm text-text cursor-pointer flex items-center gap-2"
+												>
+													<span>On</span>
+													<input
+														type="date"
+														value={v.recurringEndDate as unknown as string}
+														onChange={(e) =>
+															setV((prev) => ({
+																...prev,
+																recurringEndDate: e.target.value,
+															}))
+														}
+														disabled={v.recurringEndMode !== "date"}
+														className="flex-1 rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-text outline-none focus:border-accent disabled:bg-stroke/30 disabled:cursor-not-allowed"
+													/>
+												</label>
+											</div>
+											<div className="flex items-center gap-3">
+												<input
+													type="radio"
+													id="recurringEndOccurrences"
+													name="recurringEndMode"
+													checked={v.recurringEndMode === "occurrences"}
+													onChange={() =>
+														setV((prev) => ({
+															...prev,
+															recurringEndMode: "occurrences",
+															recurringEndDate: "",
+														}))
+													}
+													className="w-4 h-4 border-stroke text-accent focus:ring-accent focus:ring-2"
+												/>
+												<label
+													htmlFor="recurringEndOccurrences"
+													className="text-xs sm:text-sm text-text cursor-pointer flex items-center gap-2"
+												>
+													<span>After</span>
+													<input
+														type="number"
+														min={1}
+														value={v.recurringEndOccurrences || ""}
+														onChange={(e) =>
+															setV((prev) => ({
+																...prev,
+																recurringEndOccurrences: e.target.value
+																	? parseInt(e.target.value)
+																	: undefined,
+															}))
+														}
+														disabled={v.recurringEndMode !== "occurrences"}
+														className="w-20 sm:w-24 rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm text-text outline-none focus:border-accent disabled:bg-stroke/30 disabled:cursor-not-allowed"
+													/>
+													<span>occurrences</span>
+												</label>
+											</div>
+										</div>
+										{calculatedEndDate && v.recurringEndOccurrences && (
+											<div className="mt-2 pt-3 border-t border-stroke">
+												<div className="text-xs sm:text-sm text-text-muted space-y-1">
+													<div>
+														{v.recurringEndOccurrences === 1
+															? "1 date"
+															: `${v.recurringEndOccurrences} dates`}
+													</div>
+													<div>
+														Starting on{" "}
+														{typeof v.startAt === "string" &&
+															new Date(v.startAt).toLocaleDateString("en-US", {
+																month: "long",
+																day: "numeric",
+																year: "numeric",
+															})}
+														. Ending{" "}
+														{calculatedEndDate.toLocaleDateString("en-US", {
+															month: "long",
+															day: "numeric",
+															year: "numeric",
+														})}
+														.
+													</div>
+												</div>
+											</div>
+										)}
+									</div>
+								</>
+							)}
 						</div>
 					</div>
 
