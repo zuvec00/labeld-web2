@@ -79,7 +79,7 @@ export default function WalletPage() {
 	return (
 		<div className="space-y-8">
 			{/* Test Payout Panels - Comment out when going live */}
-			<TestPayoutPanel /> 
+			{/* <TestPayoutPanel />  */}
 			{/* <TestStorePayoutPanel /> */}
 
 			{/* Header Summary */}
