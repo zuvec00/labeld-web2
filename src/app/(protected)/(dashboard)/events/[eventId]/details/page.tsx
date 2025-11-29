@@ -358,13 +358,6 @@ export default function EditEventDetailsPage() {
 					? null
 					: 1;
 
-			// Validate the complete form data
-			eventDetailsSchema.parse({
-				...v,
-				capacityTotal,
-				coverImageURL: coverPreview,
-			});
-
 			// Additional checks for capacity input
 			if (
 				v.capacityMode === "limited" &&
@@ -372,6 +365,35 @@ export default function EditEventDetailsPage() {
 			) {
 				return false;
 			}
+
+			// Convert datetime strings to Date objects for validation (same as saveChanges)
+			const convertLocalToTimezone = (localDateTime: string) => {
+				if (!localDateTime) return null;
+				const localDate = new Date(localDateTime);
+				const utcTime =
+					localDate.getTime() + localDate.getTimezoneOffset() * 60000;
+				return new Date(utcTime);
+			};
+
+			// Validate the complete form data with proper date conversions
+			eventDetailsSchema.parse({
+				...v,
+				capacityTotal,
+				coverImageURL: coverPreview || v.coverImageURL,
+				startAt: v.startAt
+					? convertLocalToTimezone(v.startAt as string)
+					: undefined,
+				// For recurring events, endAt should be undefined/null
+				endAt: v.isRecurring
+					? undefined
+					: v.endAt
+					? convertLocalToTimezone(v.endAt as string)
+					: undefined,
+				recurringEndDate:
+					v.isRecurring && v.recurringEndMode === "date" && v.recurringEndDate
+						? new Date(v.recurringEndDate + "T00:00:00")
+						: undefined,
+			});
 
 			return true;
 		} catch {

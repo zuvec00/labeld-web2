@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 
 function VideoWithFallback({
-	src = "/videos/intro2.MP4",
+	src = "/videos/intro.mp4",
 	poster = "/images/onboarding.JPG",
 	className = "",
 }: {
@@ -17,8 +17,15 @@ function VideoWithFallback({
 }) {
 	const ref = useRef<HTMLVideoElement | null>(null);
 	const [useImage, setUseImage] = useState(false);
+	const [isMounted, setIsMounted] = useState(false);
+
+	// Only render video on client to avoid hydration mismatch
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
 
 	useEffect(() => {
+		if (!isMounted) return;
 		const v = ref.current;
 		if (!v) return;
 
@@ -50,9 +57,22 @@ function VideoWithFallback({
 			v.removeEventListener("error", onError);
 			v.removeEventListener("canplay", onCanPlay);
 		};
-	}, []);
+	}, [isMounted]);
 
 	if (useImage) {
+		return (
+			<Image
+				src={poster}
+				alt="Creators showcasing a label drop"
+				fill
+				priority
+				className={className}
+			/>
+		);
+	}
+
+	// Show poster image during SSR to avoid hydration mismatch
+	if (!isMounted) {
 		return (
 			<Image
 				src={poster}
@@ -75,9 +95,10 @@ function VideoWithFallback({
 			playsInline
 			preload="metadata"
 			onError={() => setUseImage(true)}
+			suppressHydrationWarning
 		>
 			<source src={src} type="video/mp4" />
-			<source src="/videos/intro2.mp4" type="video/mp4" />
+			<source src="/videos/intro.mp4" type="video/mp4" />
 			Your browser does not support the video tag.
 		</video>
 	);
