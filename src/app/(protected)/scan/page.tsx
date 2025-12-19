@@ -360,6 +360,7 @@ export default function ScannerPage() {
 					<CameraScanner
 						onQRCodeDetected={handleQRCodeDetected}
 						isActive={isScanning}
+						isProcessing={isProcessing}
 						className="w-full h-full"
 					/>
 				</div>

@@ -7,12 +7,14 @@ import { QrCode, Camera, Zap, ZapOff } from "lucide-react";
 interface CameraScannerProps {
 	onQRCodeDetected: (qrString: string) => void;
 	isActive: boolean;
+	isProcessing?: boolean;
 	className?: string;
 }
 
 export default function CameraScanner({
 	onQRCodeDetected,
 	isActive,
+	isProcessing = false,
 	className = "",
 }: CameraScannerProps) {
 	const videoRef = useRef<HTMLVideoElement>(null);
@@ -389,6 +391,22 @@ export default function CameraScanner({
 							<div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
 							<span className="text-xs text-white/90 font-medium">
 								LIVE SCANNING
+							</span>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Processing State Overlay - overrides scanning UI */}
+			{isProcessing && (
+				<div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+					<div className="relative">
+						{/* Pulse rings */}
+						<div className="absolute inset-0 rounded-full bg-accent/20 animate-ping-slow"></div>
+						<div className="relative bg-black/40 p-4 rounded-xl border border-white/10 backdrop-blur-md flex flex-col items-center gap-3">
+							<Spinner size="lg" className="text-accent" />
+							<span className="text-white font-medium tracking-wide animate-pulse">
+								VERIFYING...
 							</span>
 						</div>
 					</div>
