@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Spinner } from "@/components/ui/spinner";
-import { QrCode } from "lucide-react";
+import { QrCode, Camera, Zap, ZapOff } from "lucide-react";
 
 interface CameraScannerProps {
 	onQRCodeDetected: (qrString: string) => void;
@@ -79,10 +79,10 @@ export default function CameraScanner({
 					deviceId: deviceId ? { exact: deviceId } : undefined,
 					facingMode: deviceId ? undefined : { ideal: "environment" as const },
 					// smaller frame = faster jsQR
-					width: { ideal: 640 },
-					height: { ideal: 480 },
+					width: { ideal: 1280 },
+					height: { ideal: 720 },
 					// some browsers accept these hints:
-					frameRate: { ideal: 15 },
+					frameRate: { ideal: 30 },
 				},
 				audio: false,
 			};
@@ -198,24 +198,6 @@ export default function CameraScanner({
 					width: w * 0.6,
 					height: h * 0.6,
 				},
-				// 3. Top-left region scan
-				{
-					imageData: context.getImageData(0, 0, w * 0.7, h * 0.7),
-					width: w * 0.7,
-					height: h * 0.7,
-				},
-				// 4. Top-right region scan
-				{
-					imageData: context.getImageData(w * 0.3, 0, w * 0.7, h * 0.7),
-					width: w * 0.7,
-					height: h * 0.7,
-				},
-				// 5. Bottom region scan
-				{
-					imageData: context.getImageData(0, h * 0.3, w, h * 0.7),
-					width: w,
-					height: h * 0.7,
-				},
 			];
 
 			// Try each detection strategy
@@ -263,13 +245,14 @@ export default function CameraScanner({
 	// Watchdog to avoid infinite "Starting camera..."
 	useEffect(() => {
 		if (!hasStarted) return;
+
 		const t = setTimeout(() => {
 			if (isLoading) {
 				setError(
 					"Camera is taking too long to start. Close other apps using the camera and retry."
 				);
 			}
-		}, 5000);
+		}, 8000); // Increased timeout
 		return () => clearTimeout(t);
 	}, [hasStarted, isLoading]);
 
@@ -277,31 +260,24 @@ export default function CameraScanner({
 	useEffect(() => {
 		if (!isActive) return;
 
-		let wakeLock: unknown = null;
+		let wakeLock: any = null;
 
 		const requestWakeLock = async () => {
 			try {
 				if ("wakeLock" in navigator) {
-					const nav = navigator as unknown as Record<string, unknown>;
-					wakeLock = await (
-						nav.wakeLock as { request: (type: string) => Promise<unknown> }
-					).request("screen");
+					const nav = navigator as unknown as any;
+					wakeLock = await nav.wakeLock.request("screen");
 				}
-			} catch {
-				console.log("Wake lock not supported or failed");
+			} catch (e) {
+				console.log("Wake lock not supported or failed", e);
 			}
 		};
 
 		requestWakeLock();
 
 		return () => {
-			if (
-				wakeLock &&
-				typeof wakeLock === "object" &&
-				"release" in wakeLock &&
-				typeof wakeLock.release === "function"
-			) {
-				wakeLock.release();
+			if (wakeLock) {
+				wakeLock.release().catch(() => {});
 			}
 		};
 	}, [isActive]);
@@ -309,15 +285,14 @@ export default function CameraScanner({
 	if (error) {
 		return (
 			<div
-				className={`flex flex-col items-center justify-center p-8 bg-surface rounded-2xl border border-stroke ${className}`}
+				className={`flex flex-col items-center justify-center p-8 bg-surface/50 rounded-lg border border-white/10 ${className}`}
 			>
 				<div className="text-alert text-center">
-					<p className="font-medium">Camera Error</p>
-					<p className="text-sm mt-1">{error}</p>
+					<p className="font-heading font-semibold text-lg max-w-xs">{error}</p>
 				</div>
 				<button
 					onClick={() => startCamera(selectedDeviceId)}
-					className="mt-4 px-4 py-2 bg-accent text-bg rounded-lg text-sm font-medium"
+					className="mt-6 px-6 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-gray-200 transition"
 				>
 					Retry
 				</button>
@@ -327,25 +302,35 @@ export default function CameraScanner({
 
 	return (
 		<div
-			className={`relative bg-black rounded-2xl overflow-hidden ${className}`}
+			className={`relative bg-black rounded-3xl overflow-hidden shadow-2xl ${className}`}
 		>
-			{/* Open Camera button overlay */}
+			{/* Open Camera button overlay (Initial State) */}
 			{!hasStarted && (
-				<div className="absolute inset-0 flex items-center justify-center bg-black/60 z-20">
+				<div className="absolute inset-0 flex flex-col items-center justify-center bg-surface/10 backdrop-blur-sm z-20 p-6 text-center">
+					<div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6">
+						<Camera className="w-8 h-8 text-white/50" />
+					</div>
+					<h3 className="text-white font-heading font-semibold text-xl mb-2">
+						Ready to Scan?
+					</h3>
+					<p className="text-text-muted text-sm mb-8 max-w-xs">
+						Grant camera access to start validating tickets.
+					</p>
+
 					<button
 						onClick={beginScanning}
 						disabled={isLoading}
-						className="px-6 py-3 bg-accent text-bg rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+						className="px-8 py-3 bg-accent text-bg rounded-full text-sm font-bold hover:bg-accent/90 transition-all active:scale-95 flex items-center gap-2 group"
 					>
 						{isLoading ? (
 							<>
 								<Spinner size="sm" />
-								Opening Camera...
+								<span>initializing...</span>
 							</>
 						) : (
 							<>
-								<QrCode className="w-4 h-4" />
-								Open Camera
+								<Camera className="w-4 h-4" />
+								<span>Enable Camera Access</span>
 							</>
 						)}
 					</button>
@@ -353,10 +338,12 @@ export default function CameraScanner({
 			)}
 
 			{isLoading && (
-				<div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+				<div className="absolute inset-0 flex items-center justify-center bg-black/80 z-10 backdrop-blur-md">
 					<div className="text-center text-white">
-						<Spinner size="lg" />
-						<p className="mt-2 text-sm">Starting camera...</p>
+						<Spinner size="lg" className="mb-4" />
+						<p className="text-sm font-medium tracking-wide">
+							INITIALIZING OPTICS...
+						</p>
 					</div>
 				</div>
 			)}
@@ -368,70 +355,86 @@ export default function CameraScanner({
 				muted
 			/>
 
-			{/* QR Code scanning overlay */}
+			{/* Active Scanning Overlay */}
 			{isActive && hasStarted && (
 				<div className="absolute inset-0 pointer-events-none">
-					{/* Full frame scanning indicator */}
-					<div className="absolute inset-0">
-						{/* Subtle border around entire frame */}
-						<div className="absolute inset-0 border-2 border-accent border-opacity-30 rounded-2xl"></div>
+					{/* Darken outer edges to focus user */}
+					<div
+						className="absolute inset-0 bg-black/30 mask-scan-area"
+						style={{
+							maskImage:
+								"radial-gradient(circle at center, transparent 40%, black 100%)",
+							WebkitMaskImage:
+								"radial-gradient(circle at center, transparent 40%, black 100%)",
+						}}
+					/>
 
-						{/* Corner indicators for guidance */}
-						<div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-accent rounded-tl-lg"></div>
-						<div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-accent rounded-tr-lg"></div>
-						<div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-accent rounded-bl-lg"></div>
-						<div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-accent rounded-br-lg"></div>
+					{/* Center Frame */}
+					<div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 sm:w-80 sm:h-80">
+						{/* Animated Corners */}
+						<div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-accent rounded-tl-xl shadow-[0_0_15px_rgba(196,255,48,0.5)]"></div>
+						<div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-accent rounded-tr-xl shadow-[0_0_15px_rgba(196,255,48,0.5)]"></div>
+						<div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-accent rounded-bl-xl shadow-[0_0_15px_rgba(196,255,48,0.5)]"></div>
+						<div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-accent rounded-br-xl shadow-[0_0_15px_rgba(196,255,48,0.5)]"></div>
 
-						{/* Scanning line animation that moves across the frame */}
-						<div className="absolute inset-0 overflow-hidden rounded-2xl">
-							<div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent animate-pulse"></div>
-							<div
-								className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent to-transparent animate-pulse"
-								style={{ animationDelay: "0.5s" }}
-							></div>
+						{/* Scanning beam */}
+						<div className="absolute inset-0 overflow-hidden rounded-xl">
+							<div className="absolute w-full h-[2px] bg-gradient-to-r from-transparent via-accent to-transparent shadow-[0_0_20px_rgba(196,255,48,1)] animate-scan-beam top-0"></div>
 						</div>
 					</div>
 
-					{/* Instructions */}
-					<div className="absolute bottom-8 left-0 right-0 text-center text-white">
-						<p className="text-sm bg-black bg-opacity-70 px-4 py-2 rounded-lg inline-block backdrop-blur-sm">
-							Point camera at QR code anywhere in frame
-						</p>
+					{/* Helper Text */}
+					<div className="absolute bottom-8 left-0 right-0 text-center">
+						<div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-black/60 backdrop-blur-md border border-white/10">
+							<div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+							<span className="text-xs text-white/90 font-medium">
+								LIVE SCANNING
+							</span>
+						</div>
 					</div>
 				</div>
 			)}
 
-			{/* Hidden canvas for QR detection */}
 			<canvas ref={canvasRef} className="hidden" />
 
-			{/* Camera controls */}
+			{/* Camera Controls (Floating) */}
 			{hasStarted && (
-				<div className="absolute top-4 right-4 flex gap-2">
-					{/* Device selector */}
-					{devices.length > 1 && (
-						<select
-							value={selectedDeviceId}
-							onChange={(e) => setSelectedDeviceId(e.target.value)}
-							className="px-3 py-1 bg-black bg-opacity-50 text-white text-sm rounded-lg border border-white border-opacity-20"
-						>
-							{devices.map((device) => (
-								<option key={device.deviceId} value={device.deviceId}>
-									{device.label || `Camera ${device.deviceId.slice(0, 8)}`}
-								</option>
-							))}
-						</select>
-					)}
-
+				<div className="absolute top-4 right-4 flex flex-col gap-2 pointer-events-auto">
 					{/* Torch toggle */}
 					{isTorchSupported && (
 						<button
 							onClick={toggleTorch}
-							className={`px-3 py-1 bg-black bg-opacity-50 text-white text-sm rounded-lg border border-white border-opacity-20 ${
-								isTorchOn ? "bg-accent bg-opacity-80" : ""
+							className={`p-3 rounded-full backdrop-blur-md transition-all ${
+								isTorchOn
+									? "bg-accent text-bg shadow-lg shadow-accent/20"
+									: "bg-black/50 text-white border border-white/10 hover:bg-black/70"
 							}`}
 						>
-							{isTorchOn ? "🔦" : "💡"}
+							{isTorchOn ? (
+								<Zap size={20} fill="currentColor" />
+							) : (
+								<ZapOff size={20} />
+							)}
 						</button>
+					)}
+
+					{/* Device selector (if multiple) */}
+					{devices.length > 1 && (
+						<select
+							value={selectedDeviceId}
+							onChange={(e) => setSelectedDeviceId(e.target.value)}
+							className="p-2 bg-black/50 text-white text-xs rounded-lg border border-white/10 backdrop-blur-md max-w-[120px] truncate outline-none"
+						>
+							{devices.map((device) => (
+								<option
+									key={device.deviceId}
+									value={device.deviceId}
+									className="text-black"
+								>
+									{device.label || `Camera ${device.deviceId.slice(0, 4)}`}
+								</option>
+							))}
+						</select>
 					)}
 				</div>
 			)}

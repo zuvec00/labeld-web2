@@ -1,4 +1,5 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+
 import { 
   startScanSession, 
   endScanSession, 
@@ -42,7 +43,9 @@ export function useScanner(eventId: string) {
     isProcessing: false,
   });
 
-  // const throttleRef = useRef<NodeJS.Timeout | null>(null);
+  // Track recently scanned codes to prevent spamming the server
+  // Map of <qrString, timestamp>
+  const recentScansRef = useRef<Map<string, number>>(new Map());
 
   // Start scanning session
   const startScanning = useCallback(async () => {
@@ -65,7 +68,7 @@ export function useScanner(eventId: string) {
     } catch (err) {
       console.error("Failed to start scan session:", err);
       setState(prev => ({ ...prev, isProcessing: false }));
-      throw err;
+      // throw err; // Don't throw, just log so UI doesn't break if session fails (can still try to scan)
     }
   }, [eventId]);
 
@@ -98,8 +101,8 @@ export function useScanner(eventId: string) {
   const processQRCode = useCallback(async (qrString: string) => {
     const now = Date.now();
     
-    // Throttle scans to prevent spam (800ms cooldown)
-    if (now - state.lastScanTime < 800) {
+    // 1. Global Cooldown (reduced to 500ms for faster feel, but relying on dedupe for safety)
+    if (now - state.lastScanTime < 500) {
       return;
     }
 
@@ -107,7 +110,27 @@ export function useScanner(eventId: string) {
       return;
     }
 
+    // 2. Strict Deduplication: Don't process the same code if scanned successfully < 5 seconds ago
+    // or if it failed < 2 seconds ago (to allow retrying faster if it was a flake)
+    const lastSeen = recentScansRef.current.get(qrString);
+    if (lastSeen && now - lastSeen < 3000) {
+      console.log("Skipping duplicate scan:", qrString);
+      return;
+    }
+
+    // Mark as processing immediately
     setState(prev => ({ ...prev, isProcessing: true, lastScanTime: now }));
+    
+    // Update strict cache
+    recentScansRef.current.set(qrString, now);
+
+    // Clean up old cache entries occasionally
+    if (recentScansRef.current.size > 50) {
+      const cutoff = now - 60000;
+      for (const [key, time] of recentScansRef.current.entries()) {
+        if (time < cutoff) recentScansRef.current.delete(key);
+      }
+    }
 
     try {
       const deviceInfo = {
@@ -177,7 +200,10 @@ export function useScanner(eventId: string) {
       // Play error sound
       playSound(resultType === "duplicate" ? "duplicate" : "error");
     } finally {
-      setState(prev => ({ ...prev, isProcessing: false }));
+      // Small delay before unlocking "isProcessing" to allow UI animation to finish/prevent double-taps
+      setTimeout(() => {
+        setState(prev => ({ ...prev, isProcessing: false }));
+      }, 500); 
     }
   }, [eventId, state.sessionId, state.lastScanTime, state.isProcessing]);
 
@@ -200,6 +226,8 @@ export function useScanner(eventId: string) {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
+      // Don't auto-end session on unmount, allows navigating away and back? 
+      // Actually strictly better to end it to cleanup.
       if (state.sessionId) {
         endScanSession(state.sessionId).catch(console.error);
       }

@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import Button from "@/components/ui/button";
+import {
+	ChevronDown,
+	ChevronUp,
+	Volume2,
+	VolumeX,
+	BarChart2,
+} from "lucide-react";
 
 interface ScannerHUDProps {
 	eventName: string;
@@ -33,127 +40,161 @@ export default function ScannerHUD({
 	const [showStats, setShowStats] = useState(false);
 
 	const totalScanned = counts.accepted + counts.duplicate + counts.invalid;
+	const successRate =
+		totalScanned > 0 ? Math.round((counts.accepted / totalScanned) * 100) : 0;
 
 	return (
-		<div className="bg-surface border-b border-stroke">
-			{/* Header */}
-			<div className="px-4 py-3">
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="font-heading font-semibold text-lg">{eventName}</h1>
-						{gateName && (
-							<p className="text-sm text-text-muted">Gate: {gateName}</p>
-						)}
-					</div>
-
-					<div className="flex items-center gap-2">
-						{/* Sound toggle */}
-						<button
-							onClick={onToggleSound}
-							className={`p-2 rounded-lg border ${
-								soundEnabled
-									? "bg-accent text-bg border-accent"
-									: "bg-bg text-text-muted border-stroke"
-							}`}
-							title={soundEnabled ? "Sound On" : "Sound Off"}
-						>
-							{soundEnabled ? "🔊" : "🔇"}
-						</button>
-
-						{/* Stats toggle */}
-						<button
-							onClick={() => setShowStats(!showStats)}
-							className="p-2 bg-bg text-text-muted border border-stroke rounded-lg hover:bg-surface"
-							title="Show Statistics"
-						>
-							📊
-						</button>
-					</div>
-				</div>
-			</div>
-
-			{/* Statistics Panel */}
-			{showStats && (
-				<div className="px-4 pb-3 border-t border-stroke">
-					<div className="grid grid-cols-3 gap-4 mt-3">
-						<div className="text-center">
-							<div className="text-2xl font-bold text-green-500">
-								{counts.accepted}
-							</div>
-							<div className="text-xs text-text-muted">Accepted</div>
-						</div>
-						<div className="text-center">
-							<div className="text-2xl font-bold text-amber-500">
-								{counts.duplicate}
-							</div>
-							<div className="text-xs text-text-muted">Duplicate</div>
-						</div>
-						<div className="text-center">
-							<div className="text-2xl font-bold text-red-500">
-								{counts.invalid}
-							</div>
-							<div className="text-xs text-text-muted">Invalid</div>
-						</div>
-					</div>
-
-					{totalScanned > 0 && (
-						<div className="mt-3 pt-3 border-t border-stroke">
-							<div className="flex justify-between text-sm">
-								<span className="text-text-muted">Total Scanned:</span>
-								<span className="font-medium">{totalScanned}</span>
-							</div>
-							<div className="flex justify-between text-sm">
-								<span className="text-text-muted">Success Rate:</span>
-								<span className="font-medium text-green-500">
-									{Math.round((counts.accepted / totalScanned) * 100)}%
-								</span>
-							</div>
-						</div>
+		<div className="bg-surface/80 backdrop-blur-md border-b border-white/10 shadow-lg z-30 transition-all duration-300">
+			{/* Top Bar */}
+			<div className="px-4 py-3 flex items-center justify-between">
+				<div className="flex-1 min-w-0 mr-4">
+					<h1 className="font-heading font-bold text-lg text-white truncate leading-tight">
+						{eventName}
+					</h1>
+					{gateName && (
+						<p className="text-xs text-text-muted mt-0.5 font-medium uppercase tracking-wider">
+							{gateName}
+						</p>
 					)}
 				</div>
-			)}
 
-			{/* Controls */}
-			<div className="px-4 py-3 border-t border-stroke">
-				<div className="flex gap-3">
-					<Button
-						text={
-							isProcessing
-								? isScanning
-									? "Stopping..."
-									: "Starting..."
-								: isScanning
-								? "Stop Scanning"
-								: "Start Scanning"
-						}
-						variant={isScanning ? "secondary" : "primary"}
-						onClick={onToggleScanning}
-						disabled={isProcessing}
-						className="flex-1"
-					/>
-
-					<Button
-						text="Manual Entry"
-						variant="secondary"
-						onClick={onManualEntry}
-						className="px-4"
-					/>
-				</div>
-			</div>
-
-			{/* Status Indicator */}
-			<div className="px-4 pb-3">
-				<div className="flex items-center gap-2">
-					<div
-						className={`w-2 h-2 rounded-full ${
-							isScanning ? "bg-green-500 animate-pulse" : "bg-gray-400"
+				<div className="flex items-center gap-2 shrink-0">
+					{/* Sound Toggle */}
+					<button
+						onClick={onToggleSound}
+						className={`p-2.5 rounded-xl transition-all active:scale-95 ${
+							soundEnabled
+								? "bg-white/10 text-accent hover:bg-white/20"
+								: "bg-transparent text-text-muted hover:bg-white/5"
 						}`}
-					/>
-					<span className="text-sm text-text-muted">
-						{isScanning ? "Scanning active" : "Scanning paused"}
-					</span>
+						title={soundEnabled ? "Mute Sound" : "Enable Sound"}
+					>
+						{soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+					</button>
+
+					{/* Stats Toggle */}
+					<button
+						onClick={() => setShowStats(!showStats)}
+						className={`p-2.5 rounded-xl transition-all active:scale-95 flex items-center gap-2 ${
+							showStats
+								? "bg-accent/20 text-accent"
+								: "bg-transparent text-text-muted hover:bg-white/5"
+						}`}
+					>
+						<BarChart2 size={20} />
+						{showStats ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+					</button>
 				</div>
 			</div>
+
+			{/* Stats Dashboard (Collapsible) */}
+			<div
+				className={`overflow-hidden transition-all duration-300 ease-in-out ${
+					showStats ? "max-h-64 opacity-100" : "max-h-0 opacity-0"
+				}`}
+			>
+				<div className="px-4 pb-4 pt-1">
+					<div className="grid grid-cols-3 gap-3">
+						<StatCard
+							value={counts.accepted}
+							label="Accepted"
+							color="text-green-400"
+							bg="bg-green-500/10 border-green-500/20"
+						/>
+						<StatCard
+							value={counts.duplicate}
+							label="Duplicate"
+							color="text-amber-400"
+							bg="bg-amber-500/10 border-amber-500/20"
+						/>
+						<StatCard
+							value={counts.invalid}
+							label="Invalid"
+							color="text-red-400"
+							bg="bg-red-500/10 border-red-500/20"
+						/>
+					</div>
+
+					<div className="mt-3 flex justify-between items-center px-2 py-2 bg-white/5 rounded-lg text-sm border border-white/5">
+						<span className="text-text-muted">
+							Total Scans:{" "}
+							<strong className="text-white">{totalScanned}</strong>
+						</span>
+						<span className="text-text-muted">
+							Success Rate:{" "}
+							<strong
+								className={
+									successRate > 90 ? "text-green-400" : "text-amber-400"
+								}
+							>
+								{successRate}%
+							</strong>
+						</span>
+					</div>
+				</div>
+			</div>
+
+			{/* Action Bar */}
+			<div className="px-4 py-3 pb-4 flex gap-3">
+				<Button
+					text={
+						isProcessing
+							? isScanning
+								? "Pausing..."
+								: "Resuming..."
+							: isScanning
+							? "Pause Scanning"
+							: "Resume Scanning"
+					}
+					variant={isScanning ? "secondary" : "primary"}
+					onClick={onToggleScanning}
+					disabled={isProcessing}
+					className={`flex-1 font-heading font-semibold tracking-wide shadow-lg ${
+						isScanning
+							? "bg-surface border-white/10 text-white hover:bg-white/5"
+							: "bg-accent text-bg hover:opacity-90 shadow-accent/20"
+					}`}
+				/>
+
+				<Button
+					text="Manual"
+					variant="secondary"
+					onClick={onManualEntry}
+					className="px-5 bg-surface border-white/10 text-white hover:bg-white/10"
+				/>
+			</div>
+
+			{/* Active Indicator Line */}
+			{isScanning && (
+				<div className="h-1 w-full bg-surface overflow-hidden">
+					<div className="h-full w-full bg-accent animate-progress-indeterminate origin-left" />
+				</div>
+			)}
+		</div>
+	);
+}
+
+function StatCard({
+	value,
+	label,
+	color,
+	bg,
+}: {
+	value: number;
+	label: string;
+	color: string;
+	bg: string;
+}) {
+	return (
+		<div
+			className={`flex flex-col items-center justify-center p-3 rounded-xl border ${bg}`}
+		>
+			<span className={`text-2xl font-bold font-heading ${color}`}>
+				{value}
+			</span>
+			<span className="text-xs text-text-muted uppercase tracking-wider font-medium mt-1">
+				{label}
+			</span>
 		</div>
 	);
 }

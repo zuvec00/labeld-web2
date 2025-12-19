@@ -3,12 +3,21 @@
 import { useState } from "react";
 import { Spinner } from "@/components/ui/spinner";
 import { TicketLookupResult } from "@/lib/firebase/callables/scanner";
+import {
+	X,
+	Search,
+	CheckCircle,
+	AlertTriangle,
+	XCircle,
+	Ticket,
+} from "lucide-react";
+import Button from "@/components/ui/button";
 
 interface ManualEntryModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onLookup: (code: string) => Promise<TicketLookupResult>;
-	onUseTicket: (qrString: string) => void;
+	onUseTicket: (qrString: string) => Promise<void>;
 }
 
 export default function ManualEntryModal({
@@ -34,8 +43,6 @@ export default function ManualEntryModal({
 
 		try {
 			const result = await onLookup(code.trim());
-			console.log("Lookup result:", result);
-			// console.log("QR String:", result.ticket?.qrString);
 			setLookupResult(result);
 		} catch (error: any) {
 			setError(error.message || "Failed to lookup ticket");
@@ -44,11 +51,29 @@ export default function ManualEntryModal({
 		}
 	};
 
-	const handleUseTicket = () => {
+	const [isCheckingIn, setIsCheckingIn] = useState(false);
+	const [checkInSuccess, setCheckInSuccess] = useState(false);
+
+	const handleUseTicket = async () => {
 		if (lookupResult?.ticket?.qrString) {
-			// Use the qrString directly from the lookup result
-			onUseTicket(lookupResult.ticket.qrString);
-			onClose();
+			setIsCheckingIn(true);
+			try {
+				await onUseTicket(lookupResult.ticket.qrString);
+				setCheckInSuccess(true);
+				// Delay closing to show success state/allow user to realize it worked
+				setTimeout(() => {
+					handleClose();
+					// Reset states after close animation would be done
+					setTimeout(() => {
+						setIsCheckingIn(false);
+						setCheckInSuccess(false);
+					}, 300);
+				}, 1000);
+			} catch (err) {
+				console.error("Check-in failed:", err);
+				setIsCheckingIn(false);
+				// Optional: show error in modal if needed, but scanner page handles generic errors
+			}
 		}
 	};
 
@@ -62,157 +87,140 @@ export default function ManualEntryModal({
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-			{/* Backdrop */}
-			<div
-				className="absolute inset-0 bg-black bg-opacity-50"
-				onClick={handleClose}
-			/>
-
-			{/* Modal */}
-			<div className="relative bg-surface border border-stroke rounded-2xl p-6 max-w-md w-full">
+		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-black/60 transition-opacity">
+			<div className="w-full max-w-md bg-[#1C1C1C] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
 				{/* Header */}
-				<div className="flex items-center justify-between mb-4">
-					<h2 className="font-heading font-semibold text-xl">
-						Manual Ticket Entry
+				<div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+					<h2 className="font-heading font-semibold text-white">
+						Manual Entry
 					</h2>
 					<button
 						onClick={handleClose}
-						className="text-text-muted hover:text-text text-xl"
+						className="text-white/50 hover:text-white transition"
 					>
-						×
+						<X size={20} />
 					</button>
 				</div>
 
-				{/* Form */}
-				<form onSubmit={handleSubmit} className="space-y-4">
-					<div>
-						<label className="block text-sm font-medium text-text mb-2">
-							Ticket Code or ID
-						</label>
-						<input
-							type="text"
-							value={code}
-							onChange={(e) => setCode(e.target.value.toUpperCase())}
-							placeholder="e.g., RMEU-99BN or ticket ID"
-							className="w-full px-4 py-3 bg-bg border border-stroke rounded-lg text-text placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-							disabled={isLoading}
+				<div className="p-6 overflow-y-auto">
+					<form onSubmit={handleSubmit} className="space-y-4">
+						<div className="relative">
+							<input
+								type="text"
+								value={code}
+								onChange={(e) => setCode(e.target.value.toUpperCase())}
+								placeholder="Enter ticket ID..."
+								className="w-full pl-11 pr-4 py-4 bg-black/30 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent font-mono text-lg tracking-wide uppercase"
+								autoFocus
+							/>
+							<Search
+								className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30"
+								size={20}
+							/>
+						</div>
+
+						<Button
+							text={isLoading ? "Searching..." : "Lookup Ticket"}
+							onClick={() => {}} // handled by form
+							variant="primary"
+							disabled={!code.trim() || isLoading}
+							className="w-full py-4 text-base"
 						/>
-					</div>
+					</form>
 
-					<button
-						type="submit"
-						disabled={!code.trim() || isLoading}
-						className="w-full py-3 bg-accent text-bg rounded-lg font-medium hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-					>
-						{isLoading ? (
-							<>
-								<Spinner size="sm" className="mr-2" />
-								Looking up...
-							</>
-						) : (
-							"Lookup Ticket"
-						)}
-					</button>
-				</form>
+					{error && (
+						<div className="mt-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-start gap-3">
+							<AlertTriangle
+								className="text-red-500 shrink-0 mt-0.5"
+								size={18}
+							/>
+							<p className="text-red-400 text-sm">{error}</p>
+						</div>
+					)}
 
-				{/* Error */}
-				{error && (
-					<div className="mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
-						<p className="text-red-500 text-sm">{error}</p>
-					</div>
-				)}
-
-				{/* Lookup Result */}
-				{lookupResult && (
-					<div className="mt-4 space-y-4">
-						{lookupResult.status === "ok" && lookupResult.ticket ? (
-							<div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4">
-								<div className="flex items-center gap-2 mb-3">
-									<span className="text-2xl">✅</span>
-									<h3 className="font-medium text-green-500">Ticket Found</h3>
-								</div>
-
-								<div className="space-y-2 text-sm">
-									<div className="flex justify-between">
-										<span className="text-text-muted">Code:</span>
-										<span className="font-mono font-medium">
-											{lookupResult.ticket.ticketCode}
-										</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-text-muted">Type:</span>
-										<span>{lookupResult.ticket.ticketTypeId}</span>
-									</div>
-									<div className="flex justify-between">
-										<span className="text-text-muted">Status:</span>
-										<span
-											className={`font-medium ${
-												lookupResult.ticket.status === "valid"
-													? "text-green-500"
-													: lookupResult.ticket.status === "used"
-													? "text-amber-500"
-													: "text-red-500"
-											}`}
-										>
-											{lookupResult.ticket.status.toUpperCase()}
-										</span>
-									</div>
-
-									{/* Dont Change thi, it works. */}
-
-									{/* {lookupResult.ticket.qrString && (
-										<div className="flex justify-between">
-											<span className="text-text-muted">QR String:</span>
-											<span className="font-mono text-xs text-text-muted">
-												{lookupResult.ticket.qrString.substring(0, 10)}...
-												{lookupResult.ticket.qrString.substring(
-													lookupResult.ticket.qrString.length - 10
-												)}
-											</span>
+					{lookupResult && (
+						<div className="mt-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+							{lookupResult.status === "ok" && lookupResult.ticket ? (
+								<div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+									{/* Status Header */}
+									<div className="p-4 bg-white/5 flex items-center gap-3 border-b border-white/5">
+										<CheckCircle className="text-green-500" size={24} />
+										<div>
+											<h3 className="font-bold text-white">Ticket Found</h3>
+											<p
+												className={`text-xs font-bold uppercase tracking-wider ${
+													lookupResult.ticket.status === "valid"
+														? "text-green-400"
+														: lookupResult.ticket.status === "used"
+														? "text-amber-400"
+														: "text-red-400"
+												}`}
+											>
+												STATUS: {lookupResult.ticket.status}
+											</p>
 										</div>
-									)} */}
-								</div>
+									</div>
 
-								{lookupResult.ticket.status === "valid" && (
-									<button
-										onClick={handleUseTicket}
-										className="w-full mt-4 py-2 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600"
-									>
-										Use Ticket
-									</button>
-								)}
-							</div>
-						) : lookupResult.status === "not_found" ? (
-							<div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
-								<div className="flex items-center gap-2">
-									<span className="text-2xl">❌</span>
-									<h3 className="font-medium text-red-500">Ticket Not Found</h3>
-								</div>
-								<p className="text-red-500 text-sm mt-1">
-									No ticket found with that code or ID.
-								</p>
-							</div>
-						) : (
-							<div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-4">
-								<div className="flex items-center gap-2">
-									<span className="text-2xl">⚠️</span>
-									<h3 className="font-medium text-amber-500">Event Mismatch</h3>
-								</div>
-								<p className="text-amber-500 text-sm mt-1">
-									This ticket is for a different event.
-								</p>
-							</div>
-						)}
-					</div>
-				)}
+									{/* Ticket Details */}
+									<div className="p-4 space-y-3">
+										<div className="space-y-1">
+											<span className="text-xs text-text-muted uppercase">
+												Ticket Type
+											</span>
+											<p className="text-white font-medium">
+												{lookupResult.ticket.ticketTypeId}
+											</p>
+										</div>
+										<div className="space-y-1">
+											<span className="text-xs text-text-muted uppercase">
+												Code
+											</span>
+											<p className="text-white font-mono bg-black/30 p-2 rounded border border-white/5">
+												{lookupResult.ticket.ticketCode}
+											</p>
+										</div>
+									</div>
 
-				{/* Instructions */}
-				<div className="mt-4 p-3 bg-bg rounded-lg">
-					<p className="text-xs text-text-muted">
-						Enter the ticket code (e.g., RMEU-99BN) or the full ticket ID to
-						lookup and verify a ticket manually.
-					</p>
+									{/* Action */}
+									{lookupResult.ticket.status === "valid" && (
+										<div className="p-4 pt-0">
+											<button
+												onClick={handleUseTicket}
+												disabled={isCheckingIn || checkInSuccess}
+												className={`w-full py-3 font-bold rounded-lg transition flex items-center justify-center gap-2 ${
+													checkInSuccess
+														? "bg-green-500 text-white"
+														: "bg-green-500 hover:bg-green-400 text-white"
+												}`}
+											>
+												{isCheckingIn ? (
+													<>
+														<Spinner size="sm" className="text-white" />
+														<span>Checking In...</span>
+													</>
+												) : checkInSuccess ? (
+													<>
+														<CheckCircle size={18} />
+														<span>Checked In!</span>
+													</>
+												) : (
+													<>
+														<Ticket size={18} />
+														<span>Check In</span>
+													</>
+												)}
+											</button>
+										</div>
+									)}
+								</div>
+							) : (
+								<div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl flex items-center gap-3">
+									<XCircle className="text-red-500" size={24} />
+									<p className="text-red-400 font-medium">Ticket not found</p>
+								</div>
+							)}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

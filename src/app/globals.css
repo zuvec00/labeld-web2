@@ -137,3 +137,26 @@ h1 span, h2 span, h3 span, h4 span, h5 span, h6 span { font-family: inherit; }
     @apply bg-background text-foreground;
  }
 }
+
+@layer utilities {
+  .animate-scan-beam {
+    animation: scan-beam 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  .animate-progress-indeterminate {
+    animation: progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
+  }
+}
+
+@keyframes scan-beam {
+  0%, 100% { transform: translateY(0); opacity: 0; }
+  10% { opacity: 1; }
+  50% { transform: translateY(100%); opacity: 1; }
+  90% { opacity: 0; }
+}
+
+@keyframes progress-indeterminate {
+  0% { transform: translateX(-100%) scaleX(0.2); }
+  50% { transform: translateX(0%) scaleX(0.5); }
+  100% { transform: translateX(100%) scaleX(0.2); }
+}

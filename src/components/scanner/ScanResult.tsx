@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ScanResult as ScanResultType } from "@/hooks/useScanner";
+import { CheckCircle, AlertTriangle, XCircle, X } from "lucide-react";
 
 interface ScanResultProps {
 	result: ScanResultType;
@@ -12,111 +13,100 @@ export default function ScanResult({ result, onClose }: ScanResultProps) {
 	const [isVisible, setIsVisible] = useState(false);
 
 	useEffect(() => {
-		setIsVisible(true);
+		// Small delay to allow enter animation
+		const t1 = setTimeout(() => setIsVisible(true), 10);
 
-		// Auto-hide after 3 seconds
-		const timer = setTimeout(() => {
+		// Auto-hide
+		const t2 = setTimeout(() => {
 			setIsVisible(false);
-			setTimeout(onClose, 300); // Wait for animation to complete
-		}, 3000);
+			setTimeout(onClose, 300);
+		}, 4000);
 
-		return () => clearTimeout(timer);
+		return () => {
+			clearTimeout(t1);
+			clearTimeout(t2);
+		};
 	}, [onClose]);
 
-	const getResultStyles = () => {
+	const getConfig = () => {
 		switch (result.type) {
 			case "success":
 				return {
-					bgColor: "bg-green-500",
-					borderColor: "border-green-400",
-					textColor: "text-white",
-					icon: "✅",
+					bg: "bg-surface/90 border-green-500/50",
+					text: "text-green-400",
+					icon: <CheckCircle className="w-8 h-8 text-green-500" />,
+					glow: "shadow-[0_0_30px_-5px_rgba(34,197,94,0.3)]",
 				};
 			case "duplicate":
 				return {
-					bgColor: "bg-amber-500",
-					borderColor: "border-amber-400",
-					textColor: "text-white",
-					icon: "⚠️",
+					bg: "bg-surface/90 border-amber-500/50",
+					text: "text-amber-400",
+					icon: <AlertTriangle className="w-8 h-8 text-amber-500" />,
+					glow: "shadow-[0_0_30px_-5px_rgba(245,158,11,0.3)]",
 				};
 			case "invalid":
 				return {
-					bgColor: "bg-red-500",
-					borderColor: "border-red-400",
-					textColor: "text-white",
-					icon: "❌",
+					bg: "bg-surface/90 border-red-500/50",
+					text: "text-red-400",
+					icon: <XCircle className="w-8 h-8 text-red-500" />,
+					glow: "shadow-[0_0_30px_-5px_rgba(239,68,68,0.3)]",
 				};
 		}
 	};
 
-	const styles = getResultStyles();
+	const config = getConfig();
 
 	return (
 		<div
-			className={`fixed inset-0 z-50 flex items-center justify-center p-4 ${
-				isVisible ? "opacity-100" : "opacity-0"
-			} transition-opacity duration-300`}
+			className={`absolute bottom-8 left-4 right-4 z-40 flex justify-center pointer-events-none transition-all duration-500 transform ${
+				isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
+			}`}
 		>
-			{/* Backdrop */}
 			<div
-				className="absolute inset-0 bg-black bg-opacity-50"
-				onClick={onClose}
-			/>
-
-			{/* Result Card */}
-			<div
-				className={`relative ${styles.bgColor} ${
-					styles.borderColor
-				} border-2 rounded-2xl p-6 max-w-sm w-full text-center shadow-2xl transform ${
-					isVisible ? "scale-100" : "scale-95"
-				} transition-transform duration-300`}
+				className={`relative w-full max-w-md backdrop-blur-xl border-2 rounded-2xl p-4 flex items-start gap-4 pointer-events-auto shadow-2xl ${config.bg} ${config.glow}`}
 			>
-				{/* Close button */}
-				<button
-					onClick={onClose}
-					className="absolute top-2 right-2 text-white text-opacity-70 hover:text-opacity-100 text-xl"
-				>
-					×
-				</button>
-
 				{/* Icon */}
-				<div className="text-6xl mb-4">{styles.icon}</div>
+				<div className="shrink-0 pt-1">{config.icon}</div>
 
-				{/* Message */}
-				<h3
-					className={`${styles.textColor} font-heading font-semibold text-xl mb-2`}
-				>
-					{result.message}
-				</h3>
+				{/* Content */}
+				<div className="flex-1 min-w-0">
+					<h3
+						className={`font-heading font-bold text-lg leading-tight mb-1 ${config.text}`}
+					>
+						{result.message}
+					</h3>
 
-				{/* Ticket details for successful scans */}
-				{result.ticket && (
-					<div className={`${styles.textColor} text-sm space-y-1 mt-4`}>
-						<div className="bg-black bg-opacity-20 rounded-lg p-3">
-							<div className="font-medium">Ticket Code</div>
-							<div className="font-mono text-lg">
-								{result.ticket.ticketCode}
+					{result.ticket && (
+						<div className="space-y-1 text-sm text-text-muted mt-2 bg-black/20 p-2 rounded-lg">
+							<div className="flex justify-between">
+								<span>Type:</span>
+								<span className="font-medium text-white">
+									{result.ticket.ticketTypeId}
+								</span>
+							</div>
+							<div className="flex justify-between">
+								<span>Code:</span>
+								<span className="font-mono text-white/80">
+									{result.ticket.ticketCode}
+								</span>
 							</div>
 						</div>
+					)}
 
-						<div className="bg-black bg-opacity-20 rounded-lg p-3">
-							<div className="font-medium">Ticket Type</div>
-							<div>{result.ticket.ticketTypeId}</div>
-						</div>
+					<div className="text-xs text-text-muted mt-2 opacity-60">
+						{result.timestamp.toLocaleTimeString()}
 					</div>
-				)}
-
-				{/* Timestamp */}
-				<div className={`${styles.textColor} text-xs mt-4 opacity-70`}>
-					{result.timestamp.toLocaleTimeString()}
 				</div>
 
-				{/* Action button */}
+				{/* Close Button */}
 				<button
-					onClick={onClose}
-					className={`mt-4 px-6 py-2 bg-black bg-opacity-20 ${styles.textColor} rounded-lg font-medium hover:bg-opacity-30 transition-colors`}
+					onClick={() => {
+						setIsVisible(false);
+						setTimeout(onClose, 300);
+					}}
+					className="absolute top-2 right-2 p-1 text-white/30 hover:text-white transition-colors"
 				>
-					Continue Scanning
+					<X size={16} />
 				</button>
 			</div>
 		</div>
