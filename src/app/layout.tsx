@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth/AuthContext";
 import RegisterSW from "@/components/pwa/RegisterSW";
 import { Analytics } from "@vercel/analytics/next";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
+import PageTracker from "@/components/analytics/PageTracker";
 const unbounded = Unbounded({
 	subsets: ["latin"],
 	variable: "--font-unbounded",
@@ -132,6 +133,7 @@ export default function RootLayout({
 				<AuthProvider>{children}</AuthProvider>
 				{/* Analytics */}
 				<Analytics />
+				<PageTracker />
 			</body>
 		</html>
 	);

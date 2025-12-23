@@ -118,3 +118,56 @@ export function getPayoutScheduleOptions() {
     }
   ];
 }
+
+/**
+ * Computes the next weekly payout date (Friday 00:00 UTC).
+ * If today is Friday before cut-off, it might be next week? 
+ * Logic from prompt: "Defaults to now, finding next Friday"
+ * Implementation: Find next Friday 00:00:00 UTC.
+ */
+export function computeNextWeeklyPayoutUtcMillis(): number {
+  const now = new Date();
+  
+  // Create a date for "Today" but in UTC to avoid timezone drift issues for calculation
+  // Or just use native UTC methods.
+  const d = new Date(now);
+  
+  // Set to next Friday. 
+  // Day of week: 0 (Sun) ... 5 (Fri) ... 6 (Sat)
+  const currentDay = d.getUTCDay();
+  const daysUntilFriday = (5 + 7 - currentDay) % 7; 
+  
+  // If today is Friday (daysUntilFriday == 0), do we mean TODAY or NEXT week?
+  // Usually "Upcoming" implies the future or today if not passed.
+  // Let's assume if it's already Friday, we look for the *next* payout cycle? 
+  // Or if it's Friday morning, is it today?
+  // Standard logic: Payouts happen on Fridays. Process runs.
+  // If we are checking "Upcoming", we likely mean the next scheduled one.
+  // If today is Friday, let's assume we want NEXT Friday if we missed the window, 
+  // OR today if we are before. 
+  // For simplicity based on prompt "Defaults to now, finding next Friday", let's advance at least 1 day if it's Friday?
+  // Actually, usually these systems pick the *coming* Friday. 
+  // Let's just create a date for "Next Friday".
+  
+  let targetDate = new Date(d);
+  if (daysUntilFriday === 0) {
+     // It is Friday. Move to next week?
+     targetDate.setUTCDate(targetDate.getUTCDate() + 7);
+  } else {
+     targetDate.setUTCDate(targetDate.getUTCDate() + daysUntilFriday);
+  }
+  
+  // Normalize to 00:00 UTC
+  targetDate.setUTCHours(0, 0, 0, 0);
+  
+  return targetDate.getTime();
+}
+
+
+export function minorToDisplay(amountMinor: number, currency: string = "NGN"): string {
+    // Simple formatter. Can assume NGN for now as per prompt or use Intl.
+    return new Intl.NumberFormat('en-NG', {
+        style: 'currency',
+        currency: currency
+    }).format(amountMinor / 100);
+}

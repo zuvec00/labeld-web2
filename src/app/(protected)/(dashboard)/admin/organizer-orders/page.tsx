@@ -225,6 +225,7 @@ export default function AdminOrganizerOrdersPage() {
 					hasMore={false} // pagination not implemented for this view yet
 					onLoadMore={() => {}}
 					onOrderClick={() => {}} // No detail view wired up yet
+					showFees={true}
 				/>
 			)}
 
