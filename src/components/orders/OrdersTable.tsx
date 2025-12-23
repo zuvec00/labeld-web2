@@ -23,6 +23,7 @@ interface OrdersTableProps {
 	hasMore: boolean;
 	onLoadMore: () => void;
 	onOrderClick: (order: OrderWithVendorStatus) => void;
+	showFees?: boolean;
 }
 
 export default function OrdersTable({
@@ -31,6 +32,7 @@ export default function OrdersTable({
 	hasMore,
 	onLoadMore,
 	onOrderClick,
+	showFees = false,
 }: OrdersTableProps) {
 	const { user } = useAuth();
 	const [sortField, setSortField] = useState<"createdAt" | "amount">(
@@ -227,6 +229,13 @@ export default function OrdersTable({
 							<th className="px-4 py-3 text-left">
 								<SortButton field="amount">Total</SortButton>
 							</th>
+							{/* Optional Fee Breakdown */}
+							{showFees && (
+								<>
+									<th className="px-4 py-3 text-left">Base</th>
+									<th className="px-4 py-3 text-left">Fees</th>
+								</>
+							)}
 						</tr>
 					</thead>
 					<tbody>
@@ -425,6 +434,22 @@ export default function OrdersTable({
 									<td className="px-4 py-3">
 										<Money amountMinor={order.amount.totalMinor} />
 									</td>
+
+									{/* Fee Breakdown */}
+									{showFees && (
+										<>
+											<td className="px-4 py-3 text-text-muted">
+												<Money
+													amountMinor={
+														order.amount.totalMinor - order.amount.feesMinor
+													}
+												/>
+											</td>
+											<td className="px-4 py-3 text-alert">
+												+<Money amountMinor={order.amount.feesMinor} />
+											</td>
+										</>
+									)}
 								</tr>
 							);
 						})}

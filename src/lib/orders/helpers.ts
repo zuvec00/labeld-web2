@@ -113,7 +113,7 @@ export function getOrderItemsSummary(lineItems: LineItem[]): string {
 }
 
 // Date range helpers
-export function getDateRange(type: "today" | "7days" | "30days" | "custom", customRange?: { start: Date; end: Date }) {
+export function getDateRange(type: "today" | "7days" | "30days" | "60days" | "90days" | "custom", customRange?: { start: Date; end: Date }) {
   const now = new Date();
   const oneDay = 24 * 60 * 60 * 1000;
   
@@ -137,6 +137,18 @@ export function getDateRange(type: "today" | "7days" | "30days" | "custom", cust
         start: new Date(now.getTime() - 30 * oneDay),
         end: now,
         label: "Last 30 days"
+      };
+    case "60days":
+      return {
+        start: new Date(now.getTime() - 60 * oneDay),
+        end: now,
+        label: "Last 60 days"
+      };
+    case "90days":
+      return {
+        start: new Date(now.getTime() - 90 * oneDay),
+        end: now,
+        label: "Last 90 days"
       };
     case "custom":
       if (customRange) {

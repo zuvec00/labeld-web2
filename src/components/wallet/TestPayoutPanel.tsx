@@ -224,27 +224,180 @@ export default function TestPayoutPanel() {
 								</div>
 							</div>
 							{results.payout.details && (
-								<details className="mt-3">
-									<summary className="text-xs text-text-muted cursor-pointer">
-										View Details
-									</summary>
-									<div className="mt-2 text-xs space-y-2">
-										<div>
-											<strong>Vendors with Bank:</strong>{" "}
-											{results.payout.details.vendorsWithBank.length}
-										</div>
-										<div>
-											<strong>Vendors without Bank:</strong>{" "}
-											{results.payout.details.vendorsWithoutBank.length}
-										</div>
-										{results.payout.results.batchId && (
-											<div>
-												<strong>Batch ID:</strong>{" "}
-												{results.payout.results.batchId}
+								<div className="mt-4 space-y-3">
+									{/* Vendors with Bank Details */}
+									{results.payout.details.vendorsWithBank.length > 0 && (
+										<details className="group">
+											<summary className="text-xs font-medium text-text cursor-pointer hover:text-accent flex items-center gap-2">
+												<span>
+													✓ Vendors with Bank (
+													{results.payout.details.vendorsWithBank.length})
+												</span>
+											</summary>
+											<div className="mt-2 overflow-x-auto">
+												<table className="w-full text-xs">
+													<thead className="border-b border-stroke">
+														<tr>
+															<th className="text-left py-2 px-2 text-text-muted">
+																Vendor ID
+															</th>
+															<th className="text-left py-2 px-2 text-text-muted">
+																Name
+															</th>
+															<th className="text-right py-2 px-2 text-text-muted">
+																Amount
+															</th>
+														</tr>
+													</thead>
+													<tbody className="divide-y divide-stroke/50">
+														{results.payout.details.vendorsWithBank.map(
+															(vendor, idx) => (
+																<tr key={idx} className="hover:bg-bg/50">
+																	<td className="py-2 px-2 font-mono text-text-muted">
+																		{vendor.vendorId}
+																	</td>
+																	<td className="py-2 px-2">
+																		{vendor.vendorName || "—"}
+																	</td>
+																	<td className="py-2 px-2 text-right font-mono">
+																		{vendor.amount}
+																	</td>
+																</tr>
+															)
+														)}
+													</tbody>
+												</table>
 											</div>
+										</details>
+									)}
+
+									{/* Vendors without Bank Details */}
+									{results.payout.details.vendorsWithoutBank.length > 0 && (
+										<details className="group">
+											<summary className="text-xs font-medium text-alert cursor-pointer hover:text-red-400 flex items-center gap-2">
+												<span>
+													⚠ Vendors without Bank (
+													{results.payout.details.vendorsWithoutBank.length})
+												</span>
+											</summary>
+											<div className="mt-2 overflow-x-auto">
+												<table className="w-full text-xs">
+													<thead className="border-b border-stroke">
+														<tr>
+															<th className="text-left py-2 px-2 text-text-muted">
+																Vendor ID
+															</th>
+															<th className="text-left py-2 px-2 text-text-muted">
+																Name
+															</th>
+															<th className="text-right py-2 px-2 text-text-muted">
+																Amount
+															</th>
+														</tr>
+													</thead>
+													<tbody className="divide-y divide-stroke/50">
+														{results.payout.details.vendorsWithoutBank.map(
+															(vendor, idx) => (
+																<tr key={idx} className="hover:bg-bg/50">
+																	<td className="py-2 px-2 font-mono text-text-muted">
+																		{vendor.vendorId}
+																	</td>
+																	<td className="py-2 px-2">
+																		{vendor.vendorName || "—"}
+																	</td>
+																	<td className="py-2 px-2 text-right font-mono">
+																		{vendor.amount}
+																	</td>
+																</tr>
+															)
+														)}
+													</tbody>
+												</table>
+											</div>
+										</details>
+									)}
+
+									{/* Payout Results */}
+									{results.payout.details.payoutResults &&
+										results.payout.details.payoutResults.length > 0 && (
+											<details className="group">
+												<summary className="text-xs font-medium text-text cursor-pointer hover:text-accent flex items-center gap-2">
+													<span>
+														📋 Payout Results (
+														{results.payout.details.payoutResults.length})
+													</span>
+												</summary>
+												<div className="mt-2 overflow-x-auto">
+													<table className="w-full text-xs">
+														<thead className="border-b border-stroke">
+															<tr>
+																<th className="text-left py-2 px-2 text-text-muted">
+																	Vendor ID
+																</th>
+																<th className="text-left py-2 px-2 text-text-muted">
+																	Name
+																</th>
+																<th className="text-right py-2 px-2 text-text-muted">
+																	Amount
+																</th>
+																<th className="text-center py-2 px-2 text-text-muted">
+																	Status
+																</th>
+																<th className="text-left py-2 px-2 text-text-muted">
+																	Details
+																</th>
+															</tr>
+														</thead>
+														<tbody className="divide-y divide-stroke/50">
+															{results.payout.details.payoutResults.map(
+																(result, idx) => (
+																	<tr key={idx} className="hover:bg-bg/50">
+																		<td className="py-2 px-2 font-mono text-text-muted">
+																			{result.vendorId}
+																		</td>
+																		<td className="py-2 px-2">
+																			{result.vendorName || "—"}
+																		</td>
+																		<td className="py-2 px-2 text-right font-mono">
+																			{result.amount}
+																		</td>
+																		<td className="py-2 px-2 text-center">
+																			{result.success ? (
+																				<span className="text-accent">✓</span>
+																			) : (
+																				<span className="text-alert">✗</span>
+																			)}
+																		</td>
+																		<td className="py-2 px-2 text-text-muted">
+																			{result.transferCode && (
+																				<span className="font-mono">
+																					{result.transferCode}
+																				</span>
+																			)}
+																			{result.error && (
+																				<span className="text-alert">
+																					{result.error}
+																				</span>
+																			)}
+																		</td>
+																	</tr>
+																)
+															)}
+														</tbody>
+													</table>
+												</div>
+											</details>
 										)}
-									</div>
-								</details>
+
+									{results.payout.results.batchId && (
+										<div className="text-xs text-text-muted">
+											<strong>Batch ID:</strong>{" "}
+											<span className="font-mono">
+												{results.payout.results.batchId}
+											</span>
+										</div>
+									)}
+								</div>
 							)}
 						</div>
 					)}
