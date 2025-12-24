@@ -10,17 +10,19 @@ export function MultiImagePicker({
 	onPick,
 	onClearExisting,
 	onRemoveExisting,
+	maxFiles = 4,
 }: {
 	existingUrls: string[];
 	files: File[];
 	onPick: (next: File[]) => void; // replace current files
 	onClearExisting: () => void; // clear server URLs
 	onRemoveExisting: (url: string) => void; // remove a single server URL
+	maxFiles?: number;
 }) {
 	const [msg, setMsg] = useState<string | null>(null);
 
 	const totalCount = (existingUrls?.length || 0) + (files?.length || 0);
-	const slotsLeft = Math.max(0, MAX_GALLERY - totalCount);
+	const slotsLeft = Math.max(0, maxFiles - totalCount);
 
 	const previews = useMemo(
 		() => [...existingUrls, ...files.map((f) => URL.createObjectURL(f))],
@@ -32,7 +34,7 @@ export function MultiImagePicker({
 		if (!picked.length) return;
 
 		if (slotsLeft <= 0) {
-			setMsg(`You can only upload up to ${MAX_GALLERY} images.`);
+			setMsg(`You can only upload up to ${maxFiles} images.`);
 			e.currentTarget.value = "";
 			return;
 		}
@@ -45,7 +47,7 @@ export function MultiImagePicker({
 			setMsg(
 				`Only ${slotsLeft} more image${
 					slotsLeft === 1 ? "" : "s"
-				} allowed (max ${MAX_GALLERY}).`
+				} allowed (max ${maxFiles}).`
 			);
 		} else {
 			setMsg(null);
@@ -73,7 +75,7 @@ export function MultiImagePicker({
 						piece&apos;s vibe.
 					</div>
 					<div className="text-xs text-text-muted mt-1">
-						{totalCount} / {MAX_GALLERY} selected
+						{totalCount} / {maxFiles} selected
 					</div>
 				</div>
 				<input

@@ -4,7 +4,9 @@ import AuthForm from "@/app/marketing/auth/AuthFom";
 import BrandOnboardingModal from "./BrandOnboardingModal";
 import EventOrganizerOnboardingModal from "./EventOrganizerOnboardingModal";
 import Image from "next/image";
-import { useState, useRef, useEffect } from "react";
+import { startTransition, Suspense, useEffect, useRef, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import BrandRegistrationModal from "./BrandRegistrationModal";
 
 function VideoWithFallback({
 	src = "/videos/intro.mp4",
@@ -200,15 +202,46 @@ function AuthModal({
 	);
 }
 
+// Popup Trigger Component
+function PopupTrigger({ onTrigger }: { onTrigger: () => void }) {
+	const searchParams = useSearchParams();
+
+	useEffect(() => {
+		if (searchParams?.get("popup") === "true") {
+			// Small delay to ensure modal is ready
+			const t = setTimeout(() => {
+				onTrigger();
+			}, 500);
+			return () => clearTimeout(t);
+		}
+	}, [searchParams, onTrigger]);
+
+	return null;
+}
+
 export default function OnboardingSplit() {
 	const [mode, setMode] = useState<"login" | "signup">("login");
 	const [showAuthModal, setShowAuthModal] = useState(false);
 	const [showBrandModal, setShowBrandModal] = useState(false);
+	const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 	const [showEventModal, setShowEventModal] = useState(false);
+
+	const router = useRouter();
+	const pathname = usePathname();
 
 	const handleLaunchBrand = () => {
 		// Show brand onboarding modal instead of auth modal
 		setShowBrandModal(true);
+	};
+
+	const handleRegistrationClose = () => {
+		setShowRegistrationModal(false);
+		router.replace(pathname);
+	};
+
+	const handleOpenAuth = () => {
+		setMode("signup");
+		setShowAuthModal(true);
 	};
 
 	const handleDropEvents = () => {
@@ -395,11 +428,25 @@ export default function OnboardingSplit() {
 				onModeChange={setMode}
 			/>
 
-			{/* Brand Onboarding Modal */}
+			{/* Brand Onboarding Modal (Original) */}
 			<BrandOnboardingModal
 				isOpen={showBrandModal}
 				onClose={() => setShowBrandModal(false)}
 			/>
+
+			{/* Brand Registration Modal (New Lead Gen) */}
+			<BrandRegistrationModal
+				isOpen={showRegistrationModal}
+				onClose={handleRegistrationClose}
+				onLaunchBrand={() => {
+					handleRegistrationClose();
+					handleLaunchBrand();
+				}}
+			/>
+
+			<Suspense fallback={null}>
+				<PopupTrigger onTrigger={() => setShowRegistrationModal(true)} />
+			</Suspense>
 
 			{/* Event Organizer Onboarding Modal */}
 			<EventOrganizerOnboardingModal
