@@ -11,6 +11,7 @@ export function MultiImagePicker({
 	onClearExisting,
 	onRemoveExisting,
 	maxFiles = 4,
+	description = "Upload extra angles, close-ups, or detail shots to show off the piece's vibe.",
 }: {
 	existingUrls: string[];
 	files: File[];
@@ -18,6 +19,7 @@ export function MultiImagePicker({
 	onClearExisting: () => void; // clear server URLs
 	onRemoveExisting: (url: string) => void; // remove a single server URL
 	maxFiles?: number;
+	description?: string;
 }) {
 	const [msg, setMsg] = useState<string | null>(null);
 
@@ -70,10 +72,7 @@ export function MultiImagePicker({
 			{/* dashed picker zone */}
 			<label className="block">
 				<div className="border border-dashed border-stroke/70 rounded-xl p-4 text-center cursor-pointer hover:bg-bg">
-					<div className="text-sm text-text">
-						Upload extra angles, close-ups, or detail shots to show off the
-						piece&apos;s vibe.
-					</div>
+					<div className="text-sm text-text">{description}</div>
 					<div className="text-xs text-text-muted mt-1">
 						{totalCount} / {maxFiles} selected
 					</div>

@@ -401,6 +401,7 @@ export default function BrandRegistrationModal({
 									existingUrls={[]}
 									files={formData.visuals.files}
 									maxFiles={10}
+									description="Upload images of the pieces/stock you intend to display at thefunKtion."
 									onPick={(files) =>
 										setFormData({
 											...formData,
