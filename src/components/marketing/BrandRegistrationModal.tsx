@@ -240,7 +240,9 @@ export default function BrandRegistrationModal({
 						)}
 						<div>
 							<h2 className="font-heading font-semibold text-xl">
-								{step === 4 ? "Application Received" : "Register Your Brand"}
+								{step === 4
+									? "Application Received"
+									: "Register Your Brand for thefunKtion"}
 							</h2>
 							{step < 4 && (
 								<p className="text-xs text-text-muted">Step {step} of 3</p>
