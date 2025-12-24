@@ -16,6 +16,7 @@ import { Input } from "../ui/input";
 import { MultiImagePicker } from "../ui/upload-multiple-image"; // Assuming I can import this, or I'll use the one I saw
 import { createBrandRegistration } from "@/lib/firebase/brandRegistration";
 import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileGetURL } from "@/lib/storage/upload";
 import { sendMailGenericCF } from "@/lib/firebase/callables/email";
 
 // Define the form data structure
@@ -119,12 +120,23 @@ export default function BrandRegistrationModal({
 
 			// Handle File Uploads
 			if (formData.visuals.type === "file") {
-				const uploadPromises = formData.visuals.files.map((file) =>
-					uploadImageCloudinary(file, {
-						folder: "brand_registrations",
-						tags: ["registration", formData.brandName],
-					})
-				);
+				const uploadPromises = formData.visuals.files.map(async (file) => {
+					try {
+						// Primary: Cloudinary
+						return await uploadImageCloudinary(file, {
+							folder: "brand_registrations",
+							tags: ["registration", formData.brandName],
+						});
+					} catch (err) {
+						console.warn(
+							"Cloudinary upload failed, falling back to storage:",
+							err
+						);
+						// Fallback: Firebase Storage
+						const path = `brand_registrations/${Date.now()}_${file.name}`;
+						return await uploadFileGetURL(file, path);
+					}
+				});
 				visualData = await Promise.all(uploadPromises);
 			} else {
 				visualData = formData.visuals.links.filter((l) => l.url.trim());
