@@ -148,61 +148,106 @@ export default function BrandRegistrationModal({
 
 			// Send Email Notification (Non-blocking)
 			const emailHtml = `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h1 style="color: #000;">New Brand Registration</h1>
-                    <p>A new brand has applied to join Labeld Studio.</p>
-                    
-                    <h2 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">Brand Details</h2>
-                    <p><strong>Brand Name:</strong> ${formData.brandName}</p>
-                    <p><strong>Phone:</strong> ${formData.phone}</p>
-                    <p><strong>Email:</strong> ${formData.email}</p>
-                    
-                    <h3>Socials</h3>
-                    <p><strong>Instagram:</strong> ${
-											formData.socials.instagram || "N/A"
-										}</p>
-                    <p><strong>TikTok:</strong> ${
-											formData.socials.tiktok || "N/A"
-										}</p>
-                    
-                    <h3>Description</h3>
-                    <p style="white-space: pre-wrap; background: #f9f9f9; padding: 15px; border-radius: 8px;">${
-											formData.description
-										}</p>
-                    
-                    <h3>Visuals</h3>
-                    <p><strong>Type:</strong> ${
-											formData.visuals.type === "file"
-												? "Uploaded Files"
-												: "Links"
-										}</p>
-                    ${
-											formData.visuals.type === "link"
-												? `
-                        <ul>
-                            ${formData.visuals.links
-															.map(
-																(l) =>
-																	`<li><a href="${l.url}">${
-																		l.title || l.url
-																	}</a></li>`
-															)
-															.join("")}
-                        </ul>
-                    `
-												: `
-                        <p>Check Firestore for uploaded image URLs.</p>
-                    `
-										}
+                <div style="background-color: #0B0B0B; color: #FAF7F1; font-family: sans-serif; padding: 40px 20px;">
+                    <div style="max-width: 600px; margin: 0 auto; background-color: #1C1C1C; border-radius: 12px; overflow: hidden; border: 1px solid #2A2A2A;">
+                        <div style="background-color: #C4FF30; padding: 30px; text-align: center;">
+                            <h1 style="color: #0B0B0B; margin: 0; font-size: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: -0.5px;">New Brand Registration</h1>
+                        </div>
+                        
+                        <div style="padding: 30px;">
+                            <p style="font-size: 16px; line-height: 1.5; color: #FAF7F1; margin-bottom: 24px;">
+                                A new brand has applied to join Labeld Studio.
+                            </p>
 
-                    <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #666;">
-                        <p>Sent from Labeld Studio Web</p>
+                            <div style="margin-bottom: 24px;">
+                                <h2 style="font-size: 18px; color: #C4FF30; margin: 0 0 12px 0; border-bottom: 1px solid #2A2A2A; padding-bottom: 8px;">Brand Details</h2>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #9E9E9E; width: 120px; font-size: 14px;">Brand Name</td>
+                                        <td style="padding: 8px 0; color: #FAF7F1; font-weight: 600;">${
+																					formData.brandName
+																				}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #9E9E9E; font-size: 14px;">Phone</td>
+                                        <td style="padding: 8px 0; color: #FAF7F1;">${
+																					formData.phone
+																				}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #9E9E9E; font-size: 14px;">Email</td>
+                                        <td style="padding: 8px 0; color: #FAF7F1;">${
+																					formData.email
+																				}</td>
+                                    </tr>
+                                </table>
+                            </div>
+
+                            <div style="margin-bottom: 24px;">
+                                <h2 style="font-size: 18px; color: #C4FF30; margin: 0 0 12px 0; border-bottom: 1px solid #2A2A2A; padding-bottom: 8px;">Socials</h2>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #9E9E9E; width: 120px; font-size: 14px;">Instagram</td>
+                                        <td style="padding: 8px 0; color: #FAF7F1;">${
+																					formData.socials.instagram || "N/A"
+																				}</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px 0; color: #9E9E9E; font-size: 14px;">TikTok</td>
+                                        <td style="padding: 8px 0; color: #FAF7F1;">${
+																					formData.socials.tiktok || "N/A"
+																				}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <div style="margin-bottom: 24px;">
+                                <h2 style="font-size: 18px; color: #C4FF30; margin: 0 0 12px 0; border-bottom: 1px solid #2A2A2A; padding-bottom: 8px;">Description</h2>
+                                <div style="background-color: #0B0B0B; padding: 16px; border-radius: 8px; color: #FAF7F1; line-height: 1.6; border: 1px solid #2A2A2A; white-space: pre-wrap; font-size: 14px;">${
+																	formData.description
+																}</div>
+                            </div>
+
+                            <div style="margin-bottom: 8px;">
+                                <h2 style="font-size: 18px; color: #C4FF30; margin: 0 0 12px 0; border-bottom: 1px solid #2A2A2A; padding-bottom: 8px;">Visuals</h2>
+                                <p style="margin: 0 0 12px 0; color: #9E9E9E; font-size: 14px;">Type: <span style="color: #FAF7F1; text-transform: capitalize;">${
+																	formData.visuals.type
+																}</span></p>
+                                ${
+																	formData.visuals.type === "link"
+																		? `
+                                        <ul style="margin: 0; padding-left: 20px; color: #C4FF30;">
+                                            ${formData.visuals.links
+																							.map(
+																								(l) =>
+																									`<li style="margin-bottom: 8px;"><a href="${
+																										l.url
+																									}" style="color: #C4FF30; text-decoration: none; border-bottom: 1px dotted #C4FF30;">${
+																										l.title || l.url
+																									}</a></li>`
+																							)
+																							.join("")}
+                                        </ul>
+                                    `
+																		: `
+                                        <p style="color: #9E9E9E; font-style: italic; font-size: 14px; background: #2A2A2A; padding: 10px; border-radius: 6px; display: inline-block;">Check Dashboard for uploaded images.</p>
+                                    `
+																}
+                            </div>
+                        </div>
+                        <div style="background-color: #0B0B0B; padding: 20px; text-align: center; border-top: 1px solid #2A2A2A;">
+                            <p style="color: #555; font-size: 12px; margin: 0;">Sent from Labeld Studio Web</p>
+                        </div>
                     </div>
                 </div>
             `;
 
 			sendMailGenericCF({
-				to: "labeldapp@gmail.com",
+				to: [
+					"labeldapp@gmail.com",
+					"thefunktionng@gmail.com",
+					"seyanumoradeyo@gmail.com",
+				],
 				subject: `New Brand Registration: ${formData.brandName}`,
 				html: emailHtml,
 				text: `New Brand Registration: ${formData.brandName}\n\nPhone: ${formData.phone}\nEmail: ${formData.email}\n\nSee full details in dashboard.`,
