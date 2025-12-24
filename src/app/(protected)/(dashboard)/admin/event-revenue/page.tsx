@@ -166,7 +166,6 @@ export default function AdminEventRevenuePage() {
 							/>
 							<Button
 								text="Go"
-								size="sm"
 								variant="secondary"
 								onClick={handleApplyCustomRange}
 								disabled={!customStart || !customEnd || loading}
