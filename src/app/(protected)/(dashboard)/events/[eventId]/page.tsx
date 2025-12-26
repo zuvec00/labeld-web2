@@ -80,7 +80,7 @@ export default function EventDashboardPage() {
 				rev += order.amount.itemsSubtotalMinor || 0;
 				order.lineItems.forEach((item) => {
 					if (item._type === "ticket") {
-						sold += item.qty || 1;
+						sold += item.qty;
 					}
 				});
 			}
