@@ -157,16 +157,9 @@ export function useEventOrders(eventId: string): UseEventOrdersResult {
             fulfillmentStatuses[line.lineKey] = getLineFulfillmentStatus(line); 
           });
 
-          // Compute aggregate status for ALL lines (since event owner)
-          const allLineKeys = order.lineItems.map(item => 
-             item._type === "ticket" ? `ticket:${item.ticketTypeId}` : `merch:${item.merchItemId}`
-          );
-          // Actually, fulfillment is usually tracked for Merch only?
-          // Tickets are auto-fulfilled or separate.
-          // Let's assume fulfillment tracking is for merch items mainly, or check lineItems.
-          
+          // Compute aggregate status for merch items only (tickets are auto-fulfilled)
           const merchLineKeys = order.lineItems
-            .filter(item => item._type === "merch")
+            .filter((item): item is import("@/types/orders").MerchLineItem => item._type === "merch")
             .map(item => `merch:${item.merchItemId}`);
 
           const fulfillmentAggregateStatus = calculateFulfillmentAggregateStatus(
