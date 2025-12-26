@@ -185,6 +185,48 @@ export async function getOrdersInDateRange(
   }
 }
 
+// Get orders for a specific event
+export async function getOrdersForEvent(
+  eventId: string,
+  pageSize: number = 25,
+  lastDoc?: QueryDocumentSnapshot,
+  startDate?: Date,
+  endDate?: Date
+): Promise<{ orders: OrderDoc[]; lastDoc?: QueryDocumentSnapshot }> {
+  try {
+    let q = query(
+      collection(db, "orders"),
+      where("eventId", "==", eventId)
+    );
+
+    if (startDate && endDate) {
+        const startTimestamp = Timestamp.fromDate(startDate);
+        const endTimestamp = Timestamp.fromDate(endDate);
+        q = query(q, where("createdAt", ">=", startTimestamp), where("createdAt", "<=", endTimestamp));
+    }
+
+    q = query(q, orderBy("createdAt", "desc"));
+    
+    if (lastDoc) {
+      q = query(q, startAfter(lastDoc));
+    }
+
+    q = query(q, limit(pageSize));
+
+    const snapshot = await getDocs(q);
+    const orders = snapshot.docs.map(parseOrderDoc);
+    const newLastDoc = snapshot.docs[snapshot.docs.length - 1];
+
+    return {
+      orders,
+      lastDoc: newLastDoc,
+    };
+  } catch (error) {
+    console.error("Error getting orders for event:", error);
+    return { orders: [] };
+  }
+}
+
 // Get fulfillment lines for orders
 export async function getFulfillmentLines(
   orderIds: string[]

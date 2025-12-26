@@ -13,6 +13,10 @@ import {
 	Ticket as TicketIcon,
 	Package as PackageIcon,
 	QrCode,
+	Info,
+	ShoppingCart,
+	Banknote,
+	Users,
 } from "lucide-react";
 import { countTicketTypes, fetchEventById } from "@/lib/firebase/queries/event";
 import { listTicketTypes } from "@/lib/firebase/queries/ticketTypes";
@@ -24,6 +28,10 @@ import type { MomentDoc } from "@/lib/models/moment";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { OrganizersPanel } from "@/components/events/OrganizersPanel";
 import { useAuth } from "@/lib/auth/AuthContext";
+import EventDetailsTab from "@/components/events/dashboard/EventDetailsTab";
+import EventTicketsTab from "@/components/events/dashboard/EventTicketsTab";
+import EventOrdersTab from "@/components/events/dashboard/EventOrdersTab";
+import EventSalesTab from "@/components/events/dashboard/EventSalesTab";
 
 // Decide where “Resume setup” should go based on data you have
 function nextSetupPath(ev: any, ticketCount: number) {
@@ -32,7 +40,15 @@ function nextSetupPath(ev: any, ticketCount: number) {
 	return `/events/${ev.id}/merch`;
 }
 
-type TabKey = "overview" | "tickets" | "merch" | "moments" | "settings";
+type TabKey =
+	| "overview"
+	| "details"
+	| "tickets"
+	| "orders"
+	| "sales"
+	| "merch"
+	| "moments"
+	| "settings";
 
 export default function EventDashboardPage() {
 	const { eventId } = useParams<{ eventId: string }>();
@@ -140,114 +156,105 @@ export default function EventDashboardPage() {
 
 	const nav = [
 		{ key: "overview", label: "Overview", icon: BarChart3 },
+		{ key: "details", label: "Details", icon: Info },
 		{ key: "tickets", label: "Tickets", icon: TicketIcon },
+		{ key: "orders", label: "Orders", icon: ShoppingCart },
+		{ key: "sales", label: "Sales", icon: Banknote },
 		{ key: "merch", label: "Merch", icon: PackageIcon },
 		{ key: "moments", label: "Moments", icon: Calendar },
-		{ key: "settings", label: "Settings", icon: Settings },
+		{ key: "settings", label: "Team", icon: Users },
 	] as const;
 
 	return (
-		<div className="min-h-dvh bg-bg">
-			{/* Cover header */}
-			<div className="relative">
-				<div className="h-32 sm:h-40 lg:h-48 bg-stroke/20 relative">
-					{ev.coverImageURL && (
-						<OptimizedImage
-							src={ev.coverImageURL}
-							alt={ev.title}
-							fill
-							priority
-							sizeContext="hero"
-							objectFit="cover"
-						/>
-					)}
-					<div className="absolute inset-0 bg-black/30 z-10" />
-				</div>
-
-				<div className="relative px-3 sm:px-4 lg:px-6 py-4 sm:py-6 max-w-6xl mx-auto">
-					<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6 -mt-8 sm:-mt-16 relative z-10">
-						<div className="flex flex-col gap-3 sm:gap-4">
+		<div className="min-h-dvh bg-bg pb-12">
+			{/* Clean Header */}
+			<div className="border-b border-stroke bg-surface">
+				<div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+					<div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+						<div className="flex gap-4">
+							{ev.coverImageURL ? (
+								<div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border border-stroke flex-shrink-0 relative">
+									<OptimizedImage
+										src={ev.coverImageURL}
+										alt={ev.title}
+										fill
+										sizeContext="thumbnail"
+										objectFit="cover"
+									/>
+								</div>
+							) : (
+								<div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-bg border border-stroke flex-shrink-0" />
+							)}
 							<div>
-								<div className="flex items-center gap-2 sm:gap-3">
-									<h1 className="font-heading font-semibold text-lg sm:text-xl lg:text-2xl">
+								<div className="flex items-center gap-2 mb-1">
+									<h1 className="font-heading font-bold text-xl sm:text-2xl text-text">
 										{ev.title || "Untitled Event"}
 									</h1>
-									<span className="text-xs px-2 py-0.5 rounded-full border border-stroke">
-										{ev.status}
+									<span
+										className={`px-2 py-0.5 text-xs font-medium rounded-full border ${
+											ev.status === "published"
+												? "bg-green-500/10 text-green-500 border-green-500/20"
+												: "bg-text-muted/10 text-text-muted border-stroke"
+										}`}
+									>
+										{ev.status === "published" ? "Published" : "Draft"}
 									</span>
 								</div>
-								<p className="text-text-muted text-sm sm:text-base mt-1">
-									{new Date(
-										ev.startAt?.toDate ? ev.startAt.toDate() : ev.startAt
-									).toLocaleString()}
-								</p>
-								<p className="text-text-muted text-xs sm:text-sm">
-									{ev.venue?.name
-										? `${ev.venue.name}${
-												ev.venue.city ? " • " + ev.venue.city : ""
-										  }`
-										: "Venue TBA"}
-								</p>
+								<div className="text-sm text-text-muted flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
+									<span>
+										{formatDateTimeRange(ev.startAt, ev.endAt, ev.timezone)}
+									</span>
+									<span className="hidden sm:inline">•</span>
+									<span>{formatVenue(ev.venue)}</span>
+								</div>
 							</div>
+						</div>
 
-							{/* Action Buttons */}
-							<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-								{/* Scanner Button - Always visible for published events or if user has scanner role */}
-								{(ev.status === "published" ||
-									myRoles?.includes("scanner") ||
-									myRoles?.includes("manager") ||
-									myRoles?.includes("owner")) && (
-									<Button
-										variant="primary"
-										text="Scan Tickets"
-										onClick={() => router.push(`/scan?eventId=${ev.id}`)}
-										className="flex items-center justify-center gap-2 text-sm sm:text-base"
-									>
-										<QrCode className="w-4 h-4" />
-										Scan Tickets
-									</Button>
-								)}
-
-								{/* Draft banner → Resume */}
-								{ev.status === "draft" && (
-									<div className="rounded-xl bg-bg border border-stroke p-3 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
-										<span className="text-xs sm:text-sm text-text">
-											This event is a draft.
-										</span>
-										<Button
-											variant="outline"
-											text="Resume setup"
-											onClick={() => router.push(resumeHref)}
-											className="text-xs sm:text-sm"
-										/>
-									</div>
-								)}
-							</div>
+						<div className="flex items-center gap-2 sm:self-center">
+							{ev.status === "draft" && (
+								<Button
+									variant="outline"
+									text="Resume setup"
+									onClick={() => router.push(resumeHref)}
+									className="text-sm"
+								/>
+							)}
+							{(ev.status === "published" ||
+								myRoles?.includes("scanner") ||
+								myRoles?.includes("manager") ||
+								myRoles?.includes("owner")) && (
+								<Button
+									variant="primary"
+									text="Scan Tickets"
+									leftIcon={<QrCode className="w-4 h-4" />}
+									onClick={() => router.push(`/scan?eventId=${ev.id}`)}
+									className="text-sm"
+								/>
+							)}
 						</div>
 					</div>
 				</div>
 			</div>
 
-			{/* Mobile Navigation Tabs */}
-			<div className="lg:hidden px-3 sm:px-4">
-				<div className="bg-surface border border-stroke rounded-xl p-1 -mt-4 relative z-10">
-					<div className="flex overflow-x-auto scrollbar-hide">
+			{/* Tabs Navigation (Responsive) */}
+			<div className="sticky top-0 z-20 bg-bg/80 backdrop-blur-md border-b border-stroke overflow-x-auto scrollbar-hide">
+				<div className="max-w-6xl mx-auto px-4 sm:px-6">
+					<div className="flex items-center gap-6 sm:gap-8">
 						{nav.map((item) => {
-							const Icon = item.icon;
 							const active = tab === item.key;
 							return (
 								<button
 									key={item.key}
 									onClick={() => setTab(item.key as TabKey)}
 									className={[
-										"flex items-center gap-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors",
-										active
-											? "bg-cta text-white"
-											: "text-text-muted hover:text-text hover:bg-stroke/20",
+										"relative py-4 text-sm font-medium transition-colors whitespace-nowrap",
+										active ? "text-text" : "text-text-muted hover:text-text",
 									].join(" ")}
 								>
-									<Icon className="w-4 h-4" />
 									{item.label}
+									{active && (
+										<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cta rounded-full" />
+									)}
 								</button>
 							);
 						})}
@@ -255,477 +262,224 @@ export default function EventDashboardPage() {
 				</div>
 			</div>
 
-			{/* Body */}
-			<div className="px-3 sm:px-4 lg:px-6 max-w-6xl mx-auto flex gap-4 lg:gap-8 pb-8 sm:pb-12">
-				{/* Desktop Left nav - Hidden on mobile */}
-				<nav className="hidden lg:block w-60 flex-shrink-0 mt-6">
-					<div className="bg-surface border border-stroke rounded-2xl p-3 sticky top-6">
-						<div className="space-y-1">
-							{nav.map((item) => {
-								const Icon = item.icon;
-								const active = tab === item.key;
-								return (
-									<button
-										key={item.key}
-										onClick={() => setTab(item.key as TabKey)}
-										className={[
-											"w-full flex items-center gap-3 px-3 py-2 rounded-xl text-left transition-colors",
-											active
-												? "bg-cta text-white"
-												: "text-text-muted hover:text-text hover:bg-stroke/20",
-										].join(" ")}
-									>
-										<Icon className="w-4 h-4" />
-										{item.label}
-									</button>
-								);
-							})}
-						</div>
-					</div>
-				</nav>
-
-				{/* Main */}
-				<main className="flex-1 mt-3 sm:mt-6 space-y-4 sm:space-y-6">
-					{tab === "overview" && (
-						<div className="space-y-4 sm:space-y-6">
-							{/* Event Summary */}
-							<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-								<h3 className="font-heading font-semibold text-sm sm:text-base mb-3 sm:mb-4">
-									Event Summary
+			{/* Tab Content */}
+			<main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+				{tab === "overview" && (
+					<div className="space-y-6">
+						{/* Stats Grid */}
+						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+							<div className="bg-surface border border-stroke rounded-xl p-5">
+								<h3 className="text-text-muted text-sm font-medium">
+									Total Tickets
 								</h3>
-								<div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-									{ev.coverImageURL ? (
-										<div className="w-20 h-20 sm:w-28 sm:h-28 relative rounded-lg sm:rounded-xl border border-stroke flex-shrink-0 overflow-hidden">
-											<OptimizedImage
-												src={ev.coverImageURL}
-												alt={ev.title}
-												fill
-												sizeContext="thumbnail"
-												objectFit="cover"
-											/>
-										</div>
-									) : (
-										<div className="w-20 h-20 sm:w-28 sm:h-28 rounded-lg sm:rounded-xl bg-bg border border-stroke flex-shrink-0" />
-									)}
-									<div className="flex-1 min-w-0">
-										<div className="font-medium text-sm sm:text-base">
-											{ev.title || "Untitled Event"}
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1 break-all">
-											URL:{" "}
-											{ev.slug
-												? `https://events.labeld.app/${ev.slug}`
-												: `https://events.labeld${ev.id}`}
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-2">
-											{formatDateTimeRange(ev.startAt, ev.endAt, ev.timezone)}
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1">
-											{formatVenue(ev.venue)}
-										</div>
-									</div>
+								<div className="mt-2 text-2xl font-bold font-heading">
+									{ticketCount}
 								</div>
-								{ev.description ? (
-									<p className="text-xs sm:text-sm text-text-muted mt-3 sm:mt-4 line-clamp-3">
-										{ev.description}
-									</p>
-								) : null}
-							</div>
-
-							{/* Stats Grid */}
-							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
-								<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-									<h3 className="font-medium text-sm sm:text-base">Tickets</h3>
-									<p className="text-xs sm:text-sm text-text-muted mt-1 sm:mt-2">
-										{ticketCount} ticket type(s)
-									</p>
-									<div className="text-xs text-text-muted mt-1">
-										{hasActiveTickets
-											? "Active tickets available"
-											: "No active tickets"}
-									</div>
-								</div>
-
-								<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-									<h3 className="font-medium text-sm sm:text-base">Merch</h3>
-									<p className="text-xs sm:text-sm text-text-muted mt-1 sm:mt-2">
-										{merch.length} item(s)
-									</p>
-									<div className="text-xs text-text-muted mt-1">
-										{merch.length > 0
-											? "Merchandise available"
-											: "No merch added"}
-									</div>
-								</div>
-
-								<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
-									<h3 className="font-medium text-sm sm:text-base">Moments</h3>
-									<p className="text-xs sm:text-sm text-text-muted mt-1 sm:mt-2">
-										{moments.length} moment(s)
-									</p>
-									<div className="text-xs text-text-muted mt-1">
-										{moments.length > 0 ? "Content shared" : "No moments yet"}
-									</div>
+								<div className="mt-1 text-xs text-text-muted">
+									{hasActiveTickets ? "Sales active" : "No active tickets"}
 								</div>
 							</div>
+							<div className="bg-surface border border-stroke rounded-xl p-5">
+								<h3 className="text-text-muted text-sm font-medium">merch</h3>
+								<div className="mt-2 text-2xl font-bold font-heading">
+									{merch.length}
+								</div>
+								<div className="mt-1 text-xs text-text-muted">Items listed</div>
+							</div>
+							<div className="bg-surface border border-stroke rounded-xl p-5">
+								<h3 className="text-text-muted text-sm font-medium">Moments</h3>
+								<div className="mt-2 text-2xl font-bold font-heading">
+									{moments.length}
+								</div>
+								<div className="mt-1 text-xs text-text-muted">
+									Shared moments
+								</div>
+							</div>
+							<div className="bg-surface border border-stroke rounded-xl p-5">
+								<h3 className="text-text-muted text-sm font-medium">
+									Page Views
+								</h3>
+								<div className="mt-2 text-2xl font-bold font-heading">--</div>
+								<div className="mt-1 text-xs text-text-muted">Last 30 days</div>
+							</div>
+						</div>
 
-							{/* Quick Actions */}
-							<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-								<h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">
+						{/* Quick Links / Summary */}
+						<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+							<div className="lg:col-span-2 bg-surface border border-stroke rounded-xl p-6">
+								<h3 className="font-heading font-semibold text-lg mb-4">
+									Event Performance
+								</h3>
+								<div className="h-48 grid place-items-center text-text-muted text-sm border border-dashed border-stroke rounded-lg">
+									Chart placeholder - Sales over time
+								</div>
+							</div>
+							<div className="bg-surface border border-stroke rounded-xl p-6 flex flex-col gap-4">
+								<h3 className="font-heading font-semibold text-lg">
 									Quick Actions
 								</h3>
-								<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-									<Button
-										variant="outline"
-										text="Edit details"
-										onClick={() => router.push(`/events/${ev.id}/details`)}
-										className="text-xs sm:text-sm"
-									/>
-									<Button
-										variant="outline"
-										text="Manage tickets"
-										onClick={() => router.push(`/events/${ev.id}/tickets`)}
-										className="text-xs sm:text-sm"
-									/>
-									<Button
-										variant="outline"
-										text="Manage merch"
-										onClick={() => router.push(`/events/${ev.id}/merch`)}
-										className="text-xs sm:text-sm"
-									/>
-									<Button
-										variant="outline"
-										text="Add moments"
-										onClick={() => router.push(`/events/${ev.id}/moments`)}
-										className="text-xs sm:text-sm"
-									/>
-								</div>
-
-								{/* Scanner Action - Prominent for published events */}
-								{(ev.status === "published" ||
-									myRoles?.includes("scanner") ||
-									myRoles?.includes("manager") ||
-									myRoles?.includes("owner")) && (
-									<div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-stroke">
-										<Button
-											variant="primary"
-											text="Scan Event Tickets"
-											onClick={() => router.push(`/scan?eventId=${ev.id}`)}
-											className="flex items-center gap-2 w-full justify-center text-sm sm:text-base"
-										>
-											<QrCode className="w-4 h-4" />
-											Scan Event Tickets
-										</Button>
-									</div>
-								)}
-							</div>
-
-							{/* Event Status */}
-							<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-								<h3 className="font-medium text-sm sm:text-base mb-3 sm:mb-4">
-									Event Status
-								</h3>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-									<div>
-										<div className="text-xs sm:text-sm font-medium">Status</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1">
-											{ev.status === "draft" ? "Draft" : "Published"}
-										</div>
-									</div>
-									<div>
-										<div className="text-xs sm:text-sm font-medium">
-											Visibility
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1">
-											{ev.visibility === "public" ? "Public" : "Unlisted"}
-										</div>
-									</div>
-									<div>
-										<div className="text-xs sm:text-sm font-medium">
-											Timezone
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1">
-											{ev.timezone || "Not set"}
-										</div>
-									</div>
-									<div>
-										<div className="text-xs sm:text-sm font-medium">
-											Capacity
-										</div>
-										<div className="text-xs sm:text-sm text-text-muted mt-1">
-											{ev.capacityMode === "unlimited"
-												? "Unlimited"
-												: `${ev.capacityTotal || 0} people`}
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					)}
-
-					{tab === "tickets" && (
-						<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 mb-4">
-								<h2 className="font-heading font-semibold text-lg sm:text-xl">
-									Tickets
-								</h2>
-								<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-									{/* Scanner Button - Show if event is published or user has scanner permissions */}
-									{(ev.status === "published" ||
-										myRoles?.includes("scanner") ||
-										myRoles?.includes("manager") ||
-										myRoles?.includes("owner")) && (
-										<Button
-											variant="outline"
-											text="Scan Tickets"
-											onClick={() => router.push(`/scan?eventId=${ev.id}`)}
-											className="flex items-center justify-center gap-2 text-sm"
-										>
-											<QrCode className="w-4 h-4" />
-											Scan Tickets
-										</Button>
-									)}
-									<Button
-										variant="primary"
-										text="Create ticket"
-										onClick={() => router.push(`/events/${ev.id}/tickets`)}
-										className="text-sm"
-									/>
-								</div>
-							</div>
-							{tickets.length ? (
-								<div className="space-y-3">
-									{tickets.map((t) => (
-										<div
-											key={t.id}
-											className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-stroke"
-										>
-											<div className="flex-1 min-w-0">
-												<div className="font-medium text-sm sm:text-base">
-													{t.name}
-												</div>
-												{t.description && (
-													<div className="text-xs sm:text-sm text-text-muted mt-1 line-clamp-2">
-														{t.description}
-													</div>
-												)}
-												<div className="text-xs text-text-muted mt-2 flex flex-wrap gap-2 sm:gap-3">
-													<span>
-														{t.kind === "single"
-															? "Single"
-															: `Group x${t.groupSize}`}
-													</span>
-													<span>
-														{t.price != null
-															? `${t.currency ?? "NGN"} ${(
-																	t.price / 100
-															  ).toLocaleString()}`
-															: "Free"}
-													</span>
-													<span>
-														{t.quantityTotal == null
-															? "Unlimited"
-															: `${t.quantityRemaining ?? 0}/${
-																	t.quantityTotal
-															  } left`}
-													</span>
-													<span
-														className={
-															t.isActive ? "text-green-600" : "text-red-600"
-														}
-													>
-														{t.isActive ? "Active" : "Inactive"}
-													</span>
-												</div>
-											</div>
-											<div className="flex gap-2">
-												<Button
-													variant="outline"
-													text="Edit"
-													onClick={() =>
-														router.push(`/events/${ev.id}/tickets/${t.id}/edit`)
-													}
-													className="text-xs sm:text-sm"
-												/>
-											</div>
-										</div>
-									))}
-								</div>
-							) : (
-								<div className="text-center py-6 sm:py-8">
-									<TicketIcon className="mx-auto w-10 h-10 sm:w-12 sm:h-12 text-text-muted mb-3" />
-									<p className="text-text-muted text-sm sm:text-base">
-										No tickets created yet
-									</p>
-									<Button
-										className="mt-3"
-										variant="primary"
-										text="Create your first ticket"
-										onClick={() => router.push(`/events/${ev.id}/tickets`)}
-									/>
-								</div>
-							)}
-						</div>
-					)}
-
-					{tab === "merch" && (
-						<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 mb-4">
-								<h2 className="font-heading font-semibold text-lg sm:text-xl">
-									Merchandise
-								</h2>
 								<Button
-									variant="primary"
-									text="Add merch"
-									onClick={() => router.push(`/events/${ev.id}/merch`)}
-									className="text-sm"
+									variant="outline"
+									text="Edit Event Details"
+									onClick={() => setTab("details")}
+									className="w-full justify-start"
+									leftIcon={<Info className="w-4 h-4" />}
+								/>
+								<Button
+									variant="outline"
+									text="Manage Tickets"
+									onClick={() => setTab("tickets")}
+									className="w-full justify-start"
+									leftIcon={<TicketIcon className="w-4 h-4" />}
+								/>
+								<Button
+									variant="outline"
+									text="View Public Page"
+									onClick={() =>
+										window.open(
+											ev.slug
+												? `https://events.labeld.app/${ev.slug}`
+												: `/events/${ev.id}`,
+											"_blank"
+										)
+									}
+									className="w-full justify-start"
+									leftIcon={<BarChart3 className="w-4 h-4" />}
 								/>
 							</div>
-							{merch.length ? (
-								<div className="space-y-3">
-									{merch.map((m) => (
-										<div
-											key={m.id}
-											className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg sm:rounded-xl border border-stroke"
-										>
-											{m.images?.[0]?.url ? (
-												<div className="w-12 h-12 sm:w-16 sm:h-16 relative rounded-lg border border-stroke flex-shrink-0 overflow-hidden">
-													<OptimizedImage
-														src={m.images[0].url}
-														alt={m.name}
-														fill
-														sizeContext="thumbnail"
-														objectFit="cover"
-													/>
-												</div>
-											) : (
-												<div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-bg border border-stroke flex-shrink-0" />
-											)}
-											<div className="flex-1 min-w-0">
-												<div className="font-medium text-sm sm:text-base">
-													{m.name}
-												</div>
-												<div className="text-xs sm:text-sm text-text-muted mt-1">
-													{m.currency} {(m.priceMinor / 100).toLocaleString()}
-												</div>
-												<div className="text-xs text-text-muted mt-1">
-													{m.stockTotal == null
-														? "Unlimited"
-														: `${m.stockRemaining ?? 0}/${m.stockTotal} left`}
-												</div>
-												{m.sizeOptions?.length && (
-													<div className="text-xs text-text-muted mt-1">
-														Sizes: {m.sizeOptions.join(", ")}
-													</div>
-												)}
-											</div>
-											<div className="flex gap-2">
-												<Button
-													variant="outline"
-													text="Edit"
-													className="text-xs sm:text-sm"
-												/>
-											</div>
-										</div>
-									))}
-								</div>
-							) : (
-								<div className="text-center py-6 sm:py-8">
-									<PackageIcon className="mx-auto w-10 h-10 sm:w-12 sm:h-12 text-text-muted mb-3" />
-									<p className="text-text-muted text-sm sm:text-base">
-										No merchandise added yet
-									</p>
-									<Button
-										className="mt-3"
-										variant="primary"
-										text="Add your first item"
-										onClick={() => router.push(`/events/${ev.id}/merch`)}
-									/>
-								</div>
-							)}
 						</div>
-					)}
+					</div>
+				)}
 
-					{tab === "moments" && (
-						<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-							<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 mb-4">
-								<h2 className="font-heading font-semibold text-lg sm:text-xl">
-									Moments
-								</h2>
-								<Button
-									variant="primary"
-									text="Add moment"
-									onClick={() => router.push(`/events/${ev.id}/moments`)}
-									className="text-sm"
-								/>
-							</div>
-							{moments.length ? (
-								<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-									{moments.slice(0, 6).map((m) => (
-										<div
-											key={m.id}
-											className="aspect-square rounded-lg overflow-hidden border border-stroke bg-bg"
-										>
-											{m.type === "image" && m.mediaURL && (
-												<img
-													src={m.mediaURL}
-													className="w-full h-full object-cover"
-													alt=""
-												/>
-											)}
-											{m.type === "video" && (
-												<div className="w-full h-full grid place-items-center text-xs text-text-muted">
-													Video
-												</div>
-											)}
-											{m.type === "text" && (
-												<div className="p-2 text-xs line-clamp-3">{m.text}</div>
-											)}
-										</div>
-									))}
-									{moments.length > 6 && (
-										<div className="aspect-square rounded-lg border border-stroke bg-bg grid place-items-center text-xs text-text-muted">
-											+{moments.length - 6} more
-										</div>
-									)}
-								</div>
-							) : (
-								<div className="text-center py-6 sm:py-8">
-									<Calendar className="mx-auto w-10 h-10 sm:w-12 sm:h-12 text-text-muted mb-3" />
-									<p className="text-text-muted text-sm sm:text-base">
-										No moments shared yet
-									</p>
-									<Button
-										className="mt-3"
-										variant="primary"
-										text="Share your first moment"
-										onClick={() => router.push(`/events/${ev.id}/moments`)}
-									/>
-								</div>
-							)}
-						</div>
-					)}
+				{tab === "details" && <EventDetailsTab eventId={eventId} />}
 
-					{tab === "settings" && (
-						<div className="space-y-4 sm:space-y-6">
-							<div className="bg-surface border border-stroke rounded-xl sm:rounded-2xl p-4 sm:p-6">
-								<h2 className="font-heading font-semibold text-lg sm:text-xl mb-2">
-									Settings
-								</h2>
-								<p className="text-text-muted text-sm sm:text-base">
-									Publish / cancel, organizer roles, etc.
-								</p>
-							</div>
+				{tab === "tickets" && <EventTicketsTab eventId={eventId} />}
 
-							<OrganizersPanel
-								eventId={ev.id}
-								currentUserId={user?.uid}
-								currentUserRoles={myRoles as any}
+				{tab === "orders" && <EventOrdersTab eventId={eventId} />}
+
+				{tab === "sales" && (
+					<div className="py-12 text-center bg-surface border border-stroke rounded-xl">
+						<Banknote className="mx-auto w-12 h-12 text-text-muted mb-3" />
+						<h3 className="font-medium text-lg">Sales & Revenue</h3>
+						<p className="text-text-muted mt-1">Sales analytics coming soon.</p>
+					</div>
+				)}
+
+				{tab === "merch" && (
+					<div className="bg-surface border border-stroke rounded-xl p-6">
+						<div className="flex items-center justify-between mb-6">
+							<h2 className="font-heading font-semibold text-xl">
+								Merchandise
+							</h2>
+							<Button
+								variant="primary"
+								text="Add merch"
+								onClick={() => router.push(`/events/${ev.id}/merch`)}
 							/>
 						</div>
-					)}
-				</main>
-			</div>
+						{merch.length ? (
+							<div className="grid gap-3">
+								{merch.map((m) => (
+									<div
+										key={m.id}
+										className="flex items-center gap-4 p-4 rounded-xl border border-stroke hover:border-cta/50 transition-colors"
+									>
+										{m.images?.[0]?.url ? (
+											<div className="w-16 h-16 relative rounded-lg overflow-hidden border border-stroke flex-shrink-0">
+												<OptimizedImage
+													src={m.images[0].url}
+													alt={m.name}
+													fill
+													sizeContext="thumbnail"
+													objectFit="cover"
+												/>
+											</div>
+										) : (
+											<div className="w-16 h-16 rounded-lg bg-bg border border-stroke flex-shrink-0" />
+										)}
+										<div className="flex-1 min-w-0">
+											<div className="font-medium">{m.name}</div>
+											<div className="text-sm text-text-muted">
+												{m.currency} {(m.priceMinor / 100).toLocaleString()} •{" "}
+												{m.stockTotal == null
+													? "Unlimited"
+													: `${m.stockRemaining}/${m.stockTotal} left`}
+											</div>
+										</div>
+										<Button
+											variant="outline"
+											text="Edit"
+											onClick={() => router.push(`/events/${ev.id}/merch`)}
+											className="text-sm"
+										/>
+									</div>
+								))}
+							</div>
+						) : (
+							<div className="text-center py-12">
+								<PackageIcon className="mx-auto w-10 h-10 text-text-muted mb-3" />
+								<p className="text-text-muted">No merchandise added yet</p>
+							</div>
+						)}
+					</div>
+				)}
+
+				{tab === "moments" && (
+					<div className="bg-surface border border-stroke rounded-xl p-6">
+						<div className="flex items-center justify-between mb-6">
+							<h2 className="font-heading font-semibold text-xl">Moments</h2>
+							<Button
+								variant="primary"
+								text="Add moment"
+								onClick={() => router.push(`/events/${ev.id}/moments`)}
+							/>
+						</div>
+						{moments.length ? (
+							<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+								{moments.map((m) => (
+									<div
+										key={m.id}
+										className="aspect-square rounded-xl overflow-hidden border border-stroke bg-bg relative"
+									>
+										{m.type === "image" && m.mediaURL && (
+											<OptimizedImage
+												src={m.mediaURL}
+												alt="Moment"
+												fill
+												sizeContext="card"
+												objectFit="cover"
+											/>
+										)}
+										{m.type === "video" && (
+											<div className="w-full h-full grid place-items-center text-text-muted">
+												Video
+											</div>
+										)}
+										{m.type === "text" && (
+											<div className="p-4 text-sm line-clamp-4">{m.text}</div>
+										)}
+									</div>
+								))}
+							</div>
+						) : (
+							<div className="text-center py-12">
+								<Calendar className="mx-auto w-10 h-10 text-text-muted mb-3" />
+								<p className="text-text-muted">No moments shared yet</p>
+							</div>
+						)}
+					</div>
+				)}
+
+				{tab === "settings" && (
+					<div className="space-y-6">
+						<OrganizersPanel
+							eventId={ev.id}
+							currentUserId={user?.uid}
+							currentUserRoles={myRoles as any}
+						/>
+					</div>
+				)}
+			</main>
 		</div>
 	);
 }
@@ -737,31 +491,36 @@ function formatDateTimeRange(
 	end?: string | Date,
 	tz?: string
 ) {
-	if (!start || !end) return "Date & time not set";
+	if (!start) return "Date not set";
 	try {
-		const s = new Date(start);
-		const e = new Date(end);
-		const fmt: Intl.DateTimeFormatOptions = {
+		const s = new Date(
+			typeof start === "string" || start instanceof Date
+				? start
+				: (start as any).toDate()
+		);
+		const fmtDate: Intl.DateTimeFormatOptions = {
 			weekday: "short",
-			year: "numeric",
 			month: "short",
 			day: "numeric",
-			hour: "2-digit",
+			timeZone: tz || Intl.DateTimeFormat().resolvedOptions().timeZone,
+		};
+		const fmtTime: Intl.DateTimeFormatOptions = {
+			hour: "numeric",
 			minute: "2-digit",
 			timeZone: tz || Intl.DateTimeFormat().resolvedOptions().timeZone,
 		};
-		return `${new Intl.DateTimeFormat(undefined, fmt).format(
-			s
-		)} → ${new Intl.DateTimeFormat(undefined, fmt).format(e)} (${
-			tz || "local"
-		})`;
+
+		const dateStr = new Intl.DateTimeFormat(undefined, fmtDate).format(s);
+		const timeStr = new Intl.DateTimeFormat(undefined, fmtTime).format(s);
+
+		return `${dateStr}, ${timeStr}`;
 	} catch {
-		return "Date & time not set";
+		return "Date not set";
 	}
 }
 
 function formatVenue(v?: any) {
-	if (!v) return "Venue not set";
-	const bits = [v.name, v.address, v.city, v.state, v.country].filter(Boolean);
-	return bits.length ? bits.join(", ") : "Venue not set";
+	if (!v) return "Venue to be announced";
+	const bits = [v.name, v.city].filter(Boolean);
+	return bits.length ? bits.join(", ") : "Venue to be announced";
 }

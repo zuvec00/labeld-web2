@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import { Spinner } from "@/components/ui/spinner";
-import Button from "@/components/ui/button";
+import Button, { Button2 } from "@/components/ui/button";
 import OptimizedImage from "@/components/ui/OptimizedImage";
-import { QrCode } from "lucide-react";
+import { QrCode, Ticket, Users } from "lucide-react";
 import { listMyEventsLite } from "@/lib/firebase/queries/event";
 import {
 	getMultipleEventTicketStats,
@@ -24,15 +24,16 @@ const TABS: { key: TabKey; label: string }[] = [
 	{ key: "ended", label: "Ended" },
 ];
 
+import { deleteEvent } from "@/lib/firebase/queries/event";
+import { Copy, Trash2 } from "lucide-react";
+
 export default function EventsIndexPage() {
 	const router = useRouter();
 	const auth = getAuth();
 
 	const [tab, setTab] = useState<TabKey>("all");
 	const [loading, setLoading] = useState(true);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [err, setErr] = useState<string | null>(null);
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const [events, setEvents] = useState<any[]>([]);
 	const [ticketStats, setTicketStats] = useState<Record<string, TicketStats>>(
 		{}
@@ -53,19 +54,16 @@ export default function EventsIndexPage() {
 
 				if (!mounted) return;
 
-				// If no event organizer profile, show the modal
 				if (!hasProfile) {
 					setShowEventOrganizerModal(true);
 					setLoading(false);
 					return;
 				}
 
-				// Load events only if user has event organizer profile
 				const data = await listMyEventsLite(uid);
 				if (!mounted) return;
 				setEvents(data);
 
-				// Load ticket stats for all events
 				if (data.length > 0) {
 					const eventIds = data.map((event) => event.id);
 					const stats = await getMultipleEventTicketStats(eventIds);
@@ -88,14 +86,23 @@ export default function EventsIndexPage() {
 
 	const handleEventOrganizerComplete = () => {
 		setShowEventOrganizerModal(false);
-		// Refresh the page to reload events
 		window.location.reload();
+	};
+
+	const handleDelete = async (eventId: string) => {
+		if (!confirm("Are you sure you want to delete this event?")) return;
+		try {
+			await deleteEvent(eventId);
+			setEvents(events.filter((e) => e.id !== eventId));
+		} catch (error) {
+			console.error(error);
+			alert("Failed to delete event");
+		}
 	};
 
 	const filtered = useMemo(() => {
 		if (tab === "all") return events;
 		if (tab === "published") {
-			// Show published events that haven't ended yet
 			return events.filter((e) => {
 				if (e.status !== "published") return false;
 				try {
@@ -104,14 +111,12 @@ export default function EventsIndexPage() {
 						: new Date(e.endAt);
 					return endDate.getTime() > Date.now();
 				} catch {
-					return true; // If date parsing fails, show it
+					return true;
 				}
 			});
 		}
 		if (tab === "drafts") return events.filter((e) => e.status === "draft");
-		// "ended" tab: show events with status="ended" OR published events past their endAt date
 		return events.filter((e) => {
-			// if (e.status === "ended") return true;
 			if (e.status === "published") {
 				try {
 					const endDate = e.endAt?.toDate
@@ -137,10 +142,11 @@ export default function EventsIndexPage() {
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-6xl mx-auto">
 			<div className="flex items-center justify-between">
-				<h1 className="font-heading font-semibold text-2xl">Events</h1>
-				<Button
+				<h1 className="font-heading font-medium text-2xl">Events</h1>
+				<Button2
 					text="Create new event"
 					variant="primary"
+					className="font-medium"
 					onClick={() => router.push("/events/create/details")}
 				/>
 			</div>
@@ -153,7 +159,7 @@ export default function EventsIndexPage() {
 						key={t.key}
 						onClick={() => setTab(t.key)}
 						className={[
-							"pb-3 -mb-px text-sm",
+							"pb-3 -mb-px text-sm !font-sans",
 							tab === t.key
 								? "border-b-2 border-accent text-accent"
 								: "text-text-muted",
@@ -163,11 +169,9 @@ export default function EventsIndexPage() {
 					</button>
 				))}
 				<div className="ml-auto" />
-				{/* Optional: Filter button */}
-				{/* <button className="text-sm text-text-muted">Filter</button> */}
 			</div>
 
-			<div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+			<div className="mt-6 grid gap-4 lg:grid-cols-2">
 				{filtered.map((ev) => (
 					<EventCard
 						key={ev.id}
@@ -175,6 +179,7 @@ export default function EventsIndexPage() {
 						ticketStats={ticketStats[ev.id]}
 						router={router}
 						onOpen={() => router.push(`/events/${ev.id}`)}
+						onDelete={() => handleDelete(ev.id)}
 					/>
 				))}
 				{!filtered.length && (
@@ -184,7 +189,6 @@ export default function EventsIndexPage() {
 				)}
 			</div>
 
-			{/* Event Organizer Onboarding Modal */}
 			<EventOrganizerOnboardingModal
 				isOpen={showEventOrganizerModal}
 				onClose={() => setShowEventOrganizerModal(false)}
@@ -199,6 +203,7 @@ function EventCard({
 	ticketStats,
 	router,
 	onOpen,
+	onDelete,
 }: {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	ev: any;
@@ -206,85 +211,140 @@ function EventCard({
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	router: any;
 	onOpen: () => void;
+	onDelete: () => void;
 }) {
 	const startedLabel = (() => {
 		try {
 			const d = ev.startAt?.toDate ? ev.startAt.toDate() : new Date(ev.startAt);
-			const diff = Date.now() - d.getTime();
-			const hours = Math.floor(Math.abs(diff) / 36e5);
-			return diff >= 0 ? `Started ${hours}h ago` : `Starts in ${hours}h`;
+			const now = new Date();
+			const diffMs = d.getTime() - now.getTime();
+			const isFuture = diffMs > 0;
+			const absDiff = Math.abs(diffMs);
+
+			const hours = Math.floor(absDiff / 36e5);
+			const days = Math.floor(absDiff / (36e5 * 24));
+
+			if (isFuture) {
+				if (days > 0) return `Starts in ${days}d`;
+				return `Starts in ${hours}h`;
+			} else {
+				if (days > 0) return `Started ${days}d ago`;
+				return `Started ${hours}h ago`;
+			}
 		} catch {
 			return "";
 		}
 	})();
 
+	const isDraft = ev.status === "draft";
+
 	return (
-		<div className="rounded-2xl bg-surface border border-stroke overflow-hidden">
-			<div className="h-40 w-full relative">
-				<OptimizedImage
-					src={ev.coverImageURL}
-					alt={ev.title || "Event"}
-					fill
-					sizeContext="card"
-					objectFit="cover"
-				/>
-			</div>
-			<div className="p-4">
-				<div className="flex items-center gap-2">
-					<span className="text-xs px-2 py-0.5 rounded-full bg-bg border border-stroke text-text-muted">
-						{ev.venue?.city ? "Physical" : "Online"}
-					</span>
-					{ev.status === "draft" && (
-						<span className="text-xs px-2 py-0.5 rounded-full border border-stroke">
-							Draft
-						</span>
-					)}
+		<div
+			onClick={onOpen}
+			className="group relative flex flex-row h-48 w-full bg-surface border border-stroke rounded-2xl overflow-hidden hover:border-cta/50 transition-all cursor-pointer shadow-sm hover:shadow-md"
+		>
+			{/* Left: Image with padding */}
+			<div className="p-3 pr-0 h-full w-48 flex-shrink-0">
+				<div className="relative w-full h-full rounded-xl overflow-hidden bg-bg">
+					<OptimizedImage
+						src={ev.coverImageURL}
+						alt={ev.title || "Event"}
+						fill
+						sizeContext="card"
+						objectFit="cover"
+						className="transition-transform duration-500 group-hover:scale-105"
+					/>
 				</div>
-				<h3 className="mt-2 font-medium">{ev.title || "Untitled"}</h3>
-				<p className="text-xs text-text-muted mt-1">{startedLabel}</p>
+			</div>
 
-				<div className="mt-4 space-y-2">
-					{/* Ticket Statistics */}
-					<div className="flex items-center justify-between text-sm">
-						<div className="flex items-center gap-1 text-text-muted">
-							<span>🎟️</span>
-							<span>{ticketStats?.totalTickets ?? 0} sold</span>
-						</div>
-						{ticketStats?.checkedInTickets !== undefined &&
-							ticketStats.checkedInTickets > 0 && (
-								<div className="flex items-center gap-1 text-green-500">
-									<span>✅</span>
-									<span>{ticketStats.checkedInTickets} checked in</span>
-								</div>
+			{/* Right: Content */}
+			<div className="flex-1 p-4 flex flex-col justify-between min-w-0">
+				{/* Top: Header */}
+				<div>
+					<div className="flex items-start justify-between">
+						{/* Badges */}
+						<div className="flex items-center gap-2 mb-1.5">
+							{isDraft ? (
+								<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-stroke/50 text-text-muted">
+									Draft
+								</span>
+							) : (
+								<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-cta/10 text-cta">
+									Published
+								</span>
 							)}
-					</div>
-
-					{/* Action Buttons */}
-					<div className="flex items-center justify-between">
-						<div className="text-xs text-text-muted">
-							{ticketStats?.activeTickets ?? 0} active tickets
+							{/* Optional Venue Type Badge */}
+							{ev.venue?.city && (
+								<span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-brand-orange/5 text-brand-orange">
+									Physical
+								</span>
+							)}
 						</div>
-						<div className="flex items-center gap-2">
+
+						{/* Top Actions: Copy (mock) & Delete */}
+						<div className="flex items-center gap-1 -mt-1 -mr-1">
+							{/* Mock copy button if desired, else just delete */}
+							{/* <button 
+                                onClick={(e) => { e.stopPropagation(); alert('Copied!'); }}
+                                className="p-1.5 text-text-muted hover:text-text rounded-lg hover:bg-bg transition-colors"
+                            >
+                                <Copy className="w-3.5 h-3.5" />
+                            </button> */}
+
 							<button
-								title="Scan Tickets"
 								onClick={(e) => {
 									e.stopPropagation();
-									router.push(`/scan?eventId=${ev.id}`);
+									onDelete();
 								}}
-								className="flex items-center gap-1 px-2 py-1 bg-accent text-bg rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors"
+								className="p-1.5 text-text-muted hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
+								title="Delete Event"
 							>
-								<QrCode className="w-3 h-3" />
-								Scan
+								<Trash2 className="w-4 h-4" />
 							</button>
-							<button
-								title="Open"
-								onClick={onOpen}
-								className="text-sm underline"
-							>
-								Open
-							</button>
-							{/* copy / delete icons can go here */}
 						</div>
+					</div>
+
+					<h3
+						className="text-base leading-tight truncate pr-8 text-text"
+						title={ev.title}
+					>
+						{ev.title || "Untitled Event"}
+					</h3>
+					<p className="text-xs text-text-muted mt-1 font-normal">
+						{startedLabel}
+					</p>
+				</div>
+
+				<div className="flex items-end justify-between mt-auto pt-2">
+					{/* Ticket Stats */}
+					<div className="flex flex-col gap-0.5">
+						<div className="text-text-muted mb-1 flex items-center gap-1">
+							<Ticket className="w-3.5 h-3.5" />
+							{ticketStats?.totalTickets ?? 0}
+						</div>
+						<div className="text-sm text-text-muted">Tickets sold</div>
+						{/* <div className="flex items-center gap-1.5 text-xs text-text-muted">
+							<Ticket className="w-3.5 h-3.5" />
+							<span className="font-medium text-text">
+								{ticketStats?.totalTickets ?? 0}
+							</span>
+							<span>sold</span>
+						</div> */}
+					</div>
+
+					{/* Actions: Scan Button */}
+					<div className="flex items-center gap-2 z-10">
+						<button
+							title="Scan Tickets"
+							onClick={(e) => {
+								e.stopPropagation();
+								router.push(`/scan?eventId=${ev.id}`);
+							}}
+							className="flex items-center gap-1.5 pl-2 pr-3 py-1.5 bg-accent text-bg rounded-lg text-xs font-bold hover:bg-accent/90 transition-transform active:scale-95 shadow-sm"
+						>
+							<QrCode className="w-3.5 h-3.5" />
+							Scan
+						</button>
 					</div>
 				</div>
 			</div>

@@ -14,6 +14,7 @@ import {
   doc,
   updateDoc,
   deleteField,
+  deleteDoc,
 } from "firebase/firestore";
 
 /**
@@ -112,3 +113,11 @@ export async function publishEvent(eventId: string) {
     publishedAt: serverTimestamp(),
   });
 }
+
+/**
+ * Delete an event by its ID.
+ */
+export async function deleteEvent(eventId: string): Promise<void> {
+  await deleteDoc(doc(db, "events", eventId));
+}
+
