@@ -6,7 +6,13 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 
-export default function Topbar() {
+import { Menu } from "lucide-react";
+
+interface TopbarProps {
+	onMenuClick?: () => void;
+}
+
+export default function Topbar({ onMenuClick }: TopbarProps) {
 	const { user } = useAuth();
 	const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
 	const [loading, setLoading] = useState(true);
@@ -37,7 +43,15 @@ export default function Topbar() {
 	}, [user]);
 	return (
 		<div className="h-16 sm:h-18 flex items-center gap-3 px-4 sm:px-6 lg:px-8">
-			<div className="flex items-center gap-2">
+			<div className="flex-1 lg:hidden">
+				<button
+					onClick={onMenuClick}
+					className="p-2 -ml-2 text-text hover:bg-bg rounded-lg transition-colors"
+				>
+					<Menu className="w-6 h-6" />
+				</button>
+			</div>
+			<div className="flex lg:hidden items-center gap-2">
 				<div
 					className="flex flex-col justify-center"
 					style={{ height: "72px" }}
@@ -46,13 +60,13 @@ export default function Topbar() {
 					<Image
 						src="/1.svg"
 						alt="Labeld"
-						width={15}
-						height={15}
-						className="h-15 w-15"
+						width={32}
+						height={32}
+						className="h-8 w-8"
 					/>
 				</div>
-				<span className="font-heading font-semibold text-2xl text-cta">
-					LABELD STUDIO
+				<span className="font-heading font-semibold text-xl text-text">
+					LABELD
 				</span>
 			</div>
 			<div className="flex-1"></div>

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase/firebaseConfig";
 import { logPageVisit } from "@/lib/firebase/pageVisits";
+import { Environment } from "@/lib/types/pageVisit";
 
 const COOLDOWN_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -13,9 +14,14 @@ export default function PageTracker() {
 
 	useEffect(() => {
 		const handleTracking = () => {
-			// Determine environment
-			const environment =
-				process.env.NODE_ENV === "production" ? "production" : "development";
+			// Disable tracking in development to save costs
+			const currentEnv = process.env.NODE_ENV as string;
+			if (currentEnv === "development") {
+				return;
+			}
+
+			const environment: Environment =
+				currentEnv === "development" ? "development" : "production";
 
 			// Check cooldown
 			const storageKey = `last_visit_studio-web_${pathname}`;

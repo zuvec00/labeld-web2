@@ -2,39 +2,46 @@
 "use client";
 
 import Sidebar from "@/components/dashboard/SideBar";
+import MobileSidebar from "@/components/dashboard/MobileSidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import GlobalUploadIndicator from "@/components/ui/GlobalUploadIndicator";
 import { Toaster } from "@/components/ui/toast";
+import { useState } from "react";
 
 export default function DashboardLayout({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
+	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
 	return (
-		<div className="min-h-dvh bg-bg text-text p-4 sm:p-6 lg:p-8">
-			{/* Top bar spans full width */}
-			<header className="sticky top-0 z-30 bg-surface border border-stroke rounded-[20px]">
-				<Topbar />
-			</header>
+		<div className="min-h-dvh bg-bg text-text">
+			{/* Mobile Sidebar */}
+			<MobileSidebar open={isMobileMenuOpen} setOpen={setIsMobileMenuOpen} />
 
-			{/* Page body: sidebar + content live BELOW the topbar */}
-			<div className="mt-6">
-				{/* max-w-[1400px] */}
-				<div className="mx-auto grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
-					{/* Sidebar card - fixed height and sticky */}
-					<aside className="lg:h-[calc(100vh-120px)] lg:sticky lg:top-6">
-						<div className="w-full h-full rounded-[20px] bg-surface border border-stroke overflow-hidden">
-							<Sidebar />
-						</div>
-					</aside>
+			<div className="flex h-screen overflow-hidden">
+				{/* Desktop Sidebar - fixed width, full height */}
+				<aside className="hidden lg:block w-[260px] flex-shrink-0 h-full bg-surface z-40">
+					<Sidebar />
+				</aside>
 
-					{/* Main content area */}
-					<main className="min-h-[70vh]">{children}</main>
+				{/* Main Content Area (Topbar + Page Content) */}
+				<div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+					{/* Top bar */}
+					<header className="flex-shrink-0 bg-surface/80 backdrop-blur-md border-b border-stroke h-16 w-full z-30">
+						<Topbar onMenuClick={() => setIsMobileMenuOpen(true)} />
+					</header>
+
+					{/* Scrollable Content */}
+					<main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+						{/* Wrapper for max width constraint if desired */}
+						<div className="w-full max-w-[1600px] mx-auto">{children}</div>
+					</main>
 				</div>
 			</div>
 
-			{/* Global Upload Indicator - shows across all dashboard pages */}
+			{/* Global Upload Indicator */}
 			<GlobalUploadIndicator />
 
 			{/* Toast notifications */}

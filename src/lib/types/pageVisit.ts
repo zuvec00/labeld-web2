@@ -1,5 +1,6 @@
 import { Timestamp } from "firebase/firestore";
 
+export type Environment = 'development' | 'production';
 export interface PageVisit {
   id?: string;
   userId: string | null;
