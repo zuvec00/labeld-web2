@@ -111,6 +111,15 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 				)}
 			</div>
 
+			{/* Fee Info */}
+			<div className="mt-6 bg-surface/50 border border-stroke rounded-xl p-4">
+				<p className="text-text-muted text-sm">
+					We don&apos;t charge a fee for free tickets. For paid tickets, we
+					charge a small transaction fee that&apos;s a percentage of the ticket
+					value.
+				</p>
+			</div>
+
 			{/* Dialogs */}
 			{openKind === "single" && (
 				<CreateSingleDialog

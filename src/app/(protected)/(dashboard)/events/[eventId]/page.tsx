@@ -32,6 +32,7 @@ import EventDetailsTab from "@/components/events/dashboard/EventDetailsTab";
 import EventTicketsTab from "@/components/events/dashboard/EventTicketsTab";
 import EventOrdersTab from "@/components/events/dashboard/EventOrdersTab";
 import EventSalesTab from "@/components/events/dashboard/EventSalesTab";
+import { useEventOrders } from "@/hooks/useEventOrders";
 
 // Decide where “Resume setup” should go based on data you have
 function nextSetupPath(ev: any, ticketCount: number) {
@@ -63,6 +64,30 @@ export default function EventDashboardPage() {
 	const [moments, setMoments] = useState<MomentDoc[]>([]);
 	const [tab, setTab] = useState<TabKey>("overview");
 	const [myRoles, setMyRoles] = useState<string[] | undefined>(undefined);
+
+	// Fetch orders for stats calculation
+	const { orders: eventOrders } = useEventOrders(eventId);
+
+	// Calculate tickets sold and revenue from paid orders
+	const { ticketsSold, revenue, currency } = useMemo(() => {
+		let sold = 0;
+		let rev = 0;
+		let cur = "NGN";
+
+		eventOrders.forEach((order) => {
+			if (order.status === "paid") {
+				cur = order.amount.currency || "NGN";
+				rev += order.amount.itemsSubtotalMinor || 0;
+				order.lineItems.forEach((item) => {
+					if (item._type === "ticket") {
+						sold += item.qty || 1;
+					}
+				});
+			}
+		});
+
+		return { ticketsSold: sold, revenue: rev / 100, currency: cur };
+	}, [eventOrders]);
 
 	useEffect(() => {
 		let mounted = true;
@@ -247,7 +272,7 @@ export default function EventDashboardPage() {
 									key={item.key}
 									onClick={() => setTab(item.key as TabKey)}
 									className={[
-										"relative py-4 text-sm font-medium transition-colors whitespace-nowrap",
+										"relative py-4 text-md font-medium transition-colors whitespace-nowrap !font-sans",
 										active ? "text-text" : "text-text-muted hover:text-text",
 									].join(" ")}
 								>
@@ -267,20 +292,29 @@ export default function EventDashboardPage() {
 				{tab === "overview" && (
 					<div className="space-y-6">
 						{/* Stats Grid */}
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+						<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
 							<div className="bg-surface border border-stroke rounded-xl p-5">
 								<h3 className="text-text-muted text-sm font-medium">
-									Total Tickets
+									Tickets Sold
 								</h3>
 								<div className="mt-2 text-2xl font-bold font-heading">
-									{ticketCount}
+									{ticketsSold}
 								</div>
 								<div className="mt-1 text-xs text-text-muted">
 									{hasActiveTickets ? "Sales active" : "No active tickets"}
 								</div>
 							</div>
 							<div className="bg-surface border border-stroke rounded-xl p-5">
-								<h3 className="text-text-muted text-sm font-medium">merch</h3>
+								<h3 className="text-text-muted text-sm font-medium">Revenue</h3>
+								<div className="mt-2 text-2xl font-bold font-heading">
+									₦{revenue.toLocaleString()}
+								</div>
+								<div className="mt-1 text-xs text-text-muted">
+									Excl. platform fees
+								</div>
+							</div>
+							<div className="bg-surface border border-stroke rounded-xl p-5">
+								<h3 className="text-text-muted text-sm font-medium">Merch</h3>
 								<div className="mt-2 text-2xl font-bold font-heading">
 									{merch.length}
 								</div>
@@ -294,13 +328,6 @@ export default function EventDashboardPage() {
 								<div className="mt-1 text-xs text-text-muted">
 									Shared moments
 								</div>
-							</div>
-							<div className="bg-surface border border-stroke rounded-xl p-5">
-								<h3 className="text-text-muted text-sm font-medium">
-									Page Views
-								</h3>
-								<div className="mt-2 text-2xl font-bold font-heading">--</div>
-								<div className="mt-1 text-xs text-text-muted">Last 30 days</div>
 							</div>
 						</div>
 
