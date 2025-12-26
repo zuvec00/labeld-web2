@@ -9,9 +9,9 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import { QrCode, Ticket, Users } from "lucide-react";
 import { listMyEventsLite } from "@/lib/firebase/queries/event";
 import {
-	getMultipleEventTicketStats,
-	type TicketStats,
-} from "@/lib/firebase/queries/attendeeTickets";
+	getOrderStatsForEvents,
+	type OrderBasedTicketStats,
+} from "@/lib/firebase/queries/orders";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
 import EventOrganizerOnboardingModal from "@/components/marketing/EventOrganizerOnboardingModal";
@@ -35,9 +35,9 @@ export default function EventsIndexPage() {
 	const [loading, setLoading] = useState(true);
 	const [err, setErr] = useState<string | null>(null);
 	const [events, setEvents] = useState<any[]>([]);
-	const [ticketStats, setTicketStats] = useState<Record<string, TicketStats>>(
-		{}
-	);
+	const [ticketStats, setTicketStats] = useState<
+		Record<string, OrderBasedTicketStats>
+	>({});
 	const [showEventOrganizerModal, setShowEventOrganizerModal] = useState(false);
 
 	useEffect(() => {
@@ -66,7 +66,7 @@ export default function EventsIndexPage() {
 
 				if (data.length > 0) {
 					const eventIds = data.map((event) => event.id);
-					const stats = await getMultipleEventTicketStats(eventIds);
+					const stats = await getOrderStatsForEvents(eventIds);
 					if (!mounted) return;
 					setTicketStats(stats);
 				}
@@ -207,7 +207,7 @@ function EventCard({
 }: {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	ev: any;
-	ticketStats?: TicketStats;
+	ticketStats?: OrderBasedTicketStats;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	router: any;
 	onOpen: () => void;
@@ -320,7 +320,7 @@ function EventCard({
 					<div className="flex flex-col gap-0.5">
 						<div className="text-text-muted mb-1 flex items-center gap-1">
 							<Ticket className="w-3.5 h-3.5" />
-							{ticketStats?.totalTickets ?? 0}
+							{ticketStats?.ticketsSold ?? 0}
 						</div>
 						<div className="text-sm text-text-muted">Tickets sold</div>
 						{/* <div className="flex items-center gap-1.5 text-xs text-text-muted">

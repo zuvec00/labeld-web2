@@ -227,6 +227,61 @@ export async function getOrdersForEvent(
   }
 }
 
+// Stats calculated from orders
+export interface OrderBasedTicketStats {
+  ticketsSold: number;
+  revenue: number;
+  currency: string;
+}
+
+// Get order-based ticket stats for a single event
+export async function getOrderStatsForEvent(eventId: string): Promise<OrderBasedTicketStats> {
+  try {
+    const q = query(
+      collection(db, "orders"),
+      where("eventId", "==", eventId),
+      where("status", "==", "paid")
+    );
+    const snapshot = await getDocs(q);
+    
+    let ticketsSold = 0;
+    let revenue = 0;
+    let currency = "NGN";
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      currency = data.amount?.currency || "NGN";
+      revenue += data.amount?.itemsSubtotalMinor || 0;
+      
+      const lineItems = data.lineItems || [];
+      lineItems.forEach((item: any) => {
+        if (item._type === "ticket") {
+          ticketsSold += item.qty || 0;
+        }
+      });
+    });
+
+    return { ticketsSold, revenue: revenue / 100, currency };
+  } catch (error) {
+    console.error("Error getting order stats for event:", error);
+    return { ticketsSold: 0, revenue: 0, currency: "NGN" };
+  }
+}
+
+// Get order-based ticket stats for multiple events
+export async function getOrderStatsForEvents(
+  eventIds: string[]
+): Promise<Record<string, OrderBasedTicketStats>> {
+  const stats: Record<string, OrderBasedTicketStats> = {};
+  
+  const promises = eventIds.map(async (eventId) => {
+    stats[eventId] = await getOrderStatsForEvent(eventId);
+  });
+
+  await Promise.all(promises);
+  return stats;
+}
+
 // Get fulfillment lines for orders
 export async function getFulfillmentLines(
   orderIds: string[]
