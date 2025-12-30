@@ -61,7 +61,7 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 				</div>
 				<Button
 					variant="primary"
-					text="Add ticket"
+					text="Add new ticket"
 					leftIcon={<Plus className="w-4 h-4" />}
 					onClick={() => setOpenKind("single")}
 					className="text-sm"

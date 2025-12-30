@@ -19,6 +19,7 @@ import {
 	QrCode,
 	Trash2,
 	AlertTriangle,
+	CheckCircle,
 } from "lucide-react";
 
 type OrganizerRow = {
@@ -67,6 +68,7 @@ export function OrganizersPanel({
 	const [addRoles, setAddRoles] = useState<Role[]>(["scanner"]);
 	const [saving, setSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
 	const canManage = useMemo(
 		() =>
@@ -145,11 +147,33 @@ export function OrganizersPanel({
 
 		setSaving(true);
 		setError(null);
+		setSuccessMessage(null);
 		try {
-			await addOrganizerByEmail(eventId, email.trim(), addRoles);
+			// Pass current origin as baseUrl for invite links (supports localhost testing)
+			const baseUrl =
+				typeof window !== "undefined" ? window.location.origin : undefined;
+			const result = await addOrganizerByEmail(
+				eventId,
+				email.trim(),
+				addRoles,
+				baseUrl
+			);
+			const addedEmail = email.trim();
 			setEmail("");
 			setAddRoles(["scanner"]);
 			await loadOrganizers(false);
+
+			// Show appropriate success message
+			if (result.invited) {
+				setSuccessMessage(
+					`Invite sent to ${addedEmail}! They'll receive an email with instructions.`
+				);
+			} else if (result.added) {
+				setSuccessMessage(`${addedEmail} has been added as an organizer.`);
+			}
+
+			// Clear success message after 5 seconds
+			setTimeout(() => setSuccessMessage(null), 5000);
 		} catch (err: unknown) {
 			console.error("Failed to add organizer:", err);
 			setError(err instanceof Error ? err.message : "Failed to add organizer");
@@ -244,6 +268,16 @@ export function OrganizersPanel({
 					<div className="flex items-center gap-2 text-red-400">
 						<AlertTriangle className="w-4 h-4" />
 						<span className="text-sm">{error}</span>
+					</div>
+				</div>
+			)}
+
+			{/* Success Message */}
+			{successMessage && (
+				<div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4">
+					<div className="flex items-center gap-2 text-green-400">
+						<CheckCircle className="w-4 h-4" />
+						<span className="text-sm">{successMessage}</span>
 					</div>
 				</div>
 			)}

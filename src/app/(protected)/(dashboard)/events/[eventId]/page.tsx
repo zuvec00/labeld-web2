@@ -32,7 +32,10 @@ import EventDetailsTab from "@/components/events/dashboard/EventDetailsTab";
 import EventTicketsTab from "@/components/events/dashboard/EventTicketsTab";
 import EventOrdersTab from "@/components/events/dashboard/EventOrdersTab";
 import EventSalesTab from "@/components/events/dashboard/EventSalesTab";
-import { useEventOrders } from "@/hooks/useEventOrders";
+import {
+	getOrderStatsForEvent,
+	type OrderBasedTicketStats,
+} from "@/lib/firebase/queries/orders";
 
 // Decide where “Resume setup” should go based on data you have
 function nextSetupPath(ev: any, ticketCount: number) {
@@ -65,45 +68,31 @@ export default function EventDashboardPage() {
 	const [tab, setTab] = useState<TabKey>("overview");
 	const [myRoles, setMyRoles] = useState<string[] | undefined>(undefined);
 
-	// Fetch orders for stats calculation
-	const { orders: eventOrders } = useEventOrders(eventId);
-
-	// Calculate tickets sold and revenue from paid orders
-	const { ticketsSold, revenue, currency } = useMemo(() => {
-		let sold = 0;
-		let rev = 0;
-		let cur = "NGN";
-
-		eventOrders.forEach((order) => {
-			if (order.status === "paid") {
-				cur = order.amount.currency || "NGN";
-				rev += order.amount.itemsSubtotalMinor || 0;
-				order.lineItems.forEach((item) => {
-					if (item._type === "ticket") {
-						sold += item.qty;
-					}
-				});
-			}
-		});
-
-		return { ticketsSold: sold, revenue: rev / 100, currency: cur };
-	}, [eventOrders]);
+	// Order stats from getOrderStatsForEvent (same as events list page)
+	const [orderStats, setOrderStats] = useState<OrderBasedTicketStats>({
+		ticketsSold: 0,
+		revenue: 0,
+		currency: "NGN",
+	});
 
 	useEffect(() => {
 		let mounted = true;
 		(async () => {
 			try {
-				const [eventDoc, tix, merchItems, momentsList] = await Promise.all([
-					fetchEventById(eventId),
-					listTicketTypes(eventId),
-					listMerchForEvent(eventId),
-					listMomentsForEvent(eventId),
-				]);
+				const [eventDoc, tix, merchItems, momentsList, stats] =
+					await Promise.all([
+						fetchEventById(eventId),
+						listTicketTypes(eventId),
+						listMerchForEvent(eventId),
+						listMomentsForEvent(eventId),
+						getOrderStatsForEvent(eventId),
+					]);
 				if (!mounted) return;
 				setEv(eventDoc);
 				setTickets(tix);
 				setMerch(merchItems);
 				setMoments(momentsList);
+				setOrderStats(stats);
 				if (eventDoc) {
 					const n = await countTicketTypes(eventDoc.id);
 					if (!mounted) return;
@@ -298,7 +287,7 @@ export default function EventDashboardPage() {
 									Tickets Sold
 								</h3>
 								<div className="mt-2 text-2xl font-bold font-heading">
-									{ticketsSold}
+									{orderStats.ticketsSold}
 								</div>
 								<div className="mt-1 text-xs text-text-muted">
 									{hasActiveTickets ? "Sales active" : "No active tickets"}
@@ -307,7 +296,7 @@ export default function EventDashboardPage() {
 							<div className="bg-surface border border-stroke rounded-xl p-5">
 								<h3 className="text-text-muted text-sm font-medium">Revenue</h3>
 								<div className="mt-2 text-2xl font-bold font-heading">
-									₦{revenue.toLocaleString()}
+									₦{orderStats.revenue.toLocaleString()}
 								</div>
 								<div className="mt-1 text-xs text-text-muted">
 									Excl. platform fees

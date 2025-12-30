@@ -268,6 +268,32 @@ export async function getOrderStatsForEvent(eventId: string): Promise<OrderBased
   }
 }
 
+// Get ALL orders for an event within a date range (for export, no pagination)
+export async function getAllOrdersForEventExport(
+  eventId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<OrderDoc[]> {
+  try {
+    const startTimestamp = Timestamp.fromDate(startDate);
+    const endTimestamp = Timestamp.fromDate(endDate);
+
+    const q = query(
+      collection(db, "orders"),
+      where("eventId", "==", eventId),
+      where("createdAt", ">=", startTimestamp),
+      where("createdAt", "<=", endTimestamp),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(parseOrderDoc);
+  } catch (error) {
+    console.error("Error getting orders for event export:", error);
+    return [];
+  }
+}
+
 // Get order-based ticket stats for multiple events
 export async function getOrderStatsForEvents(
   eventIds: string[]

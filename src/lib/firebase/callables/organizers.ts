@@ -11,10 +11,24 @@ export async function ensureOwnerIfEmpty(eventId: string): Promise<{ seeded: boo
   return (res.data as any) ?? { seeded: false };
 }
 
-export async function addOrganizerByEmail(eventId: string, email: string, roles: Role[]) {
+export interface AddOrganizerResult {
+  ok: boolean;
+  added?: boolean;
+  invited?: boolean;
+  userId?: string;
+  token?: string;
+  email?: string;
+}
+
+export async function addOrganizerByEmail(
+  eventId: string, 
+  email: string, 
+  roles: Role[],
+  baseUrl?: string
+): Promise<AddOrganizerResult> {
   const fn = httpsCallable(functions, "addEventOrganizerByEmail");
-  const res = await fn({ eventId, email, roles });
-  return (res.data as any) ?? {};
+  const res = await fn({ eventId, email, roles, baseUrl });
+  return (res.data as AddOrganizerResult) ?? { ok: false };
 }
 
 export async function listOrganizers(eventId: string) {
