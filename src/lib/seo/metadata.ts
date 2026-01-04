@@ -74,9 +74,9 @@ export function generateBrandMetadata({
 	logoUrl?: string;
 	username: string;
 }): Metadata {
-	const title = `${brandName} | Labeld`;
+	const title = `${brandName} | Labeld Studio`;
 	const description =
-		bio || `Discover ${brandName} on Labeld - For the Culture, Not the Clout.`;
+		bio || `Discover ${brandName} on Labeld Studio — the brand and event management platform.`;
 
 	return generateSEO({
 		title,
@@ -105,7 +105,7 @@ export function generateEventMetadata({
 	startDate?: Date;
 	venue?: string;
 }): Metadata {
-	const title = `${eventTitle} | Labeld Events`;
+	const title = `${eventTitle} | Labeld Studio`;
 	let desc = description || `Join ${eventTitle} on Labeld.`;
 
 	if (startDate) {
@@ -141,8 +141,8 @@ export function generateProductMetadata({
 	brandName?: string;
 }): Metadata {
 	const title = brandName
-		? `${productName} by ${brandName} | Labeld`
-		: `${productName} | Labeld`;
+		? `${productName} by ${brandName} | Labeld Studio`
+		: `${productName} | Labeld Studio`;
 
 	let desc = description || `Shop ${productName} on Labeld.`;
 	if (price) {

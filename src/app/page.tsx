@@ -2,13 +2,13 @@ import OnboardingSplit from "@/components/marketing/OnboardingHero";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Labeld Studio - Launch Your Brand or Drop Events",
+	title: "Labeld Studio — Brand & Event Management for Creators",
 	description:
-		"Join Labeld Studio to launch your streetwear brand, manage drops, or organize unforgettable events. Built for creators, by the culture.",
+		"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
 	openGraph: {
-		title: "Labeld Studio - Launch Your Brand or Drop Events",
+		title: "Labeld Studio — Brand & Event Management for Creators",
 		description:
-			"Join Labeld Studio to launch your streetwear brand, manage drops, or organize unforgettable events. Built for creators, by the culture.",
+			"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
 		type: "website",
 		url: "https://studio.labeld.app",
 		images: [
@@ -16,15 +16,15 @@ export const metadata: Metadata = {
 				url: "/images/onboarding-hero.JPEG",
 				width: 1200,
 				height: 630,
-				alt: "Labeld Studio - For the Culture",
+				alt: "Labeld Studio — Brand & Event Management Platform",
 			},
 		],
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Labeld Studio - Launch Your Brand or Drop Events",
+		title: "Labeld Studio — Brand & Event Management for Creators",
 		description:
-			"Join Labeld Studio to launch your streetwear brand, manage drops, or organize unforgettable events.",
+			"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
 		images: ["/images/onboarding-hero.JPEG"],
 	},
 };

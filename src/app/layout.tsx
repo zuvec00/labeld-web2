@@ -20,11 +20,11 @@ const manrope = Manrope({
 
 export const metadata = {
 	title: {
-		default: "Labeld Studio - For the Culture, Not the Clout",
-		template: "%s | Labeld",
+		default: "Labeld Studio — Brand & Event Management Platform by Labeld",
+		template: "%s | Labeld Studio",
 	},
 	description:
-		"Labeld Studio is the platform where brands can manage their brandspace, drops, content, and more. Brands and event organizers can create and manage events, handle orders, and access wallet features all in one place.",
+		"Labeld Studio is the official brand and event management platform by Labeld. Brands and organizers manage drops, events, orders, wallets, and content from one unified dashboard.",
 	keywords: [
 		"streetwear",
 		"fashion brands",
