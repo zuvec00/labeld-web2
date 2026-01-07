@@ -75,6 +75,7 @@ function parseEventLite(doc: DocumentSnapshot): EventLite | null {
     id: doc.id,
     title: data?.title || undefined,
     createdBy: data?.createdBy || undefined,
+    startAt: data?.startAt || undefined,
   };
 }
 

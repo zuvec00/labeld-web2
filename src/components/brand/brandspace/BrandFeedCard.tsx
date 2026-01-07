@@ -2,7 +2,7 @@
 "use client";
 
 import React from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Flame } from "lucide-react";
 import { DropContent } from "@/lib/models/radar_feed";
 import DropStatusCapsule from "./DropStatusCapsule";
 
@@ -10,14 +10,10 @@ export default function BrandFeedCard({
 	content,
 	isBrand = true,
 	onOpen,
-	onEdit,
-	onDelete,
 }: {
 	content: DropContent;
 	isBrand?: boolean; // dashboard: true by default
 	onOpen?: (c: DropContent) => void;
-	onEdit?: (c: DropContent) => void;
-	onDelete?: (c: DropContent) => void;
 }) {
 	return (
 		<div className="mb-4 break-inside-avoid">
@@ -37,33 +33,20 @@ export default function BrandFeedCard({
 					<DropStatusCapsule launchDate={content.launchDate ?? null} />
 				</div>
 
-				{/* edit/delete like Flutter (right-top) */}
-				{isBrand && (
-					<div className="absolute right-3 top-3 flex items-center gap-2">
-						<button
-							onClick={(e) => {
-								e.stopPropagation();
-								onEdit?.(content);
-							}}
-							className="p-2 rounded-lg bg-bg/80 backdrop-blur border border-stroke hover:bg-bg"
-							aria-label="Edit"
-							title="Edit"
-						>
-							<Pencil className="h-4 w-4 text-[var(--edit,#06b6d4)]" />
-						</button>
-						<button
-							onClick={(e) => {
-								e.stopPropagation();
-								onDelete?.(content);
-							}}
-							className="p-2 rounded-lg bg-bg/80 backdrop-blur border border-stroke hover:bg-bg"
-							aria-label="Delete"
-							title="Delete"
-						>
-							<Trash2 className="h-4 w-4 text-[var(--alert,#ef4444)]" />
-						</button>
+				{/* Reaction Signal (Fire) */}
+				<div className="absolute right-3 bottom-3">
+					<div className="flex items-center gap-1 bg-black/50 backdrop-blur rounded-full px-2 py-1 text-white text-xs font-bold">
+						<Flame className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+						<span>
+							{Object.values(content.reactions || {}).reduce(
+								(a, b) => a + b,
+								0
+							)}
+						</span>
 					</div>
-				)}
+				</div>
+
+				{/* edit/delete removed - clicks go to edit page */}
 			</div>
 
 			{/* Optionally show title below (Flutter currently hides) */}

@@ -30,8 +30,8 @@ export default function Sidebar({
 						className="h-8 w-8"
 					/>
 				</div>
-				<span className="font-heading font-semibold text-xl text-text">
-					LABELD
+				<span className="font-heading font-semibold text-lg text-text">
+					LABELD STUDIO
 				</span>
 			</div>
 			{/* Brand header - Hidden on mobile sidebar wrapper as it has its own header, or keep it consistent? 

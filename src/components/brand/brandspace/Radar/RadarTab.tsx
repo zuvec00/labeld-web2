@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { DropContent, fetchBrandContents } from "@/lib/models/radar_feed";
 import BrandFeedCard from "../BrandFeedCard";
 import { deleteDropContent } from "@/lib/firebase/queries/dropContent";
+import { Plus } from "lucide-react";
 import Button from "@/components/ui/button";
 
 function ShimmerCard({ h = 240 }: { h?: number }) {
@@ -54,19 +55,21 @@ export default function RadarTab({
 		};
 	}, [brandId]);
 
+	// User wants card click to go to edit page
 	const onOpen = (c: DropContent) => {
-		router.push(`/brand-space/feed/${c.id}`); // route however you prefer
-	};
-
-	const onEdit = (c: DropContent) => {
 		router.push(`/brand-space/drop-content/${c.id}/edit`);
 	};
 
-	const onDelete = async (c: DropContent) => {
-		if (!confirm("Delete this content?")) return;
-		await deleteDropContent(c.id, c.brandId);
-		setItems((prev) => prev.filter((x) => x.id !== c.id));
-	};
+	// FAB component for reuse or just inline
+	const Fab = () => (
+		<button
+			onClick={() => router.push("/radar/new")}
+			className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-accent text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+			title="Drop a Moment"
+		>
+			<Plus className="w-6 h-6" />
+		</button>
+	);
 
 	// random-ish heights for skeleton variety
 	const skeletonHeights = useMemo(
@@ -105,19 +108,7 @@ export default function RadarTab({
 			isBrand
 		);
 		return (
-			<div className="px-4 sm:px-6 py-16 text-center">
-				{isBrand && (
-					<div className="flex justify-end mb-8">
-						<Button
-							text="Drop a Moment"
-							variant="primary"
-							onClick={() => {
-								console.log("Drop a Moment button clicked (empty state)");
-								router.push("/radar/new");
-							}}
-						/>
-					</div>
-				)}
+			<div className="px-4 sm:px-6 py-16 text-center relative min-h-[50vh]">
 				<img
 					src="/images/empty-radar.png"
 					alt=""
@@ -125,9 +116,10 @@ export default function RadarTab({
 				/>
 				<p className="text-text-muted">
 					{isBrand
-						? "Drop your next content here and keep your audience in the loop."
+						? "Create your first moment to start the feed."
 						: "No Radar content yet. Check back later for this brand's latest drops."}
 				</p>
+				{isBrand && <Fab />}
 			</div>
 		);
 	}
@@ -139,19 +131,7 @@ export default function RadarTab({
 		isBrand
 	);
 	return (
-		<div className="px-4 sm:px-6">
-			{isBrand && (
-				<div className="flex justify-end mb-8">
-					<Button
-						text="Drop a Moment"
-						variant="primary"
-						onClick={() => {
-							console.log("Drop a Moment button clicked (from grid view)");
-							router.push("/radar/new");
-						}}
-					/>
-				</div>
-			)}
+		<div className="px-4 sm:px-6 pb-20">
 			{/* CSS Masonry: 1 / 2 / 3 / 4 columns */}
 			<div className="columns-2 sm:columns-2 lg:columns-4 2xl:columns-4 gap-4">
 				{items.map((c) => (
@@ -160,11 +140,11 @@ export default function RadarTab({
 						content={c}
 						isBrand={isBrand}
 						onOpen={onOpen}
-						onEdit={onEdit}
-						onDelete={onDelete}
+						// No edit/delete props passed, forcing clean card
 					/>
 				))}
 			</div>
+			{isBrand && <Fab />}
 		</div>
 	);
 }

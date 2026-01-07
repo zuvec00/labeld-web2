@@ -57,15 +57,13 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 				{/* On Hold Balance */}
 				<div className="rounded-[20px] bg-surface border border-stroke p-6 hover:border-calm-2/30 transition-colors group">
 					<div className="flex items-center justify-between mb-3">
-						<h3 className="text-sm font-medium text-text-muted">
-							On Hold Balance
-						</h3>
+						<h3 className="text-sm font-medium text-text-muted">On Hold</h3>
 						<div className="w-3 h-3 bg-calm-2 rounded-full group-hover:scale-110 transition-transform"></div>
 					</div>
 					<div className="text-3xl font-heading font-semibold text-calm-2 mb-2">
 						{formatCurrency(summary.onHoldMinor)}
 					</div>
-					<p className="text-xs text-text-muted">Awaiting release</p>
+					<p className="text-xs text-text-muted">Awaiting confirmation</p>
 				</div>
 
 				{/* Total Balance */}
@@ -93,7 +91,7 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 							<span className="font-medium text-text">Event Earnings</span>
 						</div>
 						<p className="text-text-muted">
-							Weekly (Every Friday at 2 PM) - No fees
+							Event payouts are processed automatically every Friday
 						</p>
 					</div>
 					<div>
@@ -102,16 +100,7 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 							<span className="font-medium text-text">Store Earnings</span>
 						</div>
 						<p className="text-text-muted">
-							{summary.payout?.schedule?.label || "Standard"} -
-							{summary.payout?.schedule?.timelineDays
-								? ` ${summary.payout.schedule.timelineDays} business day${
-										summary.payout.schedule.timelineDays !== 1 ? "s" : ""
-								  }`
-								: " 7 business days"}{" "}
-							-
-							{summary.payout?.schedule?.feePercent
-								? ` ${summary.payout.schedule.feePercent}% fee`
-								: " No fees"}
+							Store payouts follow your custom payout settings
 						</p>
 					</div>
 				</div>

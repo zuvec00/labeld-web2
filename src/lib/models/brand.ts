@@ -4,6 +4,8 @@ export interface BrandModel {
   uid: string;                 // same as user uid
   brandName: string;
   username: string;
+  brandSlug?: string;          // NEW: for SEO friendly URLs, defaults to username
+  subscriptionTier?: "free" | "pro" | "premium"; // NEW: for feature gating
   bio?: string | null;
   category: string;
   brandTags?: string[] | null;

@@ -66,7 +66,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 					/>
 				</div>
 				<span className="font-heading font-semibold text-xl text-text">
-					LABELD
+					LABELD STUDIO
 				</span>
 			</div>
 			<div className="flex-1"></div>

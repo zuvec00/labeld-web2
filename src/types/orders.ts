@@ -138,6 +138,7 @@ export interface EventLite {
   id: string;
   title?: string;
   createdBy?: string;
+  startAt?: any; // Firestore Timestamp
 }
 
 // UI-specific types
@@ -215,6 +216,7 @@ export interface OrderWithVendorStatus extends OrderDoc {
   fulfillmentAggregateStatus?: FulfillmentAggregateStatus;
   fulfillmentLines?: Record<string, FulfillmentLine>;
   eventTitle?: string;
+  eventDate?: any; // Firestore timestamp
   visibleLineItems?: LineItem[];
   visibilityReason?: "organizer" | "brand" | "both";
 }

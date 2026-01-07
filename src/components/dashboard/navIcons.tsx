@@ -11,6 +11,9 @@ import {
 	Settings,
 	HelpCircle,
 	Globe,
+	Lightbulb,
+	BarChart3,
+	FileText,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -37,6 +40,12 @@ export const getNavIcon = (iconName: string) => {
 			return <Settings {...iconProps} />;
 		case "Help":
 			return <HelpCircle {...iconProps} />;
+		case "Insights":
+			return <Lightbulb {...iconProps} />;
+		case "Performance":
+			return <BarChart3 {...iconProps} />;
+		case "Reports":
+			return <FileText {...iconProps} />;
 		default:
 			return null;
 	}

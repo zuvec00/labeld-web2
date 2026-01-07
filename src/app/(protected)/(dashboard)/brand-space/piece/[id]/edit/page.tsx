@@ -390,27 +390,7 @@ export default function EditPiecePage() {
 			</div>
 
 			<div className="px-4 sm:px-6 mt-6 space-y-4">
-				{/* Link to collection */}
-				<Group>
-					<Label text="Link This to a Collection" />
-					<Select
-						value={collectionId}
-						onChange={(v) => {
-							setCollectionId(v);
-							const match = collections.find((c) => c.id === v);
-							if (match?.launchDate) setLaunchDate(match.launchDate);
-						}}
-						placeholder={
-							collections.length ? "Tap to select" : "No collections found"
-						}
-						options={[
-							{ label: "— None —", value: "" },
-							...collections.map((c) => ({ label: c.name, value: c.id })),
-						]}
-					/>
-				</Group>
-
-				{/* Basic fields */}
+				{/* 1. Identity */}
 				<Group>
 					<Label text="Piece Name" required />
 					<Input
@@ -418,8 +398,30 @@ export default function EditPiecePage() {
 						onChange={setPieceName}
 						placeholder="Camo Hoodie"
 					/>
+					<div className="mt-4">
+						<Label text="Part of a collection? (Optional)" />
+						<Select
+							value={collectionId}
+							onChange={(v) => {
+								setCollectionId(v);
+								const match = collections.find((c) => c.id === v);
+								if (match?.launchDate) setLaunchDate(match.launchDate);
+							}}
+							placeholder={
+								collections.length ? "Tap to select" : "No collections found"
+							}
+							options={[
+								{ label: "— None —", value: "" },
+								...collections.map((c) => ({ label: c.name, value: c.id })),
+							]}
+						/>
+						<Hint text="Use this to connect your piece to one of your collections." />
+					</div>
+				</Group>
 
-					<div className="grid grid-cols-3 gap-3 mt-3">
+				{/* 2. Pricing */}
+				<Group>
+					<div className="grid grid-cols-3 gap-3">
 						<div className="col-span-1">
 							<Label text="Currency" required />
 							<CurrencyDropdown
@@ -446,8 +448,30 @@ export default function EditPiecePage() {
 						</div>
 					</div>
 
-					{/* Size Options */}
 					<div className="mt-4">
+						<div className="space-y-3">
+							<Toggle
+								checked={absorbTransactionFee}
+								onChange={setAbsorbTransactionFee}
+								label="Absorb Transaction Fees"
+							/>
+							<div className="space-y-2">
+								<Hint text="When enabled, you cover the 5% fee so buyers see a cleaner price." />
+								<a
+									href="#"
+									className="text-xs text-text-muted underline decoration-dotted hover:text-text"
+								>
+									Learn more
+								</a>
+							</div>
+						</div>
+					</div>
+				</Group>
+
+				{/* 3. Sizes & Stock */}
+				<Group>
+					{/* Sizes First */}
+					<div>
 						<Label text="Size Options" />
 						<TagsInput
 							value={sizes}
@@ -456,9 +480,10 @@ export default function EditPiecePage() {
 						/>
 					</div>
 
-					{/* Stock Management */}
 					<Divider />
-					<div className="mt-4">
+
+					{/* Stock Second */}
+					<div>
 						<Label text="Stock Management" />
 						<div className="space-y-3">
 							<Toggle
@@ -469,8 +494,11 @@ export default function EditPiecePage() {
 								}}
 								label="Unlimited Stock"
 							/>
+							{unlimitedStock && (
+								<Hint text="Best for made-to-order or ongoing pieces" />
+							)}
 							{!unlimitedStock && (
-								<div>
+								<div className="mt-2">
 									<Label text="Stock Quantity" required />
 									<Input
 										type="number"
@@ -481,15 +509,104 @@ export default function EditPiecePage() {
 									<Hint text="Set how many units are available for purchase" />
 								</div>
 							)}
-							{unlimitedStock && (
-								<Hint text="This piece will always be available for purchase" />
-							)}
 						</div>
 					</div>
+				</Group>
 
-					{/* Discount */}
-					<Divider />
+				{/* 4. Drop Timing */}
+				<Group>
+					<Label text="Drop Timing" required />
+					<DateTimePicker value={launchDate} onChange={setLaunchDate} />
+					{!!collectionId &&
+						collections.find(
+							(c) =>
+								c.id === collectionId &&
+								c.launchDate &&
+								launchDate &&
+								+c.launchDate! === +launchDate!
+						) && <Hint text="Piece matches drop collection launch date." />}
 					<div className="mt-4">
+						<Toggle
+							checked={availableNow}
+							onChange={(v) => {
+								setAvailableNow(v);
+								if (v) setLaunchDate(new Date());
+							}}
+							label="Make this piece live immediately"
+						/>
+					</div>
+				</Group>
+
+				{/* 5. Visuals */}
+				<Group>
+					<Label text="Main Piece Visual" required />
+					<SingleImagePicker
+						existingUrl={onlineMain}
+						file={mainFile}
+						onPick={(f) => setMainFile(f)}
+						onClear={() => {
+							setMainFile(null);
+							setOnlineMain(""); // force re-upload if removing current
+						}}
+					/>
+					<Hint text="This is the first image people see" />
+
+					<div className="mt-6">
+						<Label text="Gallery Shots" />
+						<MultiImagePicker
+							existingUrls={onlineGallery}
+							files={galleryFiles}
+							onPick={(next) => setGalleryFiles(next)}
+							onClearExisting={() => setOnlineGallery([])}
+							onRemoveExisting={(url) =>
+								setOnlineGallery((prev) => prev.filter((u) => u !== url))
+							}
+						/>
+						<Hint text="Extra angles or details (up to 4)" />
+					</div>
+
+					<div className="mt-6">
+						<Label text="Size Guide" />
+						<SingleImagePicker
+							existingUrl={onlineSizeGuide}
+							file={sizeGuideFile}
+							onPick={(f) => setSizeGuideFile(f)}
+							onClear={() => {
+								setSizeGuideFile(null);
+								setOnlineSizeGuide("");
+							}}
+						/>
+						<Hint text="Upload a size guide image to help customers choose the right size" />
+					</div>
+				</Group>
+
+				{/* 6. Story */}
+				<Group>
+					<Label text="Description" />
+					<Textarea
+						value={description}
+						onChange={setDescription}
+						placeholder="Tell the story behind this piece. Inspiration, process, or meaning — anything you want people to feel."
+					/>
+				</Group>
+
+				{/* 7. Discovery */}
+				<Group>
+					<Label text="Piece Tags" />
+					<TagsInput
+						value={tags}
+						onChange={setTags}
+						placeholder="Add your tags"
+					/>
+					<Hint text="Helps people discover your piece" />
+				</Group>
+
+				{/* 8. Advanced Settings (Discount) */}
+				<div className="pt-4">
+					<p className="px-2 text-sm font-medium text-text-muted mb-2">
+						Advanced Settings
+					</p>
+					<Group>
 						<Label text="Discount" />
 						<div className="space-y-3">
 							<Toggle
@@ -525,121 +642,8 @@ export default function EditPiecePage() {
 								</div>
 							)}
 						</div>
-					</div>
-
-					{/* Fee Settings */}
-					<Divider />
-					<div className="mt-4">
-						<Label text="Transaction Fee Settings" />
-						<div className="space-y-3">
-							<Toggle
-								checked={absorbTransactionFee}
-								onChange={setAbsorbTransactionFee}
-								label="Absorb Transaction Fees"
-							/>
-							<div className="space-y-2">
-								<Hint text="When enabled, you pay the 5% transaction fee instead of your customers. This makes checkout more attractive to buyers." />
-								<Hint text="When disabled, customers pay the 5% fee on top of your listed price (e.g., ₦1,000 item becomes ₦1,050 at checkout)." />
-							</div>
-						</div>
-					</div>
-
-					<Divider />
-					<div className="mt-4">
-						<Label text="Launch Date" required />
-						<DateTimePicker value={launchDate} onChange={setLaunchDate} />
-						{!!collectionId &&
-							collections.find(
-								(c) =>
-									c.id === collectionId &&
-									c.launchDate &&
-									launchDate &&
-									+c.launchDate! === +launchDate!
-							) && <Hint text="Piece matches drop collection launch date." />}
-						<div className="mt-3">
-							<Toggle
-								checked={availableNow}
-								onChange={(v) => {
-									setAvailableNow(v);
-									if (v) setLaunchDate(new Date());
-								}}
-								label="Available Now"
-							/>
-						</div>
-					</div>
-				</Group>
-
-				{/* Images */}
-				<Group>
-					<Label text="Main Piece Visual" required />
-					<SingleImagePicker
-						existingUrl={onlineMain}
-						file={mainFile}
-						onPick={(f) => setMainFile(f)}
-						onClear={() => {
-							setMainFile(null);
-							setOnlineMain(""); // force re-upload if removing current
-						}}
-					/>
-
-					<div className="mt-4">
-						<Label text="Gallery Shots" />
-						<MultiImagePicker
-							existingUrls={onlineGallery}
-							files={galleryFiles}
-							onPick={(next) => setGalleryFiles(next)}
-							onClearExisting={() => setOnlineGallery([])}
-							onRemoveExisting={(url) =>
-								setOnlineGallery((prev) => prev.filter((u) => u !== url))
-							}
-						/>
-					</div>
-
-					<div className="mt-4">
-						<Label text="Size Guide" />
-						<SingleImagePicker
-							existingUrl={onlineSizeGuide}
-							file={sizeGuideFile}
-							onPick={(f) => setSizeGuideFile(f)}
-							onClear={() => {
-								setSizeGuideFile(null);
-								setOnlineSizeGuide("");
-							}}
-						/>
-						<Hint text="Upload a size guide image to help customers choose the right size" />
-					</div>
-				</Group>
-
-				{/* Description */}
-				<Group>
-					<Label text="Description" />
-					<Textarea
-						value={description}
-						onChange={setDescription}
-						placeholder="Tell us the inspiration behind this piece (or anything basically)."
-					/>
-				</Group>
-
-				{/* Tags */}
-				<Group>
-					<Label text="Piece Tags" />
-					<TagsInput
-						value={tags}
-						onChange={setTags}
-						placeholder="Add your tags"
-					/>
-					<Hint text="Used in explore, search and trends" />
-				</Group>
-
-				{/* Cop link - COMMENTED OUT FOR STORE ORDERS */}
-				{/* <Group>
-					<Label text="Cop Link" />
-					<Input
-						value={copLink}
-						onChange={setCopLink}
-						placeholder="Paste the link where fans can cop this piece"
-					/>
-				</Group> */}
+					</Group>
+				</div>
 
 				<div className="h-16" />
 			</div>
@@ -855,90 +859,112 @@ function SingleImagePicker({
 	onClear: () => void;
 }) {
 	return (
-		<div className="flex flex-col gap-3">
-			{file ? (
-				<div className="relative w-full">
-					<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
-						<OptimizedImage
+		<div className="w-full max-w-xs">
+			<label
+				className="block w-full relative cursor-pointer rounded-xl border-2 border-dashed border-stroke hover:border-text transition-colors overflow-hidden group bg-surface hover:bg-surface/80"
+				style={{ aspectRatio: "1/1" }}
+			>
+				{file ? (
+					<>
+						<img
 							src={URL.createObjectURL(file)}
 							alt="Preview"
-							width={800}
-							height={600}
-							sizeContext="card"
-							objectFit="cover"
-							className="w-full"
+							className="w-full h-full object-cover"
 						/>
-					</div>
-					<div className="mt-2 flex gap-2">
+						<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+							<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+								Change Image
+							</span>
+						</div>
 						<button
 							type="button"
-							className={
-								baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
-							}
-							onClick={() => onPick(null)}
+							className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-red-500 text-white transition-colors z-10 backdrop-blur-sm"
+							onClick={(e) => {
+								e.preventDefault();
+								onPick(null);
+							}}
+							title="Remove"
 						>
-							Remove
+							<svg
+								className="w-5 h-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+							>
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
 						</button>
-					</div>
-				</div>
-			) : existingUrl ? (
-				<div className="relative w-full">
-					<div className="relative w-full max-h-72 overflow-hidden rounded-xl border border-stroke">
+					</>
+				) : existingUrl ? (
+					<>
 						<OptimizedImage
 							src={existingUrl}
 							alt="Current image"
-							width={800}
-							height={600}
+							fill
 							sizeContext="card"
 							objectFit="cover"
-							className="w-full"
+							className="w-full h-full"
 						/>
-					</div>
-					<div className="mt-2 flex gap-2">
-						<label className="cursor-pointer">
-							<span
-								className={
-									baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
-								}
-							>
-								Replace
+						<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+							<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+								Change Image
 							</span>
-							<input
-								type="file"
-								accept="image/*"
-								className="sr-only"
-								onChange={(e) => onPick(e.target.files?.[0] ?? null)}
-							/>
-						</label>
+						</div>
 						<button
 							type="button"
-							className={
-								baseFieldClasses() + " !py-1.5 !px-3 inline-block w-auto"
-							}
-							onClick={onClear}
+							className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-red-500 text-white transition-colors z-10 backdrop-blur-sm"
+							onClick={(e) => {
+								e.preventDefault();
+								onClear();
+							}}
+							title="Remove"
 						>
-							Remove
+							<svg
+								className="w-5 h-5"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+							>
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
 						</button>
+					</>
+				) : (
+					<div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
+						<div className="w-10 h-10 mb-3 text-text-muted">
+							<svg
+								xmlns="http://www.w3.org/2000/svg"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+								strokeLinecap="round"
+								strokeLinejoin="round"
+							>
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+								<polyline points="17 8 12 3 7 8" />
+								<line x1="12" x2="12" y1="3" y2="15" />
+							</svg>
+						</div>
+						<p className="text-text font-medium">Upload Image</p>
 					</div>
-				</div>
-			) : (
-				<label className="block cursor-pointer">
-					<div className="rounded-xl border border-dashed border-stroke p-4 text-center bg-surface hover:bg-bg transition-colors">
-						<p className="text-text-muted">No image selected</p>
-					</div>
-					<input
-						type="file"
-						accept="image/*"
-						className="sr-only"
-						onChange={(e) => onPick(e.target.files?.[0] ?? null)}
-					/>
-				</label>
-			)}
+				)}
+				<input
+					type="file"
+					accept="image/*"
+					className="sr-only"
+					onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+				/>
+			</label>
 		</div>
 	);
 }
 
-/* -------- Flutter-parity gallery picker: dashed, cap 4, clear/remove ------ */
+/* -------- Flutter-parity gallery picker: grid layout, cap 4, clear/remove ------ */
 
 function MultiImagePicker({
 	existingUrls,
@@ -989,101 +1015,134 @@ function MultiImagePicker({
 	}
 
 	return (
-		<div className="rounded-2xl border border-stroke bg-surface p-6">
-			<label className="block">
-				<div className="border border-dashed border-stroke/70 rounded-xl p-4 text-center cursor-pointer hover:bg-bg">
-					<div className="text-sm text-text">
-						Upload extra angles, close-ups, or detail shots to show off the
-						piece&apos;s vibe.
+		<div>
+			<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+				{/* Existing Images */}
+				{existingUrls.map((u) => (
+					<div
+						key={u}
+						className="relative rounded-xl border border-stroke overflow-hidden group"
+						style={{ aspectRatio: "1/1" }}
+					>
+						<OptimizedImage
+							src={u}
+							alt="Gallery image"
+							fill
+							sizeContext="thumbnail"
+							objectFit="cover"
+						/>
+						<button
+							type="button"
+							className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
+							title="Remove"
+							onClick={() => onRemoveExisting(u)}
+						>
+							<svg
+								className="w-4 h-4"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								strokeWidth="2"
+							>
+								<line x1="18" y1="6" x2="6" y2="18" />
+								<line x1="6" y1="6" x2="18" y2="18" />
+							</svg>
+						</button>
 					</div>
-					<div className="text-xs text-text-muted mt-1">
-						{total} / {MAX} selected
-					</div>
-				</div>
-				<input
-					type="file"
-					accept="image/*"
-					multiple
-					className="sr-only"
-					onChange={handleAdd}
-				/>
-			</label>
+				))}
 
-			{(existingUrls.length > 0 || files.length > 0) && (
-				<>
-					<div className="mt-3 h-16 overflow-x-auto">
-						<div className="flex items-center gap-2">
-							{existingUrls.map((u) => (
-								<div
-									key={u}
-									className="relative h-16 w-16 rounded-lg border border-stroke overflow-hidden"
+				{/* Local Files */}
+				{files.map((f, i) => {
+					const url = URL.createObjectURL(f);
+					return (
+						<div
+							key={`${f.name}-${i}`}
+							className="relative rounded-xl border border-stroke overflow-hidden group"
+							style={{ aspectRatio: "1/1" }}
+						>
+							<img src={url} alt="" className="w-full h-full object-cover" />
+							<button
+								type="button"
+								className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
+								title="Remove"
+								onClick={() => removeLocalAt(i)}
+							>
+								<svg
+									className="w-4 h-4"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
 								>
-									<OptimizedImage
-										src={u}
-										alt="Gallery image"
-										fill
-										sizeContext="thumbnail"
-										objectFit="cover"
-									/>
-									<button
-										type="button"
-										className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6 z-10"
-										title="Remove"
-										onClick={() => onRemoveExisting(u)}
-									>
-										×
-									</button>
-								</div>
-							))}
-							{files.map((f, i) => {
-								const url = URL.createObjectURL(f);
-								return (
-									<div
-										key={`${f.name}-${i}`}
-										className="relative h-16 w-16 rounded-lg border border-stroke overflow-hidden"
-									>
-										<OptimizedImage
-											src={url}
-											alt="Gallery preview"
-											fill
-											sizeContext="thumbnail"
-											objectFit="cover"
-										/>
-										<button
-											type="button"
-											className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-black/75 text-white text-sm leading-6 z-10"
-											title="Remove"
-											onClick={() => removeLocalAt(i)}
-										>
-											×
-										</button>
-									</div>
-								);
-							})}
+									<line x1="18" y1="6" x2="6" y2="18" />
+									<line x1="6" y1="6" x2="18" y2="18" />
+								</svg>
+							</button>
 						</div>
-					</div>
+					);
+				})}
 
-					<div className="mt-2 flex items-center gap-3">
-						{files.length > 0 && (
-							<button
-								type="button"
-								onClick={() => onPick([])}
-								className="text-alert text-sm border border-alert/30 rounded-lg px-2.5 py-1 hover:bg-alert/5"
-							>
-								Clear local
-							</button>
-						)}
-						{existingUrls.length > 0 && (
-							<button
-								type="button"
-								onClick={onClearExisting}
-								className="text-alert text-sm border border-alert/30 rounded-lg px-2.5 py-1 hover:bg-alert/5"
-							>
-								Clear current
-							</button>
-						)}
-					</div>
-				</>
+				{/* Upload Button */}
+				{slotsLeft > 0 && (
+					<label
+						className="block cursor-pointer rounded-xl border-2 border-dashed border-stroke hover:border-text transition-colors bg-surface hover:bg-surface/80 relative group"
+						style={{ aspectRatio: "1/1" }}
+					>
+						<div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+							<div className="w-8 h-8 mb-1 text-text-muted group-hover:text-text transition-colors">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
+									<path d="M5 12h14" />
+									<path d="M12 5v14" />
+								</svg>
+							</div>
+							<div className="text-xs font-medium text-text-muted group-hover:text-text">
+								Add
+							</div>
+							<div className="text-[10px] text-text-muted/70">
+								{total}/{MAX}
+							</div>
+						</div>
+						<input
+							type="file"
+							accept="image/*"
+							multiple
+							className="sr-only"
+							onChange={handleAdd}
+						/>
+					</label>
+				)}
+			</div>
+
+			{/* Bulk Actions (Clear) */}
+			{(existingUrls.length > 0 || files.length > 0) && (
+				<div className="mt-3 flex items-center gap-3">
+					{files.length > 0 && (
+						<button
+							type="button"
+							onClick={() => onPick([])}
+							className="text-alert text-xs border border-alert/30 rounded-lg px-2.5 py-1.5 hover:bg-alert/5"
+						>
+							Clear uploads
+						</button>
+					)}
+					{existingUrls.length > 0 && (
+						<button
+							type="button"
+							onClick={onClearExisting}
+							className="text-alert text-xs border border-alert/30 rounded-lg px-2.5 py-1.5 hover:bg-alert/5"
+						>
+							Clear existing
+						</button>
+					)}
+				</div>
 			)}
 
 			{msg && <div className="text-xs text-alert mt-2">{msg}</div>}

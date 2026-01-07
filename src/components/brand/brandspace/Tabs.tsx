@@ -5,7 +5,7 @@ import RadarTab from "./Radar/RadarTab";
 import PiecesTab from "./pieces/PiecesTab";
 import CollectionsTab from "./collections/CollectionTab";
 
-const TAB_LABELS = ["Radar", "Pieces", "Collections", "Behind the Label"];
+const TAB_LABELS = ["Pieces", "Radar", "Collections", "Behind the Label"];
 
 export default function BrandTabs({ uid }: { uid: string }) {
 	const [tab, setTab] = useState(0);
@@ -37,10 +37,24 @@ export default function BrandTabs({ uid }: { uid: string }) {
 				</div>
 			</div>
 
+			{/* Tab Narrative Context */}
+			<div className="px-4 sm:px-6 mt-3 pb-3 border-b border-stroke/50">
+				<p className="text-xs text-text-muted animate-in fade-in slide-in-from-top-1 duration-300 transform">
+					{
+						[
+							"Pieces — live works & creative assets",
+							"Radar — discovery & visibility engine",
+							"Collections — curated drops & seasons",
+							"Behind the Label — story & intent",
+						][tab]
+					}
+				</p>
+			</div>
+
 			{/* Content */}
 			<div className="px-4 sm:px-6 py-6">
-				{tab === 0 && <RadarTab brandId={uid} isBrand={true} />}
-				{tab === 1 && <PiecesTab brandId={uid} />}
+				{tab === 0 && <PiecesTab brandId={uid} />}
+				{tab === 1 && <RadarTab brandId={uid} isBrand={true} />}
 				{tab === 2 && <CollectionsTab />}
 				{tab === 3 && (
 					<div className="text-center text-text-muted">Coming soon</div>

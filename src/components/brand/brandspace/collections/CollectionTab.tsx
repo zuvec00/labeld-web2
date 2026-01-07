@@ -6,6 +6,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
+import { Plus } from "lucide-react";
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -230,17 +231,7 @@ export default function CollectionsTab() {
 			isBrandView
 		);
 		return (
-			<div className="px-4 sm:px-6 py-16 text-center">
-				<div className="flex justify-end mb-8">
-					<Button
-						text="Drop a Collection"
-						variant="calmAccent2"
-						onClick={() => {
-							console.log("Drop a Collection button clicked (empty state)");
-							router.push("/collections/new");
-						}}
-					/>
-				</div>
+			<div className="px-4 sm:px-6 py-16 text-center relative min-h-[50vh]">
 				<img
 					src="/images/empty-radar.png"
 					alt=""
@@ -251,6 +242,15 @@ export default function CollectionsTab() {
 						? "Create your first collection and bring all your drops together."
 						: "No collections here yet. This brand hasn't set any up."}
 				</p>
+				{isBrandView && (
+					<button
+						onClick={() => router.push("/collections/new")}
+						className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-calm-2 text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+						title="Drop a Collection"
+					>
+						<Plus className="w-6 h-6" />
+					</button>
+				)}
 			</div>
 		);
 	}
@@ -262,36 +262,37 @@ export default function CollectionsTab() {
 		isBrandView
 	);
 	return (
-		<div className="px-4 sm:px-6 py-6">
+		<div className="px-4 sm:px-6 py-6 pb-20">
 			{err && (
 				<div className="mb-6 rounded-xl border border-alert/30 bg-alert/10 px-4 py-2 text-alert">
 					{err}
 				</div>
 			)}
-			<div className="flex justify-end mb-8">
-				<Button
-					text="Drop a Collection"
-					variant="calmAccent2"
-					onClick={() => {
-						console.log("Drop a Collection button clicked (from grid view)");
-						router.push("/collections/new");
-					}}
-				/>
-			</div>
-			{/* 👇 responsive grid: 1 col (mobile), 2 cols (md), 3 cols (xl) */}
+
+			{/* Output grid */}
 			<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
 				{collections.map((c) => (
 					<div key={c.id} className="min-w-0">
 						<CollectionCard
 							c={c}
 							isBrand={isBrandView}
-							onEdit={() => router.push(`/brand-space/collection/${c.id}/edit`)}
-							onDelete={() => onDelete(c.id, c.brandId)}
-							onOpen={() => router.push(`/brand-space/collection/${c.id}`)}
+							onOpen={() => router.push(`/brand-space/collection/${c.id}/edit`)}
+							onEdit={() => {}} // Removed UI
+							onDelete={() => {}} // Removed UI
 						/>
 					</div>
 				))}
 			</div>
+
+			{isBrandView && (
+				<button
+					onClick={() => router.push("/collections/new")}
+					className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-calm-2 text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+					title="Drop a Collection"
+				>
+					<Plus className="w-6 h-6" />
+				</button>
+			)}
 		</div>
 	);
 }
@@ -433,17 +434,7 @@ function CollectionCard({
 				</div>
 			)}
 
-			{isBrand && (
-				<div className="flex items-center justify-end gap-2 px-1">
-					<Button text="Edit" variant="outline" onClick={onEdit} />
-					<Button
-						text="Delete"
-						variant="outline"
-						outlineColor="alert"
-						onClick={onDelete}
-					/>
-				</div>
-			)}
+			{/* Edit/Delete removed - entire card is clickable */}
 
 			<hr className="border-stroke mt-2" />
 		</div>

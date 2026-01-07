@@ -130,10 +130,12 @@ export default function EarningsOverview({
 							<h4 className="text-sm font-medium text-text-muted">
 								Events Earnings
 							</h4>
-							<div className="w-2 h-2 bg-cta rounded-full group-hover:scale-110 transition-transform"></div>
+							<span className="px-2 py-0.5 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-medium text-accent">
+								Automatic payout
+							</span>
 						</div>
 						<p className="text-xs text-text-muted/70 mb-3">
-							Tickets & event merchandise • Weekly payout
+							Processed automatically every Friday
 						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">
@@ -157,17 +159,17 @@ export default function EarningsOverview({
 							<h4 className="text-sm font-medium text-text-muted">
 								Store Earnings
 							</h4>
-							<div className="w-2 h-2 bg-calm-1 rounded-full group-hover:scale-110 transition-transform"></div>
+							<span className="px-2 py-0.5 rounded-full bg-cta/10 border border-cta/20 text-[10px] font-medium text-cta">
+								Manual payout
+							</span>
 						</div>
 						<p className="text-xs text-text-muted/70 mb-3">
-							Standalone brand store sales •{" "}
-							{walletSummary?.payout?.schedule?.label || "Standard"} payout (
-							{walletSummary?.payout?.schedule?.timelineDays
-								? `${walletSummary.payout.schedule.timelineDays} business day${
-										walletSummary.payout.schedule.timelineDays !== 1 ? "s" : ""
-								  }`
-								: "7 business days"}
-							)
+							Store earnings are paid out based on your payout settings.
+							{periodEarnings.store.eligibleMinor > 0 && (
+								<span className="block mt-1 text-accent font-medium">
+									Available for withdrawal
+								</span>
+							)}
 						</p>
 						<div className="space-y-2">
 							<div className="flex justify-between items-center">

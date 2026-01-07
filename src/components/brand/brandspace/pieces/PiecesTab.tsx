@@ -9,13 +9,50 @@ import {
 	getProductListForBrand,
 	Product,
 } from "@/lib/firebase/queries/product";
-import Button from "@/components/ui/button";
+import { useStoreOrders } from "@/hooks/useStoreOrders";
+import { useMemo } from "react";
+import { Flame, Heart, ArrowDownUp, Plus } from "lucide-react";
 
 export default function PiecesTab({ brandId }: { brandId: string }) {
 	const [loading, setLoading] = useState(true);
 	const [err, setErr] = useState<string | null>(null);
 	const [pieces, setPieces] = useState<Product[]>([]);
+	const [sort, setSort] = useState<
+		"newest" | "oldest" | "price-high" | "price-low"
+	>("newest");
 	const router = useRouter();
+	const { orders } = useStoreOrders();
+
+	const revenueMap = useMemo(() => {
+		const map: Record<string, number> = {};
+		orders.forEach((order) => {
+			if (order.status === "cancelled" || order.status === "failed") return;
+			order.lineItems.forEach((item) => {
+				if (item._type === "product") {
+					map[item.productId] = (map[item.productId] || 0) + item.subtotalMinor;
+				}
+			});
+		});
+		return map;
+	}, [orders]);
+
+	const cycleSort = () => {
+		const options: (typeof sort)[] = [
+			"newest",
+			"oldest",
+			"price-high",
+			"price-low",
+		];
+		const next = options[(options.indexOf(sort) + 1) % options.length];
+		setSort(next);
+	};
+
+	const sortLabel = {
+		newest: "Newest",
+		oldest: "Oldest",
+		"price-high": "Price: High to Low",
+		"price-low": "Price: Low to High",
+	}[sort];
 
 	async function load() {
 		setLoading(true);
@@ -36,7 +73,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 		load();
 	}, [brandId]);
 
-	const onOpen = (p: Product) => router.push(`/brand-space/piece/${p.id}`);
+	const onOpen = (p: Product) => router.push(`/brand-space/piece/${p.id}/edit`);
 	const onEdit = (p: Product) => router.push(`/brand-space/piece/${p.id}/edit`);
 	const onDelete = async (p: Product) => {
 		if (!confirm("Delete this piece? This cannot be undone.")) return;
@@ -82,17 +119,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 			pieces.length
 		);
 		return (
-			<div className="px-4 sm:px-6 py-16 text-center">
-				<div className="flex justify-end mb-8">
-					<Button
-						text="Drop a Piece"
-						variant="cta"
-						onClick={() => {
-							console.log("Drop a Piece button clicked");
-							router.push("/pieces/new");
-						}}
-					/>
-				</div>
+			<div className="px-4 sm:px-6 py-16 text-center relative min-h-[50vh]">
 				<img
 					src="/images/empty-radar.png"
 					alt=""
@@ -101,35 +128,72 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 				<p className="text-text-muted">
 					Add your pieces so people can see and shop your products.
 				</p>
+				<button
+					onClick={() => router.push("/pieces/new")}
+					className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+					title="Drop a Piece"
+				>
+					<Plus className="w-6 h-6" />
+				</button>
 			</div>
 		);
 	}
 
+	// Derived sorted pieces
+	const sortedPieces = [...pieces].sort((a, b) => {
+		switch (sort) {
+			case "newest":
+				return (b.launchDate?.getTime() || 0) - (a.launchDate?.getTime() || 0);
+			case "oldest":
+				return (a.launchDate?.getTime() || 0) - (b.launchDate?.getTime() || 0);
+			case "price-high":
+				return b.price - a.price;
+			case "price-low":
+				return a.price - b.price;
+			default:
+				return 0;
+		}
+	});
+
 	console.log("PiecesTab: Showing pieces grid, pieces.length:", pieces.length);
 	return (
-		<div className="px-3 sm:px-4">
-			<div className="flex justify-end mb-8">
-				<Button
-					text="Drop a Piece"
-					variant="cta"
-					onClick={() => {
-						console.log("Drop a Piece button clicked (from grid view)");
-						router.push("/pieces/new");
-					}}
-				/>
+		<div className="px-3 sm:px-4 pb-20">
+			{/* Curation & Sort Header */}
+			<div className="flex items-center justify-between mb-6">
+				<div className="text-sm font-medium text-text-muted">
+					{pieces.length} Creative Assets
+				</div>
+				<div className="flex items-center gap-2">
+					<button
+						onClick={cycleSort}
+						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-stroke text-xs font-medium hover:bg-surface text-text-muted hover:text-text transition-colors"
+					>
+						<ArrowDownUp className="w-3.5 h-3.5" />
+						Sort: {sortLabel}
+					</button>
+				</div>
 			</div>
 
-			<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
-				{pieces.map((p) => (
+			<div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-x-4 gap-y-8">
+				{sortedPieces.map((p, i) => (
 					<PieceCard
 						key={p.id}
 						piece={p}
+						revenue={revenueMap[p.id] || 0}
 						onOpen={() => onOpen(p)}
 						onEdit={() => onEdit(p)}
 						onDelete={() => onDelete(p)}
 					/>
 				))}
 			</div>
+
+			<button
+				onClick={() => router.push("/pieces/new")}
+				className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
+				title="Drop a Piece"
+			>
+				<Plus className="w-6 h-6" />
+			</button>
 		</div>
 	);
 }
@@ -137,50 +201,67 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 /* --- Card --- */
 function PieceCard({
 	piece,
+	revenue,
 	onOpen,
 	onEdit,
 	onDelete,
 }: {
 	piece: Product;
+	revenue: number;
 	onOpen: () => void;
 	onEdit: () => void;
 	onDelete: () => void;
 }) {
 	const currency = getCurrencyFromMap(piece.currency);
+
 	return (
-		<div className="group cursor-pointer" onClick={onOpen}>
-			<div className="relative">
+		<div className="group cursor-pointer space-y-3" onClick={onOpen}>
+			<div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-surface border border-stroke/50">
 				<img
 					src={piece.mainVisualUrl}
 					alt={piece.dropName}
-					className="w-full h-56 object-cover rounded-2xl border border-stroke"
+					className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 				/>
-				{/* Edit/Delete (dashboard: always show on hover) */}
-				<div
-					className="absolute top-2 right-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
-					onClick={(e) => e.stopPropagation()}
-				>
-					<IconButton label="Edit" onClick={onEdit} />
-					<IconButton label="Delete" tone="alert" onClick={onDelete} />
+
+				{/* Pinned Signal - Removed per request */}
+
+				{/* Overlay: Actions & Revenue */}
+				<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
+					{/* Revenue Signal (Bottom Right) */}
+					<div className="self-end">
+						<div
+							className="bg-bg/90 backdrop-blur rounded-lg px-3 py-1.5 text-center border border-white/10 shadow-sm"
+							title="Revenue"
+						>
+							<div className="text-[10px] uppercase text-text-muted mb-0.5">
+								Revenue
+							</div>
+							<div className="flex items-center gap-1 justify-center">
+								<span className="text-green-500 font-bold text-xs">₦</span>
+								<span className="text-xs font-bold text-text">
+									{formatWithCommasDouble(revenue / 100)}
+								</span>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 
-			<div className="px-2 mt-2">
-				<div className="font-heading font-light">{piece.dropName}</div>
-				<div className="mt-1 space-y-1">
-					{/* Original price */}
-					<div className="font-semibold text-sm">
+			<div className="space-y-1">
+				<h3 className="font-medium text-text leading-tight group-hover:text-edit transition-colors">
+					{piece.dropName}
+				</h3>
+				<div className="flex items-center justify-between">
+					<div className="text-sm text-text-muted font-medium">
 						{currency ? `${currency} ` : ""}
 						{formatWithCommasDouble(piece.price)}
 					</div>
-					{/* Show final price with fee if fee is transferred to consumer */}
-					{piece.feeSettings?.absorbTransactionFee === false && (
-						<div className="text-xs text-text-muted">
-							Final For Consumer: {currency ? `${currency} ` : ""}
-							{formatWithCommasDouble(piece.price * 1.05)}
-							<span className="text-alert ml-1">(+5% fee)</span>
-						</div>
-					)}
+					{/* Status Dot */}
+					<div
+						className={`w-1.5 h-1.5 rounded-full ${
+							piece.isAvailableNow ? "bg-green-500" : "bg-stroke"
+						}`}
+					/>
 				</div>
 			</div>
 		</div>
@@ -198,13 +279,13 @@ function IconButton({
 }) {
 	const toneClass =
 		tone === "alert"
-			? "text-alert border-alert/30"
-			: "text-edit border-edit/30";
+			? "text-red-500 bg-white hover:bg-red-50"
+			: "text-black bg-white hover:bg-gray-50";
 	return (
 		<button
 			aria-label={label}
 			onClick={onClick}
-			className={`rounded-xl border px-3 py-1.5 bg-bg/80 backdrop-blur ${toneClass}`}
+			className={`rounded-lg px-3 py-1.5 text-xs font-medium shadow-sm transition-colors ${toneClass}`}
 		>
 			{label}
 		</button>

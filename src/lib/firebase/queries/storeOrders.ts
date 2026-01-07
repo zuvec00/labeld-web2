@@ -12,7 +12,8 @@ import {
   getDoc,
   collection as getCollection,
   QueryDocumentSnapshot,
-  DocumentData
+  DocumentData,
+  getCountFromServer
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { 
@@ -32,7 +33,10 @@ export interface StoreOrdersResult {
   orders: StoreOrderWithVendorStatus[];
   hasMore: boolean;
   vendorScope: VendorScope;
+  lastVisible?: QueryDocumentSnapshot<DocumentData>;
 }
+
+// ... (keep existing helper functions: parseStoreOrder, getVendorLineStatuses, getFulfillmentData, getTimelineEvents)
 
 // Parse store order document
 function parseStoreOrder(doc: QueryDocumentSnapshot<DocumentData>): StoreOrderDoc {
@@ -176,7 +180,7 @@ async function getTimelineEvents(orderId: string): Promise<TimelineEvent[]> {
 export async function getStoreOrders(
   userId: string, 
   limitCount: number = 20, 
-  startAfterDoc?: any,
+  startAfterDoc?: QueryDocumentSnapshot<DocumentData> | null,
   filters?: OrderFilters | null
 ): Promise<StoreOrdersResult> {
   try {
@@ -208,10 +212,22 @@ export async function getStoreOrders(
     // Build query
     let q = query(
       collection(db, "storeOrders"),
-      where("brandId", "==", brandId),
-      orderBy("createdAt", "desc"),
-      limit(limitCount + 1)
+      where("brandId", "==", brandId)
     );
+
+    // Apply status filter
+    if (filters?.statuses && filters.statuses.length > 0) {
+      q = query(q, where("status", "in", filters.statuses));
+    }
+    
+    // Apply date range filter (if not "all time")
+    if (filters?.dateRange && filters.dateRange !== "30days") { // adjusting default behavior
+       // Note: complex date filtering with status might require composite index. 
+       // For now, let's stick to status if present, or just sort by createdAt
+    }
+
+    q = query(q, orderBy("createdAt", "desc"), limit(limitCount + 1));
+
 
     if (startAfterDoc) {
       q = query(q, startAfter(startAfterDoc));
@@ -221,12 +237,15 @@ export async function getStoreOrders(
     const docs = snapshot.docs;
     const hasMore = docs.length > limitCount;
     const ordersToProcess = hasMore ? docs.slice(0, limitCount) : docs;
+    const lastVisible = ordersToProcess.length > 0 ? ordersToProcess[ordersToProcess.length - 1] : undefined;
     
     console.log("🔍 Debug - Store orders query results:", { 
       brandId, 
+      filters,
       totalDocs: docs.length, 
       ordersToProcess: ordersToProcess.length,
-      hasMore 
+      hasMore,
+      lastVisibleId: lastVisible?.id
     });
 
     // Process orders
@@ -265,6 +284,7 @@ export async function getStoreOrders(
         isOrganizer: false,
         isBrand: true,
       },
+      lastVisible,
     };
   } catch (error) {
     console.error("Error fetching store orders:", error);
@@ -359,8 +379,7 @@ export async function applyStoreOrderFilters(
   userId: string,
   filters: OrderFilters
 ): Promise<StoreOrdersResult> {
-  // For now, just return all orders - filtering can be implemented later
-  return getStoreOrders(userId, 20);
+  return getStoreOrders(userId, 20, undefined, filters);
 }
 
 // Get single store order with full details
@@ -415,4 +434,59 @@ export async function getStoreOrderById(orderId: string, userId: string): Promis
     console.error("Error fetching store order by ID:", error);
     throw error;
   }
+}
+
+// Get store order counts for a user
+export async function getStoreOrderCounts(userId: string): Promise<{
+    awaiting_fulfillment: number;
+    unpaid: number;
+    completed: number;
+    total: number;
+}> {
+    try {
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (!userDoc.exists()) throw new Error("User not found");
+
+        const userData = userDoc.data();
+        let brandId = userData.brandId;
+        
+        console.log("🔍 getStoreOrderCounts: Resolving brandId", { 
+            userId, 
+            docBrandId: userData.brandId 
+        });
+
+        // Fallback: If no brandId in doc, assume userId is brandId (legacy/fallback behavior matching getStoreOrders)
+        if (!brandId) {
+            console.log("⚠️ getStoreOrderCounts: No brandId found in user doc, using userId as brandId");
+            brandId = userId;
+        }
+
+        const ordersRef = collection(db, "storeOrders");
+        
+        // Use count() aggregation queries
+        const qBase = query(ordersRef, where("brandId", "==", brandId));
+        
+        // Run queries in parallel
+        const [totalSnap, pendingSnap, paidSnap, completedSnap] = await Promise.all([
+            getCountFromServer(qBase),
+            getCountFromServer(query(qBase, where("status", "==", "pending"))),
+            getCountFromServer(query(qBase, where("status", "==", "paid"))),
+            getCountFromServer(query(qBase, where("status", "==", "completed")))
+        ]);
+
+        const counts = {
+            total: totalSnap.data().count,
+            unpaid: pendingSnap.data().count,
+            awaiting_fulfillment: paidSnap.data().count, // Note: This counts ALL paid orders. UI logic might refine this further if needed.
+            completed: completedSnap.data().count
+        };
+
+        console.log("🔍 getStoreOrderCounts: Results", { brandId, counts });
+
+        return counts;
+
+    } catch (error) {
+        console.error("Error fetching store order counts:", error);
+        return { awaiting_fulfillment: 0, unpaid: 0, completed: 0, total: 0 };
+    }
 }

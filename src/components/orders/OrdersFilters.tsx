@@ -9,14 +9,18 @@ import {
 } from "@/types/orders";
 import { Search, Filter, X } from "lucide-react";
 
+import { cn } from "@/lib/utils";
+
 interface OrdersFiltersProps {
 	onFiltersChange: (filters: OrderFilters) => void;
 	loading?: boolean;
+	className?: string;
 }
 
 export default function OrdersFilters({
 	onFiltersChange,
 	loading,
+	className,
 }: OrdersFiltersProps) {
 	const [filters, setFilters] = useState<OrderFilters>({
 		dateRange: "7days",
@@ -108,7 +112,12 @@ export default function OrdersFilters({
 		filters.search.trim() !== "";
 
 	return (
-		<div className="bg-surface border border-stroke rounded-lg p-4 space-y-4">
+		<div
+			className={cn(
+				"bg-surface border border-stroke rounded-lg p-4 space-y-4",
+				className
+			)}
+		>
 			{/* Main Filter Row */}
 			<div className="flex items-center gap-3">
 				{/* Search */}

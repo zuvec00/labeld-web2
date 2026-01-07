@@ -218,6 +218,7 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
             fulfillmentStatuses,
             fulfillmentAggregateStatus,
           eventTitle: eventDetails[order.eventId]?.title,
+          eventDate: eventDetails[order.eventId]?.startAt,
           };
         }) as OrderWithVendorStatus[];
       }

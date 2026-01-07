@@ -11,6 +11,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Button } from "@/components/ui/button";
 import Card from "@/components/dashboard/Card";
 import { toMillis } from "@/lib/firebase/utils";
+import { cn } from "@/lib/utils";
 
 interface StoreOrdersTableProps {
 	orders: StoreOrderWithVendorStatus[];
@@ -33,17 +34,17 @@ export default function StoreOrdersTable({
 	const getStatusColor = (status: string) => {
 		switch (status) {
 			case "paid":
-				return "text-accent";
+				return "bg-accent/10 text-accent border border-accent/20";
 			case "pending":
-				return "text-edit";
+				return "bg-edit/10 text-edit border border-edit/20"; // Changed text to Awaiting Payment in render
 			case "failed":
-				return "text-alert";
+				return "bg-alert/10 text-alert border border-alert/20";
 			case "refunded":
-				return "text-text-muted";
+				return "bg-surface text-text-muted border border-stroke";
 			case "cancelled":
-				return "text-text-muted";
+				return "bg-surface text-text-muted border border-stroke";
 			default:
-				return "text-text-muted";
+				return "bg-surface text-text-muted border border-stroke";
 		}
 	};
 
@@ -155,11 +156,14 @@ export default function StoreOrdersTable({
 	}
 
 	return (
-		<Card>
+		<div className="bg-surface border border-stroke rounded-lg overflow-hidden">
 			<div className="overflow-x-auto">
 				<table className="w-full">
 					<thead>
 						<tr className="border-b border-stroke">
+							<th className="text-left py-3 px-4 text-xs font-medium text-text-muted uppercase tracking-wide w-4">
+								{/* Urgency column */}
+							</th>
 							<th className="text-left py-3 px-4 text-sm font-medium text-text-muted">
 								<button
 									onClick={() => {
@@ -235,84 +239,104 @@ export default function StoreOrdersTable({
 						</tr>
 					</thead>
 					<tbody>
-						{sortedOrders.map((order) => (
-							<tr
-								key={order.id}
-								className="border-b border-stroke/50 hover:bg-surface/50 transition-colors cursor-pointer"
-								onClick={() => onOrderClick(order)}
-							>
-								<td className="py-4 px-4">
-									<div className="font-mono text-sm font-medium text-text">
-										{formatOrderId(order.id)}
-									</div>
-								</td>
-								<td className="py-4 px-4">
-									<div className="text-sm text-text">
-										{order.deliverTo?.fullName || "Unknown Customer"}
-									</div>
-									<div className="text-xs text-text-muted">
-										{order.deliverTo?.email ||
-											order.deliverTo?.phone ||
-											"No contact info"}
-									</div>
-								</td>
-								<td className="py-4 px-4">
-									<div className="text-sm font-medium text-text">
-										{formatCurrency(order.amount.itemsSubtotalMinor)}
-									</div>
-									<div className="text-xs text-text-muted">
-										{(order.amount.shippingMinor ?? 0) > 0
-											? `+ ${formatCurrency(
-													order.amount.shippingMinor ?? 0
-											  )} shipping`
-											: "Free shipping"}
-									</div>
-									<div className="text-xs text-text-muted">
-										{order.lineItems.length} item
-										{order.lineItems.length !== 1 ? "s" : ""}
-									</div>
-								</td>
-								<td className="py-4 px-4">
-									<span
-										className={`text-sm font-medium ${getStatusColor(
-											order.status
-										)}`}
-									>
-										{order.status.charAt(0).toUpperCase() +
-											order.status.slice(1)}
-									</span>
-								</td>
-								<td className="py-4 px-4">
-									<span
-										className={`text-sm font-medium ${getFulfillmentColor(
-											order.fulfillmentAggregateStatus || "unfulfilled"
-										)}`}
-									>
-										{getFulfillmentLabel(
-											order.fulfillmentAggregateStatus || "unfulfilled"
+						{sortedOrders.map((order) => {
+							// Urgency Logic: Paid AND Unfulfilled
+							const isUrgent =
+								order.status === "paid" &&
+								(order.fulfillmentAggregateStatus === "unfulfilled" ||
+									order.fulfillmentAggregateStatus === "partial" ||
+									!order.fulfillmentAggregateStatus);
+
+							return (
+								<tr
+									key={order.id}
+									className={cn(
+										"border-b border-stroke/50 hover:bg-surface/50 transition-colors cursor-pointer group",
+										isUrgent ? "bg-alert/5 hover:bg-alert/10" : ""
+									)}
+									onClick={() => onOrderClick(order)}
+								>
+									<td className="py-4 px-4 w-4 relative">
+										{isUrgent && (
+											<div
+												className="absolute left-2 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-alert"
+												title="Action Needed"
+											/>
 										)}
-									</span>
-								</td>
-								<td className="py-4 px-4">
-									<div className="text-sm text-text">
-										{formatDistanceToNow(toMillis(order.createdAt), {
-											addSuffix: true,
-										})}
-									</div>
-								</td>
-								<td className="py-4 px-4 text-right">
-									<Button
-										text="View"
-										variant="outline"
-										className="px-3 py-1 text-sm"
-										onClick={(e) => {
-											e.stopPropagation();
-											onOrderClick(order);
-										}}
-									/>
-								</td>
-							</tr>
-						))}
+									</td>
+									<td className="py-4 px-4">
+										<div className="font-mono text-sm font-medium text-text group-hover:text-cta transition-colors">
+											{formatOrderId(order.id)}
+										</div>
+									</td>
+									<td className="py-4 px-4">
+										<div className="text-sm text-text">
+											{order.deliverTo?.fullName || "Unknown Customer"}
+										</div>
+										<div className="text-xs text-text-muted">
+											{order.deliverTo?.email ||
+												order.deliverTo?.phone ||
+												"No contact info"}
+										</div>
+									</td>
+									<td className="py-4 px-4">
+										<div className="text-sm font-medium text-text">
+											{formatCurrency(order.amount.itemsSubtotalMinor)}
+										</div>
+										<div className="text-xs text-text-muted">
+											{order.lineItems.length} item
+											{order.lineItems.length !== 1 ? "s" : ""}
+										</div>
+									</td>
+									<td className="py-4 px-4">
+										<span
+											className={cn(
+												"px-2 py-0.5 rounded-md text-xs font-medium inline-block",
+												getStatusColor(order.status)
+											)}
+										>
+											{order.status === "pending"
+												? "Unpaid"
+												: order.status === "paid" &&
+												  (!order.fulfillmentAggregateStatus ||
+														order.fulfillmentAggregateStatus === "unfulfilled")
+												? "Awaiting Fulfillment"
+												: order.status.charAt(0).toUpperCase() +
+												  order.status.slice(1)}
+										</span>
+									</td>
+									<td className="py-4 px-4">
+										<span
+											className={`text-sm font-medium ${getFulfillmentColor(
+												order.fulfillmentAggregateStatus || "unfulfilled"
+											)}`}
+										>
+											{getFulfillmentLabel(
+												order.fulfillmentAggregateStatus || "unfulfilled"
+											)}
+										</span>
+									</td>
+									<td className="py-4 px-4">
+										<div className="text-sm text-text">
+											{formatDistanceToNow(toMillis(order.createdAt), {
+												addSuffix: true,
+											})}
+										</div>
+									</td>
+									<td className="py-4 px-4 text-right">
+										<Button
+											text="View"
+											variant="outline"
+											className="px-3 py-1 text-sm h-8"
+											onClick={(e) => {
+												e.stopPropagation();
+												onOrderClick(order);
+											}}
+										/>
+									</td>
+								</tr>
+							);
+						})}
 					</tbody>
 				</table>
 			</div>
@@ -328,6 +352,6 @@ export default function StoreOrdersTable({
 					/>
 				</div>
 			)}
-		</Card>
+		</div>
 	);
 }

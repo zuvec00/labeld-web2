@@ -13,9 +13,17 @@ import {
 import StatusBadge from "./StatusBadge";
 import FulfillmentStatusBadge from "./FulfillmentStatusBadge";
 import Money from "./Money";
-import Date from "./Date";
+import DateDisplay from "./Date";
 import { ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import { useAuth } from "../../lib/auth/AuthContext";
+import {
+	formatDistance,
+	format,
+	differenceInDays,
+	differenceInHours,
+} from "date-fns";
+import { toMillis } from "@/lib/firebase/utils";
+import { cn } from "@/lib/utils";
 
 interface OrdersTableProps {
 	orders: OrderWithVendorStatus[];
@@ -35,59 +43,10 @@ export default function OrdersTable({
 	showFees = false,
 }: OrdersTableProps) {
 	const { user } = useAuth();
-	const [sortField, setSortField] = useState<"createdAt" | "amount">(
-		"createdAt"
-	);
+	const [sortField, setSortField] = useState<
+		"createdAt" | "amount" | "eventDate"
+	>("createdAt");
 	const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
-
-	// Calculate fulfillment status and counts for current vendor
-	const getVendorFulfillmentInfo = (order: OrderWithVendorStatus) => {
-		if (!user || !order.fulfillmentLines) return null;
-
-		const vendorLines = Object.values(order.fulfillmentLines).filter(
-			(line) => line.vendorId === user.uid && line.lineKey.startsWith("merch:")
-		);
-
-		if (vendorLines.length === 0) return null;
-
-		console.log("🔍 OrdersTable: getVendorFulfillmentInfo", {
-			orderId: order.id,
-			vendorLines: vendorLines.map((line) => ({
-				lineKey: line.lineKey,
-				status: line.shipping?.status,
-				vendorId: line.vendorId,
-				shipping: line.shipping,
-			})),
-		});
-
-		const statuses = vendorLines.map(
-			(line) => line.shipping?.status || "unfulfilled"
-		);
-
-		console.log("🔍 OrdersTable: Statuses extracted", {
-			orderId: order.id,
-			statuses,
-			user: user.uid,
-		});
-
-		const counts = {
-			unfulfilled: statuses.filter((s) => s === "unfulfilled").length,
-			shipped: statuses.filter((s) => s === "shipped").length,
-			delivered: statuses.filter((s) => s === "delivered").length,
-			fulfilled: statuses.filter((s) => s === "fulfilled").length,
-			total: vendorLines.length,
-		};
-
-		// Determine overall status
-		let overallStatus: string;
-		if (counts.unfulfilled === counts.total) overallStatus = "unfulfilled";
-		else if (counts.fulfilled + counts.delivered === counts.total)
-			overallStatus = "fulfilled";
-		else if (counts.shipped > 0) overallStatus = "shipped";
-		else overallStatus = "partial";
-
-		return { status: overallStatus, counts };
-	};
 
 	// Check if current user is organizer (has event access)
 	const isOrganizer = orders.some(
@@ -102,11 +61,11 @@ export default function OrdersTable({
 			let aValue: number, bValue: number;
 
 			if (sortField === "createdAt") {
-				// Convert to timestamp for comparison
-				aValue =
-					a.createdAt?.toDate?.()?.getTime() || (a.createdAt as number) || 0;
-				bValue =
-					b.createdAt?.toDate?.()?.getTime() || (b.createdAt as number) || 0;
+				aValue = toMillis(a.createdAt) || 0;
+				bValue = toMillis(b.createdAt) || 0;
+			} else if (sortField === "eventDate") {
+				aValue = toMillis(a.eventDate) || 0;
+				bValue = toMillis(b.eventDate) || 0;
 			} else {
 				aValue = a.amount.totalMinor;
 				bValue = b.amount.totalMinor;
@@ -120,12 +79,12 @@ export default function OrdersTable({
 		});
 	}, [orders, sortField, sortDirection]);
 
-	const handleSort = (field: "createdAt" | "amount") => {
+	const handleSort = (field: "createdAt" | "amount" | "eventDate") => {
 		if (sortField === field) {
 			setSortDirection(sortDirection === "asc" ? "desc" : "asc");
 		} else {
 			setSortField(field);
-			setSortDirection("desc");
+			setSortDirection("desc"); // Default to desc (newest/highest first)
 		}
 	};
 
@@ -133,7 +92,7 @@ export default function OrdersTable({
 		field,
 		children,
 	}: {
-		field: "createdAt" | "amount";
+		field: "createdAt" | "amount" | "eventDate";
 		children: React.ReactNode;
 	}) => (
 		<button
@@ -150,6 +109,34 @@ export default function OrdersTable({
 		</button>
 	);
 
+	const getTimelineIndicator = (eventDate: Date | null) => {
+		if (!eventDate) return null;
+		const now = new Date();
+		const diffHours = differenceInHours(eventDate, now);
+		const diffDays = differenceInDays(eventDate, now);
+
+		// Alert: < 48 hours
+		if (diffHours >= 0 && diffHours < 48) {
+			return {
+				label: diffHours < 24 ? "Today" : "Tomorrow",
+				color: "text-alert",
+				dotColor: "bg-alert",
+				borderClass: "border-l-4 border-l-alert",
+			};
+		}
+		// Warm: < 7 days
+		if (diffDays >= 2 && diffDays < 7) {
+			return {
+				label: `In ${diffDays} days`,
+				color: "text-cta", // or a warm orange if defined, reusing cta/blue for now or hardcode orange
+				dotColor: "bg-cta",
+				borderClass: "border-l-4 border-l-cta",
+			};
+		}
+
+		return null;
+	};
+
 	// Loading skeleton
 	if (loading && orders.length === 0) {
 		return (
@@ -162,8 +149,6 @@ export default function OrdersTable({
 								<div className="h-4 bg-stroke rounded w-32"></div>
 								<div className="h-4 bg-stroke rounded w-40"></div>
 								<div className="h-4 bg-stroke rounded w-20"></div>
-								<div className="h-4 bg-stroke rounded w-16"></div>
-								<div className="h-4 bg-stroke rounded w-24"></div>
 							</div>
 						))}
 					</div>
@@ -193,12 +178,9 @@ export default function OrdersTable({
 						</svg>
 					</div>
 					<h3 className="text-lg font-medium text-text mb-2">
-						No Orders Found
+						No Updates Found
 					</h3>
-					<p className="text-text-muted/70">
-						No orders match your current filters. Try adjusting your search
-						criteria.
-					</p>
+					<p className="text-text-muted/70">No orders match your criteria.</p>
 				</div>
 			</div>
 		);
@@ -211,143 +193,106 @@ export default function OrdersTable({
 				<table className="w-full">
 					<thead className="bg-bg border-b border-stroke">
 						<tr>
+							<th className="px-4 py-3 text-left w-4"></th>{" "}
+							{/* Indicator Column */}
 							<th className="px-4 py-3 text-left">
 								<SortButton field="createdAt">Placed</SortButton>
 							</th>
-							<th className="px-4 py-3 text-left">Order</th>
-							<th className="px-4 py-3 text-left">Buyer</th>
-							<th className="px-4 py-3 text-left">Items</th>
-							<th className="px-4 py-3 text-left">Payment</th>
-							{/* Only show Fulfillment column if any order has merch */}
-							{orders.some((order) =>
-								order.lineItems.some((item) => item._type === "merch")
-							) && <th className="px-4 py-3 text-left">Fulfillment</th>}
-							{/* Only show My Fulfillment for vendors (not organizers) */}
-							{!isOrganizer && (
-								<th className="px-4 py-3 text-left">My Fulfillment</th>
-							)}
+							<th className="px-4 py-3 text-left">
+								<SortButton field="eventDate">Event Date</SortButton>
+							</th>
+							<th className="px-4 py-3 text-left">Order / Buyer</th>
+							<th className="px-4 py-3 text-left">Details</th>
+							<th className="px-4 py-3 text-left">Status</th>
 							<th className="px-4 py-3 text-left">
 								<SortButton field="amount">Total</SortButton>
 							</th>
-							{/* Optional Fee Breakdown */}
-							{showFees && (
-								<>
-									<th className="px-4 py-3 text-left">Base</th>
-									<th className="px-4 py-3 text-left">Fees</th>
-								</>
-							)}
 						</tr>
 					</thead>
 					<tbody>
 						{sortedOrders.map((order) => {
-							const hasMerch = order.lineItems.some(
-								(item) => item._type === "merch"
+							const eventDate = order.eventDate
+								? order.eventDate.toDate()
+								: null;
+							const indicator = getTimelineIndicator(eventDate);
+							const ticketCount = order.lineItems.reduce(
+								(acc, item) =>
+									item._type === "ticket" ? acc + item.quantity : acc,
+								0
 							);
-							const isOrganizerView =
-								order.visibilityReason === "organizer" ||
-								order.visibilityReason === "both";
-
-							// Calculate fulfillment status from actual fulfillment lines data
-							let fulfillmentStatus: FulfillmentAggregateStatus = "fulfilled"; // default for orders without merch
-							if (hasMerch && order.fulfillmentLines) {
-								const fulfillmentLines = Object.values(order.fulfillmentLines);
-								if (fulfillmentLines.length > 0) {
-									console.log(
-										"🔍 OrdersTable: Overall fulfillment calculation",
-										{
-											orderId: order.id,
-											fulfillmentLines: fulfillmentLines.map((line) => ({
-												lineKey: line.lineKey,
-												status: line.shipping?.status,
-												vendorId: line.vendorId,
-												shipping: line.shipping,
-											})),
-										}
-									);
-
-									const statuses = fulfillmentLines.map(
-										getLineFulfillmentStatus
-									);
-
-									console.log("🔍 OrdersTable: Overall statuses extracted", {
-										orderId: order.id,
-										statuses,
-										fulfillmentLines: fulfillmentLines.map((line) => ({
-											lineKey: line.lineKey,
-											status: line.shipping?.status,
-											hasShipping: !!line.shipping,
-										})),
-									});
-
-									const unfulfilledCount = statuses.filter(
-										(s) => s === "unfulfilled"
-									).length;
-									const fulfilledCount = statuses.filter((s) =>
-										["fulfilled", "delivered"].includes(s)
-									).length;
-									const shippedCount = statuses.filter(
-										(s) => s === "shipped"
-									).length;
-
-									if (unfulfilledCount === statuses.length) {
-										fulfillmentStatus = "unfulfilled";
-									} else if (fulfilledCount === statuses.length) {
-										fulfillmentStatus = "fulfilled";
-									} else if (shippedCount > 0) {
-										fulfillmentStatus = "shipped";
-									} else {
-										fulfillmentStatus = "partial";
-									}
-								}
-							}
 
 							return (
 								<tr
 									key={order.id}
 									onClick={() => onOrderClick(order)}
-									className="border-b border-stroke hover:bg-bg/50 cursor-pointer transition-colors"
+									className={cn(
+										"border-b border-stroke hover:bg-bg/50 cursor-pointer transition-colors group",
+										indicator ? "bg-bg/10" : ""
+									)}
 								>
+									<td className={cn("p-0 w-1", indicator?.borderClass)}></td>
+
 									{/* Placed */}
 									<td className="px-4 py-3">
-										<Date timestamp={order.createdAt} />
+										<div className="text-sm text-text">
+											<DateDisplay timestamp={order.createdAt} />
+										</div>
 									</td>
 
-									{/* Order ID (clickable) */}
+									{/* Event Date */}
 									<td className="px-4 py-3">
-										<span className="font-mono text-sm text-cta hover:underline">
-											{order.id.slice(0, 8)}...
-										</span>
-									</td>
-
-									{/* Buyer */}
-									<td className="px-4 py-3">
-										<span className="text-sm">
-											{order.deliverTo?.email || "—"}
-										</span>
-									</td>
-
-									{/* Items with type badges */}
-									<td className="px-4 py-3">
-										<div className="flex items-center gap-2">
-											<span className="text-sm">
-												{getOrderItemsSummary(order.lineItems)}
-											</span>
-											<div className="flex gap-1">
-												{order.lineItems.some(
-													(item) => item._type === "ticket"
-												) && (
-													<span className="text-xs" title="Tickets">
-														🎟️
+										{eventDate ? (
+											<div className="flex flex-col">
+												<span className="text-sm font-medium text-text">
+													{format(eventDate, "MMM d, yyyy")}
+												</span>
+												{indicator && (
+													<span
+														className={cn(
+															"text-xs font-semibold",
+															indicator.color
+														)}
+													>
+														{indicator.label}
 													</span>
 												)}
-												{order.lineItems.some(
-													(item) => item._type === "merch"
-												) && (
-													<span className="text-xs" title="Merchandise">
-														📦
+												{!indicator && (
+													<span className="text-xs text-text-muted">
+														{format(eventDate, "h:mm a")}
 													</span>
 												)}
 											</div>
+										) : (
+											<span className="text-text-muted text-sm">—</span>
+										)}
+									</td>
+
+									{/* Order / Buyer */}
+									<td className="px-4 py-3">
+										<div className="flex flex-col">
+											<span className="font-mono text-xs text-cta hover:underline mb-0.5">
+												{order.id.slice(0, 8)}...
+											</span>
+											<span className="text-sm text-text font-medium">
+												{order.deliverTo?.fullName ||
+													order.deliverTo?.email ||
+													"Guest"}
+											</span>
+										</div>
+									</td>
+
+									{/* Details (Tickets / Items) */}
+									<td className="px-4 py-3">
+										{ticketCount > 0 && (
+											<div className="inline-flex items-center gap-1.5 bg-surface-hover/50 px-2 py-1 rounded-md mb-1">
+												<span className="text-xs">🎟️</span>
+												<span className="text-sm font-medium">
+													{ticketCount} Ticket{ticketCount !== 1 ? "s" : ""}
+												</span>
+											</div>
+										)}
+										<div className="text-xs text-text-muted truncate max-w-[200px]">
+											{order.eventTitle}
 										</div>
 									</td>
 
@@ -356,100 +301,10 @@ export default function OrdersTable({
 										<StatusBadge status={order.status} />
 									</td>
 
-									{/* Fulfillment (show for all orders when any order has merch) */}
-									{orders.some((order) =>
-										order.lineItems.some((item) => item._type === "merch")
-									) && (
-										<td className="px-4 py-3">
-											{hasMerch ? (
-												<FulfillmentStatusBadge
-													status={fulfillmentStatus}
-													type="aggregate"
-												/>
-											) : (
-												<span className="text-text-muted">—</span>
-											)}
-										</td>
-									)}
-
-									{/* My Fulfillment (only for vendors, not organizers) */}
-									{!isOrganizerView && (
-										<td className="px-4 py-3">
-											{(() => {
-												const fulfillmentInfo = getVendorFulfillmentInfo(order);
-												if (!fulfillmentInfo) return null;
-
-												const { status } = fulfillmentInfo;
-
-												const getBadgeColor = (status: string) => {
-													switch (status) {
-														case "unfulfilled":
-															return "bg-yellow-100 text-yellow-800";
-														case "partial":
-															return "bg-orange-100 text-orange-800";
-														case "shipped":
-															return "bg-blue-100 text-blue-800";
-														case "delivered":
-															return "bg-green-100 text-green-800";
-														case "fulfilled":
-															return "bg-green-100 text-green-800";
-														default:
-															return "bg-gray-100 text-gray-800";
-													}
-												};
-
-												const getBadgeLabel = (status: string) => {
-													switch (status) {
-														case "unfulfilled":
-															return "Unfulfilled";
-														case "partial":
-															return "Partial";
-														case "shipped":
-															return "Shipped";
-														case "delivered":
-															return "Delivered";
-														case "fulfilled":
-															return "Fulfilled";
-														default:
-															return status;
-													}
-												};
-
-												return (
-													<div className="flex flex-col gap-1">
-														<span
-															className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getBadgeColor(
-																status
-															)}`}
-														>
-															{getBadgeLabel(status)}
-														</span>
-													</div>
-												);
-											})()}
-										</td>
-									)}
-
 									{/* Total */}
 									<td className="px-4 py-3">
 										<Money amountMinor={order.amount.totalMinor} />
 									</td>
-
-									{/* Fee Breakdown */}
-									{showFees && (
-										<>
-											<td className="px-4 py-3 text-text-muted">
-												<Money
-													amountMinor={
-														order.amount.totalMinor - order.amount.feesMinor
-													}
-												/>
-											</td>
-											<td className="px-4 py-3 text-alert">
-												+<Money amountMinor={order.amount.feesMinor} />
-											</td>
-										</>
-									)}
 								</tr>
 							);
 						})}

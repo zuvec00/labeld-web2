@@ -57,8 +57,7 @@ export default function PayoutsTable({
 									Event Earnings Payouts
 								</h4>
 								<p className="text-xs text-text-muted mb-2">
-									Event earnings are automatically paid out every Friday at 2:00
-									PM.
+									Event payouts are processed automatically every Friday.
 								</p>
 								<p className="text-xs text-text-muted">
 									<strong>Schedule:</strong> Weekly • <strong>Fees:</strong>{" "}
@@ -77,25 +76,10 @@ export default function PayoutsTable({
 									Store Earnings Payouts
 								</h4>
 								<p className="text-xs text-text-muted mb-2">
-									Store earnings follow your custom payout schedule.
+									Store payouts follow your custom payout settings.
 								</p>
 								<p className="text-xs text-text-muted">
-									<strong>Schedule:</strong>{" "}
-									{walletSummary?.payout?.schedule?.label || "Standard"} •{" "}
-									<strong>Timeline:</strong>{" "}
-									{walletSummary?.payout?.schedule?.timelineDays
-										? `${
-												walletSummary.payout.schedule.timelineDays
-										  } business day${
-												walletSummary.payout.schedule.timelineDays !== 1
-													? "s"
-													: ""
-										  }`
-										: "7 business days"}{" "}
-									• <strong>Fees:</strong>{" "}
-									{walletSummary?.payout?.schedule?.feePercent
-										? `${walletSummary.payout.schedule.feePercent}%`
-										: "None"}
+									<strong>Schedule:</strong> Based on settings
 								</p>
 							</div>
 						</div>

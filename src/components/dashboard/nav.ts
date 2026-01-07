@@ -26,6 +26,14 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     ],
   },
   {
+    title: "Analytics",
+    items: [
+      { label: "Insights", href: "/insights", icon: getNavIcon("Insights") },
+      { label: "Performance", href: "/performance", icon: getNavIcon("Performance") },
+      { label: "Reports", href: "/reports", icon: getNavIcon("Reports") },
+    ],
+  },
+  {
     title: "Monetization",
     items: [
       { label: "Orders", href: "/orders", feature: "orders", icon: getNavIcon("Orders") },
@@ -41,3 +49,4 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     ],
   },
 ];
+

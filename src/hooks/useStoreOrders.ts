@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth } from "@/lib/firebase/firebaseConfig";
+import { QueryDocumentSnapshot, DocumentData } from "firebase/firestore";
+
 import { 
   getStoreOrders, 
   watchStoreOrders,
@@ -28,7 +30,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(true);
   const [vendorScope, setVendorScope] = useState<VendorScope | null>(null);
-  const [lastDoc, setLastDoc] = useState<any>(null);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
   const [currentFilters, setCurrentFilters] = useState<OrderFilters | null>(null);
 
   // Auth state listener
@@ -55,7 +57,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
         setLoading(true);
         setError(null);
         
-        const { orders: initialOrders, hasMore: hasMoreOrders, vendorScope: scope } = await getStoreOrders(user.uid);
+        const { orders: initialOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await getStoreOrders(user.uid);
         
         console.log("🔍 Debug - Store orders loaded:", { 
           userId: user.uid, 
@@ -67,7 +69,8 @@ export function useStoreOrders(): UseStoreOrdersReturn {
         setOrders(initialOrders);
         setHasMore(hasMoreOrders);
         setVendorScope(scope);
-        setLastDoc(initialOrders.length > 0 ? initialOrders[initialOrders.length - 1] : null);
+        setLastDoc(lastVisible || null);
+
       } catch (err) {
         console.error("Error loading store orders:", err);
         setError(err instanceof Error ? err.message : "Failed to load store orders");
@@ -99,7 +102,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
     try {
       setLoading(true);
       
-      const { orders: moreOrders, hasMore: hasMoreOrders } = await getStoreOrders(
+      const { orders: moreOrders, hasMore: hasMoreOrders, lastVisible } = await getStoreOrders(
         user.uid, 
         20, 
         lastDoc,
@@ -108,7 +111,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       
       setOrders(prev => [...prev, ...moreOrders]);
       setHasMore(hasMoreOrders);
-      setLastDoc(moreOrders.length > 0 ? moreOrders[moreOrders.length - 1] : null);
+      setLastDoc(lastVisible || null);
     } catch (err) {
       console.error("Error loading more store orders:", err);
       setError(err instanceof Error ? err.message : "Failed to load more orders");
@@ -124,7 +127,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       setLoading(true);
       setError(null);
       
-      const { orders: refreshedOrders, hasMore: hasMoreOrders, vendorScope: scope } = await getStoreOrders(
+      const { orders: refreshedOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await getStoreOrders(
         user.uid,
         20,
         null,
@@ -134,7 +137,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       setOrders(refreshedOrders);
       setHasMore(hasMoreOrders);
       setVendorScope(scope);
-      setLastDoc(refreshedOrders.length > 0 ? refreshedOrders[refreshedOrders.length - 1] : null);
+      setLastDoc(lastVisible || null);
     } catch (err) {
       console.error("Error refreshing store orders:", err);
       setError(err instanceof Error ? err.message : "Failed to refresh orders");
@@ -151,12 +154,12 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       setError(null);
       setCurrentFilters(filters);
       
-      const { orders: filteredOrders, hasMore: hasMoreOrders, vendorScope: scope } = await applyStoreOrderFilters(user.uid, filters);
+      const { orders: filteredOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await applyStoreOrderFilters(user.uid, filters);
       
       setOrders(filteredOrders);
       setHasMore(hasMoreOrders);
       setVendorScope(scope);
-      setLastDoc(filteredOrders.length > 0 ? filteredOrders[filteredOrders.length - 1] : null);
+      setLastDoc(lastVisible || null);
     } catch (err) {
       console.error("Error applying store order filters:", err);
       setError(err instanceof Error ? err.message : "Failed to apply filters");
