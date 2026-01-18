@@ -5,7 +5,7 @@ import {
 	watchUserDoc,
 } from "@/lib/firebase/queries/brandspace";
 import { UserModel } from "@/lib/models/user";
-import { BrandModel } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 import { getProductListForBrand } from "@/lib/firebase/queries/product";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

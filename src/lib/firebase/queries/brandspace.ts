@@ -1,7 +1,7 @@
 import { getFirestore, doc, getDoc, onSnapshot, Unsubscribe, Timestamp, query, collection, where, limit, getDocs, updateDoc } from "firebase/firestore";
 import { getApp } from "firebase/app";
 import type { UserModel } from "@/lib/models/user";
-import { BrandModel } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 
 const db = getFirestore(getApp());
 

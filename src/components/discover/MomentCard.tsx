@@ -5,7 +5,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import { fetchEventById } from "@/lib/firebase/queries/event";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import EventStatusCapsule from "@/components/ui/EventStatusCapsule";
-import { BrandModel } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 
 interface Moment {
 	id: string;

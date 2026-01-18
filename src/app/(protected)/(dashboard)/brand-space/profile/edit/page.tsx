@@ -15,7 +15,8 @@ import {
 	isBrandSlugTaken,
 	updateBrandProfile,
 } from "@/lib/firebase/queries/brandspace";
-import { BrandModel, useBrandOnboard } from "@/lib/stores/brandOnboard";
+import { useBrandOnboard } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 import countriesJson from "@/data/countries_and_states.json";
 import { doc, getFirestore, updateDoc } from "firebase/firestore";
 import { useDashboardContext } from "@/hooks/useDashboardContext";

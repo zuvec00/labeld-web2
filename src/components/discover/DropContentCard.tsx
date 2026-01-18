@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DropStatusCapsule from "@/components/brand/brandspace/DropStatusCapsule";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
-import { BrandModel } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 
 interface DropContentCardProps {

@@ -14,7 +14,7 @@ import { getDateRange } from "@/lib/orders/helpers";
 import { OrderWithVendorStatus, StoreOrderWithVendorStatus, FulfillmentStatus, FulfillmentAggregateStatus } from "@/types/orders";
 import { WalletSummary } from "@/types/wallet";
 import { EventModel } from "@/lib/models/event";
-import { BrandModel } from "@/lib/stores/brandOnboard";
+import { BrandModel } from "@/lib/models/brand";
 
 export type DashboardScope = "all" | "events" | "merch";
 export type DashboardRange = "today" | "7days" | "30days" | "custom";
@@ -479,7 +479,7 @@ export function useDashboard(): UseDashboardReturn {
       fulfillmentCounts,
       topSKUs,
       topTicketTypes,
-      topTicketTypes,
+
       upcomingEvents,
       dropPerformance,
       productViews: new Map(), // View data comes from analytics hook in page, but we can structure this if we move analytics here later

@@ -216,8 +216,7 @@ export default function OrdersTable({
 								: null;
 							const indicator = getTimelineIndicator(eventDate);
 							const ticketCount = order.lineItems.reduce(
-								(acc, item) =>
-									item._type === "ticket" ? acc + item.quantity : acc,
+								(acc, item) => (item._type === "ticket" ? acc + item.qty : acc),
 								0
 							);
 
@@ -274,7 +273,8 @@ export default function OrdersTable({
 												{order.id.slice(0, 8)}...
 											</span>
 											<span className="text-sm text-text font-medium">
-												{order.deliverTo?.fullName ||
+												{(order.deliverTo as any)?.fullName ||
+													order.deliverTo?.name ||
 													order.deliverTo?.email ||
 													"Guest"}
 											</span>
