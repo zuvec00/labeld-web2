@@ -97,7 +97,7 @@ export default function AcquisitionSurveyModal({
 		setIsSubmitting(true);
 
 		try {
-			const brandRef = doc(db, "brands", user.uid);
+			const brandRef = doc(db, "users", user.uid);
 
 			const payload = {
 				acquisitionSurvey: skipped
