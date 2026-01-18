@@ -5,15 +5,9 @@ import Button from "@/components/ui/button";
 import HeatGlow from "./HeatGlow";
 import { getHeatColor } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import {
-	Copy,
-	ExternalLink,
-	BadgeCheck,
-	Calendar,
-	Package,
-	Settings2,
-	MoreHorizontal,
-} from "lucide-react";
+import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
+import MaintenanceModal from "@/components/modals/MaintenanceModal";
+import { Calendar, Copy, ExternalLink, MoreHorizontal, Package, Settings2 } from "lucide-react";
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 
 /* --- Header --- */
@@ -29,6 +23,7 @@ export default function BrandHeader({
 	joinedAt,
 	productCount = 0,
 	lastDropDate,
+	subscriptionTier,
 }: {
 	brandName: string;
 	username: string;
@@ -41,12 +36,17 @@ export default function BrandHeader({
 	joinedAt?: Date;
 	productCount?: number;
 	lastDropDate?: Date | null;
+	subscriptionTier?: "free" | "pro";
 }) {
 	const heatInt = Math.max(0, Math.floor(Number.isFinite(heat) ? heat : 0));
 	const color = getHeatColor(80);
 	const router = useRouter();
 	const [copied, setCopied] = useState(false);
 	const [showMenu, setShowMenu] = useState(false);
+
+	// Onboarding Check
+	const { isComplete } = useBrandOnboardingStatus();
+	const [showMaintenance, setShowMaintenance] = useState(false);
 
 	const brandWebsiteUrl = `https://shop.labeld.app/${username}`;
 
@@ -61,7 +61,11 @@ export default function BrandHeader({
 	};
 
 	const handleOpenWebsite = () => {
-		window.open(brandWebsiteUrl, "_blank");
+		if (isComplete) {
+			window.open(brandWebsiteUrl, "_blank");
+		} else {
+			setShowMaintenance(true);
+		}
 	};
 
 	// Logic: Active if last drop < 30 days
@@ -144,15 +148,25 @@ export default function BrandHeader({
 
 				{/* Stats & Edit Action */}
 				<div className="flex flex-row-reverse md:flex-col items-center md:items-end justify-between md:justify-start gap-4 shrink-0 mt-4 md:mt-0 w-full md:w-auto">
-					{isOwner && (
-						<button
-							onClick={() => router.push("/brand-space/profile/edit")}
-							className="p-2 rounded-full text-text-muted hover:text-text hover:bg-surface transition-colors"
-							title="Edit Profile"
-						>
-							<Settings2 className="w-5 h-5" />
-						</button>
-					)}
+					<div className="flex items-center gap-2">
+						{isOwner && subscriptionTier !== "pro" && (
+							<button
+								onClick={() => router.push("/pricing")}
+								className="px-3 py-1.5 bg-cta text-text text-sm font-semibold rounded-lg hover:bg-cta/90 transition-colors shadow-sm"
+							>
+								Upgrade
+							</button>
+						)}
+						{isOwner && (
+							<button
+								onClick={() => router.push("/brand-space/profile/edit")}
+								className="p-2 rounded-full text-text-muted hover:text-text hover:bg-surface transition-colors"
+								title="Edit Profile"
+							>
+								<Settings2 className="w-5 h-5" />
+							</button>
+						)}
+					</div>
 
 					<div className="flex items-center gap-6">
 						<Stat
@@ -228,6 +242,11 @@ export default function BrandHeader({
 					</div>
 				</div>
 			</div>
+
+			<MaintenanceModal
+				isOpen={showMaintenance}
+				onClose={() => setShowMaintenance(false)}
+			/>
 		</div>
 	);
 }

@@ -1,7 +1,7 @@
 // types/orders.ts
 export type Currency = "NGN";
 export type AdmitType = "general" | "vip" | "backstage";
-export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled";
+export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled" | "completed";
 export type PaymentProvider = "paystack" | "flutterwave";
 export type VendorLineStatus = "processing" | "ready" | "completed" | "cancelled";
 export type FulfillmentStatus = "unfulfilled" | "fulfilled" | "shipped" | "delivered" | "cancelled";

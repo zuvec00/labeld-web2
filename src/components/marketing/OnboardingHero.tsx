@@ -259,6 +259,28 @@ export default function OnboardingSplit() {
 		setShowAuthModal(true);
 	};
 
+	// Auth Trigger Component
+	function AuthTrigger({
+		onTrigger,
+	}: {
+		onTrigger: (mode: "login" | "signup") => void;
+	}) {
+		const searchParams = useSearchParams();
+
+		useEffect(() => {
+			const authMode = searchParams?.get("auth");
+			if (authMode === "login" || authMode === "signup") {
+				// Small delay to ensure modal is ready
+				const t = setTimeout(() => {
+					onTrigger(authMode);
+				}, 500);
+				return () => clearTimeout(t);
+			}
+		}, [searchParams, onTrigger]);
+
+		return null;
+	}
+
 	return (
 		<div className="min-h-dvh bg-bg text-text">
 			{/* Mobile Layout */}
@@ -446,6 +468,15 @@ export default function OnboardingSplit() {
 
 			<Suspense fallback={null}>
 				<PopupTrigger onTrigger={() => setShowRegistrationModal(true)} />
+			</Suspense>
+
+			<Suspense fallback={null}>
+				<AuthTrigger
+					onTrigger={(m) => {
+						setMode(m);
+						setShowAuthModal(true);
+					}}
+				/>
 			</Suspense>
 
 			{/* Event Organizer Onboarding Modal */}

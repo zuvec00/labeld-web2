@@ -408,25 +408,43 @@ async function fetchEngagementData(brandId: string, dateRange: { start: Date; en
     return acc;
   }, {} as Record<string, Array<{ actionType: string; userId?: string; timestamp?: { toDate?: () => Date } }>>);
 
-  Object.entries(interactionsByDay).forEach(([date, dayInteractions]) => {
-    const breakdown = {
-      date,
-      discovery: 0,
-      product: 0,
-      social: 0,
-      linkouts: 0
-    };
+  // Fill in missing dates
+  const startDate = new Date(dateRange.start);
+  const endDate = new Date(dateRange.end);
+  
+  for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+     const dateKey = d.toISOString().split('T')[0];
+     
+     if (interactionsByDay[dateKey]) {
+         // Process existing data
+         const dayInteractions = interactionsByDay[dateKey];
+         const breakdown = {
+            date: dateKey,
+            discovery: 0,
+            product: 0,
+            social: 0,
+            linkouts: 0
+         };
 
-    dayInteractions.forEach((interaction: { actionType: string }) => {
-      const actionType = interaction.actionType;
-      if (actionBuckets.discovery.includes(actionType)) breakdown.discovery++;
-      else if (actionBuckets.product.includes(actionType)) breakdown.product++;
-      else if (actionBuckets.social.includes(actionType)) breakdown.social++;
-      else if (actionBuckets.linkouts.includes(actionType)) breakdown.linkouts++;
-    });
-
-    dailyBreakdown.push(breakdown);
-  });
+        dayInteractions.forEach((interaction: { actionType: string }) => {
+            const actionType = interaction.actionType;
+            if (actionBuckets.discovery.includes(actionType)) breakdown.discovery++;
+            else if (actionBuckets.product.includes(actionType)) breakdown.product++;
+            else if (actionBuckets.social.includes(actionType)) breakdown.social++;
+            else if (actionBuckets.linkouts.includes(actionType)) breakdown.linkouts++;
+        });
+        dailyBreakdown.push(breakdown);
+     } else {
+         // Add zero entry for missing day
+         dailyBreakdown.push({
+             date: dateKey,
+             discovery: 0,
+             product: 0,
+             social: 0,
+             linkouts: 0
+         });
+     }
+  }
 
   // Calculate engagement per post
   const postsInRangeSnapshot = await getCountFromServer(

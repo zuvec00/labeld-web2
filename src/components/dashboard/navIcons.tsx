@@ -11,9 +11,12 @@ import {
 	Settings,
 	HelpCircle,
 	Globe,
-	Lightbulb,
 	BarChart3,
 	FileText,
+	CreditCard,
+	Palette,
+	Store,
+	PieChart,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -40,12 +43,23 @@ export const getNavIcon = (iconName: string) => {
 			return <Settings {...iconProps} />;
 		case "Help":
 			return <HelpCircle {...iconProps} />;
-		case "Insights":
-			return <Lightbulb {...iconProps} />;
-		case "Performance":
+		case "Insights": // Deprecated/Legacy support
+		case "Overview":
+			return <PieChart {...iconProps} />;
+		case "Performance": // Deprecated/Legacy support
 			return <BarChart3 {...iconProps} />;
 		case "Reports":
 			return <FileText {...iconProps} />;
+		case "Pricing":
+			return <CreditCard {...iconProps} />;
+		case "SiteCustomization":
+			return <Palette {...iconProps} />;
+		case "StorefrontAnalytics":
+			return <Store {...iconProps} />;
+		case "MarketplaceAnalytics":
+			return <Globe {...iconProps} />; // Reuse Globe for now, or maybe ShoppingBag
+		case "EventsAnalytics":
+			return <Ticket {...iconProps} />;
 		default:
 			return null;
 	}

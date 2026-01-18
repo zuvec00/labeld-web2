@@ -1,6 +1,6 @@
 // hooks/useBankAccount.ts
 import { useState, useCallback } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
@@ -95,15 +95,20 @@ export function useBankAccount(): UseBankAccountReturn {
       setError(null);
       try {
         const userRef = doc(db, "users", user.uid);
-        await updateDoc(userRef, {
-          "wallet.payout.bank": {
-            bankName: bankData.bankName,
-            bankCode: bankData.bankCode,
-            accountNumber: bankData.accountNumber,
-            accountName: bankData.accountName,
-            isVerified: bankData.isVerified,
-          },
-        });
+
+        await setDoc(userRef, {
+          wallet: {
+            payout: {
+              bank: {
+                bankName: bankData.bankName,
+                bankCode: bankData.bankCode,
+                accountNumber: bankData.accountNumber,
+                accountName: bankData.accountName,
+                isVerified: bankData.isVerified,
+              }
+            }
+          }
+        }, { merge: true });
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : "Failed to save bank account";
         setError(errorMessage);

@@ -390,11 +390,12 @@ export default function StoreOrderDetailDrawer({
 									</div>
 								</div>
 							)}
-						<div className="text-xs text-calm-1 mt-4 text-center">
-							<span>
-								Note: Customers are automatically emailed after every update to fulfillment or shipping info.
-							</span>
-						</div>
+							<div className="text-xs text-calm-1 mt-4 text-center">
+								<span>
+									Note: Customers are automatically emailed after every update
+									to fulfillment or shipping info.
+								</span>
+							</div>
 						</div>
 
 						{/* Order Summary */}
@@ -420,7 +421,10 @@ export default function StoreOrderDetailDrawer({
 								<div className="flex justify-between text-lg font-semibold border-t border-stroke pt-2">
 									<span>Total</span>
 									<span className="text-accent">
-										{formatCurrency(order.amount.totalMinor)}
+										{formatCurrency(
+											order.amount.itemsSubtotalMinor +
+												(order.amount.shippingMinor ?? 0)
+										)}
 									</span>
 								</div>
 							</div>

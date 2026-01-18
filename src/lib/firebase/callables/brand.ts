@@ -12,6 +12,7 @@ export async function checkBrandUsernameUniqueCF(username: string): Promise<bool
 type AddBrandArgs = {
   brandName: string;
   username: string;           // normalized (lowercase)
+  phoneNumber?: string;
   bio?: string | null;
   category: string;
   brandTags?: string[] | null;

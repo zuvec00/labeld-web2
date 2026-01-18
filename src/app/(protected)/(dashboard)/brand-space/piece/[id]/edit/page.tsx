@@ -94,7 +94,7 @@ export default function EditPiecePage() {
 	const [discountPercent, setDiscountPercent] = useState("");
 
 	// Fee Settings
-	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(true);
+	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(false);
 
 	// load
 	useEffect(() => {
@@ -449,20 +449,21 @@ export default function EditPiecePage() {
 					</div>
 
 					<div className="mt-4">
-						<div className="space-y-3">
-							<Toggle
-								checked={absorbTransactionFee}
-								onChange={setAbsorbTransactionFee}
-								label="Absorb Transaction Fees"
-							/>
-							<div className="space-y-2">
-								<Hint text="When enabled, you cover the 5% fee so buyers see a cleaner price." />
-								<a
-									href="#"
-									className="text-xs text-text-muted underline decoration-dotted hover:text-text"
-								>
-									Learn more
-								</a>
+						<div className="rounded-xl bg-surface-neutral/50 p-4 border border-stroke/50">
+							<div className="flex gap-3">
+								<div className="flex-shrink-0 mt-0.5">
+									<div className="w-1 h-full min-h-[24px] rounded-full bg-cta/40" />
+								</div>
+								<div className="text-sm">
+									<p className="font-medium text-text mb-1">
+										Labeld Marketplace Fee
+									</p>
+									<p className="text-text-muted">
+										A 5% transaction fee is applied to sales on the global
+										marketplace, paid by the customer. This does not apply to
+										your custom storefront.
+									</p>
+								</div>
 							</div>
 						</div>
 					</div>

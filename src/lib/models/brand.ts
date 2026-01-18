@@ -5,7 +5,16 @@ export interface BrandModel {
   brandName: string;
   username: string;
   brandSlug?: string;          // NEW: for SEO friendly URLs, defaults to username
-  subscriptionTier?: "free" | "pro" | "premium"; // NEW: for feature gating
+  phoneNumber?: string | null; // NEW: Contact phone number
+  subscriptionTier?: "free" | "pro"; // Feature gating
+  
+  // Subscription / Payments
+  subscriptionId?: string | null;
+  subscriptionStatus?: "active" | "expired" | "past_due" | "cancelled";
+  subscriptionStartedAt?: Timestamp | null;
+  subscriptionEndsAt?: Timestamp | null;
+  billingCycle?: "monthly" | "quarterly" | "biannual" | "annual" | null;
+
   bio?: string | null;
   category: string;
   brandTags?: string[] | null;
@@ -23,6 +32,17 @@ export interface BrandModel {
   tiktok?: string | null;
 
   isOpen?: boolean;            // store open/closed status
+
+  storefrontConfig?: import("./site-customization").BrandStorefrontConfig; // Persisted storefront config
+
+  // Acquisition Survey
+  acquisitionSurvey?: {
+    source: string;
+    subSource?: string; // e.g. "image_ads", "video_ads"
+    otherDetail?: string; // e.g. "Friend's name"
+    skipped?: boolean;
+    respondedAt: Timestamp | Date;
+  } | null;
 
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;

@@ -126,6 +126,22 @@ export async function isBrandUsernameTaken(usernameLower: string, excludeUid?: s
   return true;
 }
 
+export async function isBrandSlugTaken(slug: string, excludeUid?: string) {
+  const db = getFirestore();
+  const q = query(
+    collection(db, "brands"),
+    where("brandSlug", "==", slug),
+    limit(1)
+  );
+  const snap = await getDocs(q);
+  if (snap.empty) return false;
+  const hit = snap.docs[0];
+  // If the same user owns this slug, it's "not taken" in the sense that they can keep it.
+  // BUT: if we are checking "is it taken by SOMEONE ELSE", we exclude ID.
+  if (excludeUid && hit.id === excludeUid) return false;
+  return true;
+}
+
 export async function updateBrandProfile(uid: string, data: Partial<BrandModel>) {
   const db = getFirestore();
   const ref = doc(db, "brands", uid);

@@ -6,7 +6,9 @@ import MobileSidebar from "@/components/dashboard/MobileSidebar";
 import Topbar from "@/components/dashboard/Topbar";
 import GlobalUploadIndicator from "@/components/ui/GlobalUploadIndicator";
 import { Toaster } from "@/components/ui/toast";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useDashboardContext } from "@/hooks/useDashboardContext";
+import AcquisitionSurveyModal from "@/components/modals/AcquisitionSurveyModal";
 
 export default function DashboardLayout({
 	children,
@@ -14,6 +16,21 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+	const { activeRole, roleDetection } = useDashboardContext();
+	const [showSurvey, setShowSurvey] = useState(false);
+
+	useEffect(() => {
+		// Only show for brands
+		if (activeRole !== "brand" || !roleDetection) return;
+
+		// Check if survey already completed or skipped
+		// roleDetection is BrandModel
+		if (!roleDetection.acquisitionSurvey) {
+			// Add a small delay so it doesn't pop up INSTANTLY on load
+			const timer = setTimeout(() => setShowSurvey(true), 1500);
+			return () => clearTimeout(timer);
+		}
+	}, [activeRole, roleDetection]);
 
 	return (
 		<div className="min-h-dvh bg-bg text-text">
@@ -46,6 +63,12 @@ export default function DashboardLayout({
 
 			{/* Toast notifications */}
 			<Toaster />
+
+			{/* Acquisition Survey */}
+			<AcquisitionSurveyModal
+				isOpen={showSurvey}
+				onClose={() => setShowSurvey(false)}
+			/>
 		</div>
 	);
 }

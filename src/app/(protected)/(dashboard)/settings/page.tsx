@@ -16,8 +16,14 @@ import Button from "@/components/ui/button";
 import AccountSecurity from "@/components/settings/AccountSecurity";
 import ShippingSettings from "@/components/settings/ShippingSettings";
 import PayoutSettings from "@/components/settings/PayoutSettings";
+import BillingSettings from "@/components/settings/BillingSettings";
 
-type SettingsSection = "main" | "account-security" | "shipping" | "payout";
+type SettingsSection =
+	| "main"
+	| "account-security"
+	| "shipping"
+	| "payout"
+	| "billing";
 
 export default function SettingsPage() {
 	const [currentSection, setCurrentSection] = useState<SettingsSection>("main");
@@ -31,6 +37,8 @@ export default function SettingsPage() {
 			setCurrentSection("shipping");
 		} else if (section === "payout") {
 			setCurrentSection("payout");
+		} else if (section === "billing") {
+			setCurrentSection("billing");
 		}
 	}, [searchParams]);
 
@@ -47,6 +55,13 @@ export default function SettingsPage() {
 			title: "Payout Settings",
 			description: "Configure how quickly you receive your earnings",
 			icon: DollarSign,
+			available: true,
+		},
+		{
+			id: "billing" as const,
+			title: "Billing & Payments",
+			description: "Manage your payment methods and billing information",
+			icon: CreditCard,
 			available: true,
 		},
 		{
@@ -68,13 +83,6 @@ export default function SettingsPage() {
 		// 	title: "Notifications",
 		// 	description: "Manage your notification preferences",
 		// 	icon: Bell,
-		// 	available: false,
-		// },
-		// {
-		// 	id: "billing" as const,
-		// 	title: "Billing & Payments",
-		// 	description: "Manage your payment methods and billing information",
-		// 	icon: CreditCard,
 		// 	available: false,
 		// },
 	];
@@ -119,6 +127,24 @@ export default function SettingsPage() {
 
 				{/* Payout Settings Component */}
 				<PayoutSettings />
+			</div>
+		);
+	}
+
+	if (currentSection === "billing") {
+		return (
+			<div className="space-y-6">
+				{/* Back Arrow */}
+				<button
+					onClick={handleBackToMain}
+					className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
+				>
+					<ArrowLeft className="w-4 h-4" />
+					<span className="text-sm">Back to Settings</span>
+				</button>
+
+				{/* Billing Settings Component */}
+				<BillingSettings />
 			</div>
 		);
 	}

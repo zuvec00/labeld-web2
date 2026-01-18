@@ -8,6 +8,8 @@ import { useWallet } from "./useWallet";
 import { getVendorScope } from "@/lib/firebase/queries/orders";
 import { listMyEventsLite } from "@/lib/firebase/queries/event";
 import { fetchBrandDoc } from "@/lib/firebase/queries/brandspace";
+import { getProductListForBrand, Product } from "@/lib/firebase/queries/product";
+import { getCollectionListForBrand, CollectionDoc } from "@/lib/firebase/queries/collection";
 import { getDateRange } from "@/lib/orders/helpers";
 import { OrderWithVendorStatus, StoreOrderWithVendorStatus, FulfillmentStatus, FulfillmentAggregateStatus } from "@/types/orders";
 import { WalletSummary } from "@/types/wallet";
@@ -84,6 +86,11 @@ export interface DashboardData {
   topTicketTypes: TopTicketType[];
   upcomingEvents: UpcomingEvent[];
   recentOrders: OrderWithVendorStatus[];
+  dropPerformance: {
+    current: { name: string; revenue: number; orders: number } | null;
+    previous: { name: string; revenue: number; orders: number } | null;
+  };
+  productViews: Map<string, number>; // productId -> view count
   walletSummary?: WalletSummary;
   brandData?: BrandModel;
   hasAnyOrders: boolean;
@@ -117,6 +124,8 @@ export function useDashboard(): UseDashboardReturn {
   // Additional data state
   const [events, setEvents] = useState<EventModel[]>([]);
   const [brandData, setBrandData] = useState<BrandModel | null>(null);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [collections, setCollections] = useState<CollectionDoc[]>([]);
   const [vendorScope, setVendorScope] = useState<{
     eventIds: Set<string>;
     merchItemIds: Set<string>;
@@ -132,33 +141,55 @@ export function useDashboard(): UseDashboardReturn {
     return () => unsubscribe();
   }, []);
 
-  // Load vendor scope and additional data
+  // Load data progressively
   useEffect(() => {
     if (!user?.uid) return;
 
-    const loadData = async () => {
+    let mounted = true;
+
+    const loadCriticalData = async () => {
       try {
-        setLoading(true);
+        setLoading(true); // Critical loading starts
         setError(null);
 
-        const [scope, eventsData, brand] = await Promise.all([
+        // 1. Critical: Vendor Scope & Wallet (others are handled by their own hooks)
+        const [scope] = await Promise.all([
           getVendorScope(user.uid),
-          listMyEventsLite(user.uid),
-          fetchBrandDoc(user.uid).catch(() => null), // Brand might not exist yet
         ]);
 
-        setVendorScope(scope);
-        setEvents(eventsData);
-        setBrandData(brand);
+        if (mounted) {
+           setVendorScope(scope);
+           setLoading(false); // Critical data loaded, UI can render skeletons or partial data
+        }
+
+        // 2. Secondary: Metadata (Products, Collections, Events, Brand)
+        // These are needed for rich insights but not for basic numbers
+        const [eventsData, brand, productsList, collectionsList] = await Promise.all([
+          listMyEventsLite(user.uid),
+          fetchBrandDoc(user.uid).catch(() => null),
+          getProductListForBrand(user.uid).catch(() => []), 
+          getCollectionListForBrand(user.uid).catch(() => []), 
+        ]);
+
+        if (mounted) {
+          setEvents(eventsData);
+          setBrandData(brand);
+          setProducts(productsList);
+          setCollections(collectionsList);
+        }
+
       } catch (err) {
-        console.error("Error loading dashboard data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load dashboard data");
-      } finally {
-        setLoading(false);
-      }
+        if (mounted) {
+          console.error("Error loading dashboard data:", err);
+          setError(err instanceof Error ? err.message : "Failed to load dashboard data");
+          setLoading(false);
+        }
+      } 
     };
 
-    loadData();
+    loadCriticalData();
+
+    return () => { mounted = false; };
   }, [user?.uid]);
 
   // Computed dashboard data
@@ -380,6 +411,56 @@ export function useDashboard(): UseDashboardReturn {
       })
       .slice(0, 10) as unknown as OrderWithVendorStatus[];
 
+    // Calculate Drop Performance (Collection vs Collection)
+    // 1. Map products to drops
+    const productDropMap = new Map<string, string>(); // productId -> dropId
+    products.forEach(p => {
+      if (p.dropId) productDropMap.set(p.id, p.dropId);
+    });
+
+    // 2. Aggregate aggregated revenue by dropId
+    const dropStats = new Map<string, { revenue: number; orders: number }>();
+    filteredStoreOrders.forEach(order => {
+      order.lineItems.forEach(line => {
+        if (line._type === "product") {
+          const dropId = productDropMap.get(line.productId);
+          if (dropId) {
+             if (!dropStats.has(dropId)) {
+               dropStats.set(dropId, { revenue: 0, orders: 0 });
+             }
+             const stat = dropStats.get(dropId)!;
+             stat.revenue += line.subtotalMinor;
+             stat.orders += line.qty; // Approximate orders as units sold for velocity, or use unique orders logic if needed
+          }
+        }
+      });
+    });
+
+    // 3. Sort collections by launch date
+    const sortedCollections = [...collections].sort((a, b) => {
+        const dateA = a.launchDate instanceof Date ? a.launchDate : new Date(a.launchDate || 0);
+        const dateB = b.launchDate instanceof Date ? b.launchDate : new Date(b.launchDate || 0);
+        return dateB.getTime() - dateA.getTime(); // Descending (newest first)
+    });
+
+    // 4. Get Current (Newest) and Previous
+    const currentDrop = sortedCollections[0];
+    const previousDrop = sortedCollections[1];
+
+    const dropPerformance = {
+      current: currentDrop ? {
+        name: currentDrop.name,
+        revenue: dropStats.get(currentDrop.id)?.revenue || 0,
+        orders: dropStats.get(currentDrop.id)?.orders || 0,
+      } : null,
+      previous: previousDrop ? {
+        name: previousDrop.name,
+        revenue: dropStats.get(previousDrop.id)?.revenue || 0,
+        orders: dropStats.get(previousDrop.id)?.orders || 0,
+      } : null,
+    };
+
+
     // Calculate refunds (placeholder)
     const refunds = 0;
 
@@ -398,13 +479,16 @@ export function useDashboard(): UseDashboardReturn {
       fulfillmentCounts,
       topSKUs,
       topTicketTypes,
+      topTicketTypes,
       upcomingEvents,
+      dropPerformance,
+      productViews: new Map(), // View data comes from analytics hook in page, but we can structure this if we move analytics here later
       recentOrders,
       walletSummary: walletData.summary || undefined,
       brandData: brandData || undefined,
       hasAnyOrders,
     };
-  }, [user?.uid, vendorScope, storeOrders, eventOrders, storeOrdersLoading, eventOrdersLoading, walletData, walletLoading, filters, events, brandData]);
+  }, [user?.uid, vendorScope, storeOrders, eventOrders, storeOrdersLoading, eventOrdersLoading, walletData, walletLoading, filters, events, brandData, products, collections]);
 
   const refresh = () => {
     refreshEventOrders();

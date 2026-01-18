@@ -22,3 +22,13 @@ export function slugify(s: string) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+export function formatCurrency(amount: number, currency: string = "NGN", options: { compact?: boolean } = {}): string {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: options.compact ? 1 : 2,
+    notation: options.compact ? "compact" : "standard",
+  }).format(amount / 100);
+}

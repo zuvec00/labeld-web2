@@ -16,6 +16,7 @@ import { BrandSpaceData, BrandSpaceKPIs } from "@/hooks/useBrandSpace";
 interface BrandHealthSectionProps {
 	data: BrandSpaceData | null;
 	loading?: boolean;
+	children?: React.ReactNode;
 }
 
 // Tooltip component for explaining metrics
@@ -284,9 +285,12 @@ function BrandGuidance({
 	);
 }
 
+
+
 export default function BrandHealthSection({
 	data,
 	loading = false,
+	children,
 }: BrandHealthSectionProps) {
 	if (loading || !data) {
 		return (
@@ -325,6 +329,12 @@ export default function BrandHealthSection({
 					Is your brand alive? Here's your pulse check.
 				</p>
 			</div>
+
+			{children && (
+				<div className="animate-in fade-in slide-in-from-top-2 duration-500">
+					{children}
+				</div>
+			)}
 
 			<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 				<HeatScoreCard kpis={data.kpis} heatLog={data.heatLog} />

@@ -23,14 +23,17 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
       { label: "Radar", href: "/radar", feature: "brandspace", icon: getNavIcon("Radar") },
       { label: "Pieces", href: "/pieces", feature: "brandspace", icon: getNavIcon("Pieces") },
       { label: "Collections", href: "/collections", feature: "brandspace", icon: getNavIcon("Collections") },
+      { label: "Site Customization", href: "/brand-space/site-customization", feature: "brandspace", icon: getNavIcon("SiteCustomization"),badge: "PRO"  },
     ],
   },
   {
     title: "Analytics",
     items: [
-      { label: "Insights", href: "/insights", icon: getNavIcon("Insights") },
-      { label: "Performance", href: "/performance", icon: getNavIcon("Performance") },
-      { label: "Reports", href: "/reports", icon: getNavIcon("Reports") },
+      { label: "Overview", href: "/analytics/overview", icon: getNavIcon("Overview") },
+      { label: "Storefront", href: "/storefront-analytics", icon: getNavIcon("StorefrontAnalytics"), badge: "PRO" }, // Gated
+      { label: "Marketplace", href: "/marketplace-analytics", icon: getNavIcon("MarketplaceAnalytics") },
+      { label: "Events", href: "/events-analytics", icon: getNavIcon("EventsAnalytics") },
+      // { label: "Reports", href: "/reports", icon: getNavIcon("Reports"), badge: "PRO" }, // Gated
     ],
   },
   {
@@ -44,6 +47,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
   {
     title: "General",
     items: [
+      // { label: "Pricing", href: "/pricing", icon: getNavIcon("Pricing") },
       { label: "Settings", href: "/settings", icon: getNavIcon("Settings") },
       // { label: "Help Desk", href: "/help", icon: getNavIcon("Help") },
     ],

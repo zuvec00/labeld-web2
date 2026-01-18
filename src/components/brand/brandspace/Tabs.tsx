@@ -11,9 +11,9 @@ export default function BrandTabs({ uid }: { uid: string }) {
 	const [tab, setTab] = useState(0);
 
 	return (
-		<div className="mt-6">
+		<div>
 			{/* Sticky tab bar */}
-			<div className="sticky top-0 z-10 bg-bg/95 backdrop-blur border-b border-stroke">
+			<div className=" top-16 sm:top-[72px] z-30 bg-bg/95 backdrop-blur border-b border-stroke">
 				<div className="overflow-x-auto">
 					<div className="flex gap-6 px-4 sm:px-6">
 						{TAB_LABELS.map((t, i) => {

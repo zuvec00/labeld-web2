@@ -17,6 +17,7 @@ interface PerformanceTimelineControlsProps {
 		customRange?: { start: Date; end: Date }
 	) => void;
 	loading?: boolean;
+	disabled?: boolean;
 }
 
 const TIMELINE_OPTIONS: { value: PerformanceRange; label: string }[] = [
@@ -60,6 +61,7 @@ export default function PerformanceTimelineControls({
 	value,
 	onChange,
 	loading = false,
+	disabled = false,
 }: PerformanceTimelineControlsProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const [showCustomPicker, setShowCustomPicker] = useState(false);
@@ -122,17 +124,21 @@ export default function PerformanceTimelineControls({
 		<div className="flex flex-col gap-3">
 			<div className="flex items-center gap-3">
 				{/* Desktop: Button group */}
-				<div className="hidden sm:flex gap-1 p-1 bg-surface border border-stroke rounded-lg">
+				<div
+					className={`hidden sm:flex gap-1 p-1 bg-surface border border-stroke rounded-lg ${
+						disabled ? "opacity-50 cursor-not-allowed" : ""
+					}`}
+				>
 					{TIMELINE_OPTIONS.map((option) => (
 						<button
 							key={option.value}
-							onClick={() => handleRangeChange(option.value)}
-							disabled={loading}
+							onClick={() => !disabled && handleRangeChange(option.value)}
+							disabled={loading || disabled}
 							className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
 								value === option.value
 									? "bg-text text-bg shadow-sm"
 									: "text-text-muted hover:text-text hover:bg-bg"
-							} ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+							} ${loading || disabled ? "opacity-50 cursor-not-allowed" : ""}`}
 						>
 							{option.label}
 						</button>

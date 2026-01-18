@@ -3,7 +3,7 @@ import React, { useMemo } from "react";
 import { Spinner } from "./spinner";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-	text: string;
+	text?: string;
 	variant?:
 		| "primary"
 		| "cta"
@@ -18,6 +18,7 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 	loadingText?: string;
 	leftIcon?: React.ReactNode;
 	rightIcon?: React.ReactNode;
+	children?: React.ReactNode;
 };
 
 export function Button({
@@ -30,6 +31,7 @@ export function Button({
 	leftIcon,
 	rightIcon,
 	disabled,
+	children,
 	...props
 }: ButtonProps) {
 	const style = useMemo(() => {
@@ -72,6 +74,8 @@ export function Button({
 					<Spinner size="sm" className="mr-1" />
 					<span>{loadingText ?? text}</span>
 				</>
+			) : children ? (
+				children
 			) : (
 				<>
 					{leftIcon}
@@ -84,7 +88,7 @@ export function Button({
 }
 
 export type ButtonProps2 = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-	text?: string; // optional now, because you may only want icons
+	text?: string;
 	variant?:
 		| "primary"
 		| "cta"
@@ -92,8 +96,10 @@ export type ButtonProps2 = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 		| "secondary"
 		| "disabled"
 		| "danger"
-		| "calmAccent2";
-	outlineColor?: string; // for outline variant
+		| "calmAccent2"
+		| "ghost"; // Added ghost
+	size?: "sm" | "md" | "lg"; // Added size
+	outlineColor?: string;
 	className?: string;
 	isLoading?: boolean;
 	loadingText?: string;
@@ -104,6 +110,7 @@ export type ButtonProps2 = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Button2({
 	text,
 	variant = "primary",
+	size = "md",
 	outlineColor = "cta",
 	className,
 	isLoading = false,
@@ -111,8 +118,9 @@ export function Button2({
 	leftIcon,
 	rightIcon,
 	disabled,
+	children,
 	...props
-}: ButtonProps) {
+}: ButtonProps2 & { children?: React.ReactNode }) {
 	const style = useMemo(() => {
 		switch (variant) {
 			case "cta":
@@ -127,10 +135,23 @@ export function Button2({
 				return "bg-stroke text-text-muted cursor-not-allowed";
 			case "danger":
 				return "bg-alert text-text border-alert";
+			case "ghost":
+				return "bg-transparent text-text hover:bg-surface border border-transparent";
 			default: // "primary"
 				return "bg-accent text-bg";
 		}
 	}, [variant, outlineColor]);
+
+	const sizeStyle = useMemo(() => {
+		switch (size) {
+			case "sm":
+				return "px-3 py-1.5 text-sm";
+			case "lg":
+				return "px-6 py-4 text-lg";
+			default:
+				return "px-4 py-3";
+		}
+	}, [size]);
 
 	const isDisabled = disabled || isLoading;
 
@@ -140,10 +161,11 @@ export function Button2({
 			disabled={isDisabled}
 			aria-busy={isLoading || undefined}
 			className={[
-				"group rounded-[12px] px-4 py-3 font-semibold transition",
+				"group rounded-[12px] font-semibold transition",
 				isDisabled ? "opacity-70 cursor-not-allowed" : "hover:opacity-90",
 				"inline-flex items-center justify-center gap-2",
 				style,
+				sizeStyle,
 				className || "",
 			].join(" ")}
 		>
@@ -155,7 +177,8 @@ export function Button2({
 			) : (
 				<>
 					{leftIcon}
-					{text && <span>{text}</span>}
+					{/* Prioritize children, then text */}
+					{children ? children : text && <span>{text}</span>}
 					{rightIcon}
 				</>
 			)}

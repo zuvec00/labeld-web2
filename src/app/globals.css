@@ -12,6 +12,7 @@
 /* Tailwind v4 tokens */
 @theme inline {
   --font-sans: var(--font-manrope);
+  --font-manrope: var(--font-manrope);
   --font-heading: var(--font-unbounded);
   /* Colors (AppColors) */
   --color-bg: #0B0B0B;

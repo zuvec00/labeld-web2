@@ -1,4 +1,5 @@
 // lib/firebase/queries/storeOrders.ts
+// Force recompile
 import { 
   collection, 
   query, 
@@ -490,3 +491,43 @@ export async function getStoreOrderCounts(userId: string): Promise<{
         return { awaiting_fulfillment: 0, unpaid: 0, completed: 0, total: 0 };
     }
 }
+
+// Get ALL store orders for a brand within a date range (for export)
+export async function getAllStoreOrders(
+  userId: string,
+  startDate?: Date,
+  endDate?: Date
+): Promise<StoreOrderDoc[]> {
+  try {
+    const userDoc = await getDoc(doc(db, "users", userId));
+    if (!userDoc.exists()) throw new Error("User not found");
+    const brandId = userDoc.data().brandId || userId;
+
+    let q = query(
+      collection(db, "storeOrders"),
+      where("brandId", "==", brandId),
+      orderBy("createdAt", "desc")
+    );
+
+    // Safety limit for exports
+    q = query(q, limit(2000)); 
+
+    const snapshot = await getDocs(q);
+    let orders = snapshot.docs.map(parseStoreOrder);
+
+    if (startDate && endDate) {
+      const startMs = startDate.getTime();
+      const endMs = endDate.getTime();
+      orders = orders.filter(o => {
+        const t = o.createdAt.toDate().getTime();
+        return t >= startMs && t <= endMs;
+      });
+    }
+
+    return orders;
+  } catch (error) {
+    console.error("Error fetching all store orders for export:", error);
+    return [];
+  }
+}
+

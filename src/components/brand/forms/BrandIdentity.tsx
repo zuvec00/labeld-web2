@@ -22,7 +22,8 @@ const BRAND_TYPES = [
 ];
 
 export default function BrandIdentityForm() {
-	const { brandName, brandUsername, brandCategory, set } = useBrandOnboard();
+	const { brandName, brandUsername, brandCategory, phoneNumber, set } =
+		useBrandOnboard();
 
 	const usernameError = useMemo(() => {
 		if (!brandUsername) return undefined;
@@ -68,6 +69,19 @@ export default function BrandIdentityForm() {
 					<p className="mt-2 text-xs text-alert">{usernameError}</p>
 				)}
 			</div>
+
+			{/* Phone Number - User requested to hide/skip for now */}
+			{/* <div className="mt-4">
+				<label className="block text-sm text-text-muted mb-1">
+					Phone Number <span className="text-cta">*</span>
+				</label>
+				<input
+					value={phoneNumber}
+					onChange={(e) => set("phoneNumber", e.target.value)}
+					placeholder="+234..."
+					className="w-full rounded-xl  border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
+				/>
+			</div> */}
 
 			{/* Category */}
 			<div className="mt-4">

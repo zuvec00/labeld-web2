@@ -366,7 +366,7 @@ export default function EventOrganizerOnboardingModal({
 			/>
 
 			{/* Modal Content */}
-			<div className="relative bg-bg border border-stroke rounded-2xl max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+			<div className="relative bg-bg border border-stroke rounded-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
 				{/* Header */}
 				<div className="flex items-center justify-between p-6 border-b border-stroke">
 					<div className="flex items-center gap-4">
@@ -515,7 +515,7 @@ export default function EventOrganizerOnboardingModal({
 									later.
 								</p>
 							</div>
-							<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+							<div className="grid grid-cols-1 lg:grid-cols-1 gap-4">
 								<div>
 									<h4 className="font-medium mb-4">Organizer Identity</h4>
 									<EventIdentityForm />

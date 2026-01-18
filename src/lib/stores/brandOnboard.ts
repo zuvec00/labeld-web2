@@ -10,6 +10,7 @@ export type BrandOnboardState = {
   // Step 1
   brandName: string;
   brandUsername: string; // @handle rules applied in UI
+  phoneNumber: string;   // NEW
   brandCategory: string | null;
   logoFile: File | null;  // local file before upload
   coverFile: File | null; // local file before upload
@@ -31,6 +32,7 @@ export type BrandOnboardState = {
 export const useBrandOnboard = create<BrandOnboardState>((set) => ({
   brandName: "",
   brandUsername: "",
+  phoneNumber: "",
   brandCategory: null,
   logoFile: null,
   coverFile: null,
@@ -46,6 +48,7 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
     set({
       brandName: "",
       brandUsername: "",
+      phoneNumber: "",
       brandCategory: null,
       logoFile: null,
       coverFile: null,
@@ -63,24 +66,16 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
  * BrandModel (matches Flutter BrandModel)
  * - Use for persisted brand objects (Firestore/Hive equivalent)
  ***************************************/
-export interface BrandModel {
-  uid: string;
-  brandName: string;
-  username: string;
-  bio?: string | null;
-  category: string;
-  brandTags?: string[] | null;
-  logoUrl: string;
-  coverImageUrl?: string | null;
-  state?: string | null;
-  country?: string | null;
-  createdAt: Date; // mirror Flutter DateTime
-  updatedAt: Date; // mirror Flutter DateTime
-  heat: number;
-  instagram?: string | null;
-  youtube?: string | null;
-  tiktok?: string | null;
-}
+import { BrandModel } from "../models/brand"; // Import the model
+import { Timestamp } from "firebase/firestore";
+
+// ... (BrandOnboardState definition remains) ...
+
+/***************************************
+ * BrandModel (matches Flutter BrandModel)
+ * - Use for persisted brand objects (Firestore/Hive equivalent)
+ ***************************************/
+// Deleted local interface
 
 /***************************************
  * Firestore converters
@@ -88,9 +83,9 @@ export interface BrandModel {
  * - toFirestore: BrandModel -> plain object (with location object)
  ***************************************/
 
-// Helper type guard for Firebase Timestamp without importing SDK types
-function isTimestamp(v: any): v is { toDate: () => Date } {
-  return v && typeof v.toDate === "function";
+// Helper to check if object is Firestore Timestamp
+function isTimestamp(val: any): val is Timestamp {
+  return val && typeof val.toDate === "function";
 }
 
 export function brandFromFirestore(map: any): BrandModel {
@@ -113,6 +108,7 @@ export function brandFromFirestore(map: any): BrandModel {
     uid: String(map?.uid ?? ""),
     brandName: String(map?.brandName ?? ""),
     username: String(map?.username ?? ""),
+    phoneNumber: map?.phoneNumber ?? null,
     bio: map?.bio ?? null,
     category: String(map?.category ?? ""),
     brandTags: Array.isArray(map?.brandTags)
@@ -131,6 +127,30 @@ export function brandFromFirestore(map: any): BrandModel {
     instagram: map?.instagram ?? null,
     youtube: map?.youtube ?? null,
     tiktok: map?.tiktok ?? null,
+    subscriptionTier: map?.subscriptionTier ?? "free", // Default to free if missing
+    brandSlug: map?.brandSlug ?? undefined,
+    
+    // New Subscription Fields
+    subscriptionId: map?.subscriptionId ?? null,
+    subscriptionStatus: map?.subscriptionStatus ?? undefined, // 'undefined' allows clean check
+    subscriptionStartedAt: map?.subscriptionStartedAt ?? null, // Expecting Timestamp or null
+    subscriptionEndsAt: map?.subscriptionEndsAt ?? null,
+    billingCycle: map?.billingCycle ?? null,
+
+    // Acquisition Survey
+    acquisitionSurvey: map?.acquisitionSurvey
+      ? {
+          source: map.acquisitionSurvey.source ?? "",
+          subSource: map.acquisitionSurvey.subSource ?? undefined,
+          otherDetail: map.acquisitionSurvey.otherDetail ?? undefined,
+          skipped: map.acquisitionSurvey.skipped ?? false,
+          respondedAt: isTimestamp(map.acquisitionSurvey.respondedAt)
+            ? map.acquisitionSurvey.respondedAt.toDate()
+            : map.acquisitionSurvey.respondedAt instanceof Date
+            ? map.acquisitionSurvey.respondedAt
+            : new Date(),
+        }
+      : null,
   };
 }
 
@@ -139,6 +159,8 @@ export function brandToFirestore(model: BrandModel) {
     uid: model.uid,
     brandName: model.brandName,
     username: model.username,
+    brandSlug: model.brandSlug ?? null,
+    phoneNumber: model.phoneNumber ?? null,
     bio: model.bio ?? null,
     category: model.category,
     brandTags: model.brandTags ?? null,
@@ -157,6 +179,17 @@ export function brandToFirestore(model: BrandModel) {
     instagram: model.instagram ?? null,
     youtube: model.youtube ?? null,
     tiktok: model.tiktok ?? null,
+    
+    // Subscription Fields
+    subscriptionTier: model.subscriptionTier ?? "free",
+    subscriptionId: model.subscriptionId ?? null,
+    subscriptionStatus: model.subscriptionStatus ?? null,
+    subscriptionStartedAt: model.subscriptionStartedAt ?? null,
+    subscriptionEndsAt: model.subscriptionEndsAt ?? null,
+    billingCycle: model.billingCycle ?? null,
+
+    // Acquisition Survey
+    acquisitionSurvey: model.acquisitionSurvey ?? null,
   };
 }
 
@@ -173,6 +206,7 @@ export function buildNewBrandFromOnboard(
     uid,
     brandName: s.brandName.trim(),
     username: s.brandUsername.trim().toLowerCase(),
+    phoneNumber: s.phoneNumber.trim() || null,
     bio: s.bio || null,
     category: s.brandCategory || "",
     brandTags: s.tags?.length ? s.tags.slice(0, 3) : null,
@@ -186,6 +220,7 @@ export function buildNewBrandFromOnboard(
     instagram: s.instagram || null,
     youtube: s.youtube || null,
     tiktok: s.tiktok || null,
+    subscriptionTier: "free",
   };
 }
 

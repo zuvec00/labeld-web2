@@ -97,6 +97,7 @@ export function BrandSpaceView({ uid }: { uid: string }) {
 				joinedAt={toJSDate(brand.createdAt)}
 				productCount={productStats.count}
 				lastDropDate={productStats.lastDrop}
+				subscriptionTier={brand.subscriptionTier}
 			/>
 
 			<BrandTabs uid={uid} />

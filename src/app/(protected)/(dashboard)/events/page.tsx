@@ -38,6 +38,7 @@ export default function EventsIndexPage() {
 	const [ticketStats, setTicketStats] = useState<
 		Record<string, OrderBasedTicketStats>
 	>({});
+	const [isOrganizer, setIsOrganizer] = useState(false);
 	const [showEventOrganizerModal, setShowEventOrganizerModal] = useState(false);
 
 	useEffect(() => {
@@ -55,11 +56,13 @@ export default function EventsIndexPage() {
 				if (!mounted) return;
 
 				if (!hasProfile) {
+					setIsOrganizer(false);
 					setShowEventOrganizerModal(true);
 					setLoading(false);
 					return;
 				}
 
+				setIsOrganizer(true);
 				const data = await listMyEventsLite(uid);
 				if (!mounted) return;
 				setEvents(data);
@@ -135,6 +138,39 @@ export default function EventsIndexPage() {
 		return (
 			<div className="min-h-dvh grid place-items-center">
 				<Spinner size="lg" />
+			</div>
+		);
+	}
+
+	// Gate content for non-organizers
+	if (!isOrganizer) {
+		return (
+			<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-6xl mx-auto flex flex-col items-center justify-center text-center">
+				<div className="max-w-md space-y-6">
+					<div className="w-16 h-16 bg-surface border border-stroke rounded-2xl flex items-center justify-center mx-auto shadow-sm">
+						<Ticket className="w-8 h-8 text-accent" />
+					</div>
+					<div className="space-y-2">
+						<h1 className="font-heading font-semibold text-2xl">
+							Become an Event Organizer
+						</h1>
+						<p className="text-text-muted">
+							Set up your organizer profile to start creating events and selling
+							tickets on Labeld.
+						</p>
+					</div>
+					<Button
+						variant="primary"
+						className="w-full justify-center"
+						text="Set Up Organizer Profile"
+						onClick={() => setShowEventOrganizerModal(true)}
+					/>
+				</div>
+				<EventOrganizerOnboardingModal
+					isOpen={showEventOrganizerModal}
+					onClose={() => setShowEventOrganizerModal(false)}
+					onComplete={handleEventOrganizerComplete}
+				/>
 			</div>
 		);
 	}

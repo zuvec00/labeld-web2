@@ -12,10 +12,15 @@ import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
 import {
 	fetchBrandById,
 	isBrandUsernameTaken,
+	isBrandSlugTaken,
 	updateBrandProfile,
 } from "@/lib/firebase/queries/brandspace";
 import { BrandModel, useBrandOnboard } from "@/lib/stores/brandOnboard";
 import countriesJson from "@/data/countries_and_states.json";
+import { doc, getFirestore, updateDoc } from "firebase/firestore";
+import { useDashboardContext } from "@/hooks/useDashboardContext";
+import { Check, Copy, Loader2, X } from "lucide-react";
+import { useToast } from "@/app/hooks/use-toast";
 
 // Types for the JSON
 type RawState = { name: string; state_code?: string };
@@ -237,12 +242,26 @@ export default function EditBrandProfilePage() {
 	// form
 	const [brandName, setBrandName] = useState("");
 	const [username, setUsername] = useState("");
+	const [phoneNumber, setPhoneNumber] = useState("");
 	const [bio, setBio] = useState("");
 	const [category, setCategory] = useState<string | null>(null);
 	const [brandTags, setBrandTags] = useState<string[]>([]);
 	const [instagram, setInstagram] = useState("");
 	const [youtube, setYoutube] = useState("");
 	const [tiktok, setTiktok] = useState("");
+
+	// Slug State
+	const [brandSlug, setBrandSlug] = useState("");
+	const [initialSlug, setInitialSlug] = useState("");
+	const [isEditingSlug, setIsEditingSlug] = useState(false);
+	const [slugError, setSlugError] = useState<string | null>(null);
+	const [checkingSlug, setCheckingSlug] = useState(false);
+	const [slugAvailable, setSlugAvailable] = useState(false);
+	const [savingSlug, setSavingSlug] = useState(false);
+
+	const { roleDetection } = useDashboardContext();
+	const { toast } = useToast();
+	const isPro = roleDetection?.brandSubscriptionTier === "pro";
 
 	// locations
 	// ✅ use your store
@@ -259,14 +278,15 @@ export default function EditBrandProfilePage() {
 	// ✅ build lists from the imported JSON (no network)
 	const { COUNTRY_LIST, COUNTRY_TO_STATES } = useMemo(() => {
 		const payload = countriesJson as CountriesPayload;
-		const list = (payload.data ?? []).map((c) => c.name);
+		// Use Set to remove duplicates immediately
+		const list = Array.from(new Set((payload.data ?? []).map((c) => c.name)));
 		const map: Record<string, string[]> = {};
 		for (const c of payload.data ?? []) {
 			map[c.name] = (c.states ?? [])
 				.map((s) => s?.name)
 				.filter(Boolean) as string[];
 		}
-		return { COUNTRY_LIST: list, COUNTRY_TO_STATES: map };
+		return { COUNTRY_LIST: list.sort(), COUNTRY_TO_STATES: map };
 	}, []);
 
 	const states = country ? COUNTRY_TO_STATES[country] ?? [] : [];
@@ -299,6 +319,12 @@ export default function EditBrandProfilePage() {
 				setBrandTags(b.brandTags ?? []);
 				setLogoUrl(b.logoUrl ?? null);
 				setCoverImageUrl(b.coverImageUrl ?? null);
+
+				// Slug Logic: Default to brandSlug if exists, else fallback to username
+				const slug = b.brandSlug || b.username || "";
+				setBrandSlug(slug);
+				setInitialSlug(slug);
+
 				set("country", b.country ?? null);
 				set("state", b.state ?? null);
 				setInstagram(b.instagram ?? "");
@@ -421,6 +447,7 @@ export default function EditBrandProfilePage() {
 			await updateBrandProfile(uid, {
 				brandName: brandName.trim(),
 				username: uname,
+				phoneNumber: phoneNumber.trim() || null,
 				bio: bio.trim() || null,
 				category: category || undefined,
 				brandTags,
@@ -432,6 +459,18 @@ export default function EditBrandProfilePage() {
 				youtube: youtube.trim() || null,
 				tiktok: tiktok.trim() || null,
 			});
+
+			// DUPLICATE SAVE: Update user collection with phone number
+			if (phoneNumber.trim()) {
+				try {
+					const db = getFirestore();
+					await updateDoc(doc(db, "users", uid), {
+						phoneNumber: phoneNumber.trim(),
+					});
+				} catch (err) {
+					console.error("Failed to sync phone number to user doc", err);
+				}
+			}
 
 			router.push("/brand-space"); // or your profile page
 		} catch (e: any) {
@@ -469,6 +508,214 @@ export default function EditBrandProfilePage() {
 			</div>
 
 			<div className="px-4 sm:px-6 mt-6 space-y-4">
+				{/* Public Store URL */}
+				<Group>
+					<div className="flex items-center justify-between mb-2">
+						<Label text="Public Store URL" />
+						{!isEditingSlug && (
+							<div className="flex items-center gap-2">
+								<button
+									onClick={() => {
+										navigator.clipboard.writeText(
+											`https://${brandSlug}.labeld.app`
+										);
+										toast({ description: "Link copied" });
+									}}
+									className="text-xs font-medium text-text-muted hover:text-text flex items-center gap-1.5 transition-colors"
+								>
+									<Copy className="w-3 h-3" />
+									Copy link
+								</button>
+								{isPro ? (
+									<button
+										onClick={() => setIsEditingSlug(true)}
+										className="text-xs font-medium text-cta hover:underline"
+									>
+										Edit
+									</button>
+								) : (
+									<span className="text-xs text-text-muted flex items-center gap-1">
+										<span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+										Pro
+									</span>
+								)}
+							</div>
+						)}
+					</div>
+
+					{isEditingSlug ? (
+						<div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+							<div className="relative">
+								<div className="flex items-center w-full rounded-xl border border-stroke bg-surface focus-within:border-accent transition-colors overflow-hidden">
+									<input
+										value={brandSlug}
+										onChange={(e) => {
+											const val = e.target.value
+												.toLowerCase()
+												.replace(/[^a-z0-9-]/g, ""); // Basic input masking
+											setBrandSlug(val);
+											setSlugError(null);
+											setSlugAvailable(false);
+
+											// 3-30 chars, start w/ letter, no spaces (implied by masking)
+											if (val.length < 3) {
+												setSlugError("Too short (min 3 chars)");
+												return;
+											}
+											if (!/^[a-z]/.test(val)) {
+												setSlugError("Must start with a letter");
+												return;
+											}
+											if (val.length > 30) {
+												setSlugError("Too long");
+												return;
+											}
+
+											// Check if unchanged
+											if (val === initialSlug) {
+												setSlugAvailable(true);
+												return;
+											}
+
+											// Debounced availability check
+											setCheckingSlug(true);
+											const timeout = setTimeout(async () => {
+												const taken = await isBrandSlugTaken(val, brand?.uid);
+												setCheckingSlug(false);
+												if (taken) {
+													setSlugError("Already taken");
+													setSlugAvailable(false);
+												} else {
+													setSlugAvailable(true);
+													setSlugError(null);
+												}
+											}, 500);
+											return () => clearTimeout(timeout);
+										}}
+										className="flex-1 bg-transparent px-3 py-2 outline-none text-text placeholder:text-text-muted font-medium"
+										placeholder="yourslug"
+										autoFocus
+									/>
+									<div className="px-3 py-2 bg-surface-neutral text-text-muted border-l border-stroke text-sm font-medium">
+										.labeld.app
+									</div>
+								</div>
+
+								{/* Availability Indicator */}
+								<div className="absolute right-[6.5rem] top-1/2 -translate-y-1/2">
+									{checkingSlug ? (
+										<Loader2 className="w-4 h-4 animate-spin text-text-muted" />
+									) : slugError ? (
+										<X className="w-4 h-4 text-alert" />
+									) : slugAvailable ? (
+										<Check className="w-4 h-4 text-green-500" />
+									) : null}
+								</div>
+							</div>
+
+							{slugError && <p className="text-xs text-alert">{slugError}</p>}
+							{slugAvailable && !slugError && brandSlug !== initialSlug && (
+								<p className="text-xs text-green-600">✓ Available</p>
+							)}
+
+							<div className="flex items-center gap-2 pt-1">
+								<Button
+									size="sm"
+									variant="secondary"
+									onClick={() => {
+										setIsEditingSlug(false);
+										setBrandSlug(initialSlug); // Reset
+										setSlugError(null);
+									}}
+								>
+									Cancel
+								</Button>
+								<Button
+									size="sm"
+									disabled={
+										!slugAvailable ||
+										!!slugError ||
+										brandSlug === initialSlug ||
+										checkingSlug ||
+										savingSlug
+									}
+									onClick={async () => {
+										if (!brand) return;
+										setSavingSlug(true);
+										try {
+											// Final safety check
+											const taken = await isBrandSlugTaken(
+												brandSlug,
+												brand.uid
+											);
+											if (taken) {
+												setSlugError("Already taken");
+												setSavingSlug(false);
+												return;
+											}
+
+											await updateBrandProfile(brand.uid, {
+												brandSlug: brandSlug,
+											});
+											setInitialSlug(brandSlug);
+											setIsEditingSlug(false);
+											toast({ title: "Public store URL updated" });
+										} catch (e) {
+											toast({
+												title: "Failed to update URL",
+												variant: "destructive",
+											});
+										} finally {
+											setSavingSlug(false);
+										}
+									}}
+								>
+									{savingSlug ? (
+										<Loader2 className="w-4 h-4 animate-spin" />
+									) : (
+										"Save URL"
+									)}
+								</Button>
+							</div>
+						</div>
+					) : (
+						<div className="space-y-3">
+							<div className="flex items-center justify-between p-3 bg-surface-neutral/30 rounded-xl border border-dashed border-stroke">
+								<span className="font-heading font-medium text-text text-lg tracking-tight">
+									{brandSlug}.labeld.app
+								</span>
+							</div>
+							{!isPro && (
+								<div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/30 rounded-lg p-3 flex items-start gap-3">
+									<div className="mt-0.5">
+										<div className="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center text-[10px] font-bold text-white">
+											★
+										</div>
+									</div>
+									<div>
+										<p className="text-xs font-medium text-amber-900 dark:text-amber-200 mb-1">
+											Custom Store URL
+										</p>
+										<p className="text-xs text-amber-700 dark:text-amber-300/80 leading-relaxed mb-2">
+											Upgrade to Pro to customize your storefront link (e.g.{" "}
+											<span className="font-mono">brand.labeld.app</span>).
+										</p>
+										<button
+											onClick={() => router.push("/pricing")}
+											className="text-xs font-semibold text-amber-800 dark:text-amber-200 hover:underline"
+										>
+											Upgrade to Pro →
+										</button>
+									</div>
+								</div>
+							)}
+							<p className="text-text-muted text-sm">
+								This is your public storefront link.
+							</p>
+						</div>
+					)}
+				</Group>
+
 				{/* Brand & Username & Category */}
 				<Group>
 					<Label text="Brand Name" required />
@@ -497,6 +744,16 @@ export default function EditBrandProfilePage() {
 							placeholder="This is your brand's @handle"
 						/>
 						<ErrorText text={usernameError} />
+					</div>
+
+					<div className="mt-4">
+						<Label text="Phone Number" required />
+						<input
+							className={baseField()}
+							value={phoneNumber}
+							onChange={(e) => setPhoneNumber(e.target.value)}
+							placeholder="+234..."
+						/>
 					</div>
 
 					<div className="mt-4">

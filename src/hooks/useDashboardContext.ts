@@ -1,10 +1,9 @@
-// hooks/useDashboardContext.ts
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, db } from "@/lib/firebase/firebaseConfig";
-import { doc, getDoc, collection, query, where, getCountFromServer } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 
 export type DashboardRole = "brand" | "eventOrganizer";
 
@@ -14,7 +13,23 @@ interface RoleDetectionResult {
   hasPieces: boolean;
   hasEvents: boolean;
   brandName?: string;
+  phoneNumber?: string | null;
   organizerName?: string;
+  brandPhoneNumber?: string | null;
+  brandSubscriptionTier?: "free" | "pro";
+  brandSubscriptionStatus?: "active" | "expired" | "past_due" | "cancelled";
+  brandBillingCycle?: "monthly" | "quarterly" | "biannual" | "annual";
+  brandSubscriptionEndsAt?: Date;
+  brandUsername?: string;
+  brandSlug?: string;
+  brandLogoUrl?: string;
+  acquisitionSurvey?: {
+    source: string;
+    subSource?: string;
+    otherDetail?: string;
+    skipped?: boolean;
+    respondedAt: Date;
+  } | null;
 }
 
 interface UseDashboardContextReturn {
@@ -51,92 +66,142 @@ export function useDashboardContext(): UseDashboardContextReturn {
       return;
     }
 
-    const detectRole = async () => {
+    setLoading(true);
+
+    // We need to manage subscriptions
+    let unsubscribeBrand: (() => void) | undefined;
+    let unsubscribeOrganizer: (() => void) | undefined;
+
+    const setupListeners = async () => {
+       const { db } = await import("@/lib/firebase/firebaseConfig");
+       const { doc, onSnapshot } = await import("firebase/firestore");
+       
+       // Real-time listener for Event Organizer Profile
+       unsubscribeOrganizer = onSnapshot(doc(db, "eventOrganizers", user.uid), async (snap) => {
+           const hasEventOrganizerProfile = snap.exists();
+           const organizerName = hasEventOrganizerProfile ? snap.data().organizerName : undefined;
+           
+           updateDetectionState((prev) => ({
+               ...prev,
+               hasEventOrganizerProfile,
+               organizerName
+           }));
+       });
+
+       // Real-time listener for Brand Profile
+       unsubscribeBrand = onSnapshot(doc(db, "brands", user.uid), async (snap) => {
+           const hasBrandProfile = snap.exists();
+           const brandName = hasBrandProfile ? snap.data().brandName : undefined;
+           const brandUsername = hasBrandProfile ? snap.data().username : undefined;
+           const brandSlug = hasBrandProfile ? (snap.data().brandSlug || snap.data().username) : undefined;
+           const brandLogoUrl = hasBrandProfile ? snap.data().logoUrl : undefined;
+           const brandPhoneNumber = hasBrandProfile ? snap.data().phoneNumber : undefined;
+           const brandSubscriptionTier = hasBrandProfile 
+               ? (snap.data().subscriptionTier as "free" | "pro" | undefined) 
+               : undefined;
+
+           // Subscription Details
+           const brandSubscriptionStatus = hasBrandProfile 
+               ? (snap.data().subscriptionStatus as any) 
+               : undefined;
+           const brandBillingCycle = hasBrandProfile 
+               ? (snap.data().billingCycle as any) 
+               : undefined;
+           
+           // Handle Timestamp conversion safely
+           const endsAtRaw = hasBrandProfile ? snap.data().subscriptionEndsAt : undefined;
+           const brandSubscriptionEndsAt = endsAtRaw && typeof endsAtRaw.toDate === 'function' 
+               ? endsAtRaw.toDate() 
+               : undefined;
+
+           // Acquisition Survey
+           const surveyRaw = hasBrandProfile ? snap.data().acquisitionSurvey : undefined;
+           const acquisitionSurvey = surveyRaw ? {
+               ...surveyRaw,
+               respondedAt: surveyRaw.respondedAt && typeof surveyRaw.respondedAt.toDate === 'function' 
+                   ? surveyRaw.respondedAt.toDate() 
+                   : (surveyRaw.respondedAt instanceof Date ? surveyRaw.respondedAt : new Date())
+           } : undefined;
+
+           updateDetectionState((prev) => ({
+               ...prev,
+               hasBrandProfile,
+               brandName,
+               brandUsername,
+               brandSlug,
+               brandLogoUrl,
+               phoneNumber: brandPhoneNumber, 
+               brandPhoneNumber,
+               brandSubscriptionTier,
+               brandSubscriptionStatus,
+               brandBillingCycle,
+               brandSubscriptionEndsAt,
+               acquisitionSurvey
+           }));
+       });
+       
+       checkCounts(user.uid);
+    };
+
+    setupListeners();
+
+    return () => {
+        if (unsubscribeBrand) unsubscribeBrand();
+        if (unsubscribeOrganizer) unsubscribeOrganizer();
+    };
+  }, [user?.uid]);
+
+  // Helper to update state and derive active roles
+  const updateDetectionState = (updater: (prev: RoleDetectionResult) => RoleDetectionResult) => {
+      setRoleDetection(prev => {
+          const defaultState: RoleDetectionResult = {
+              hasEventOrganizerProfile: false,
+              hasBrandProfile: false,
+              hasPieces: false,
+              hasEvents: false,
+          };
+          const newState = updater(prev || defaultState);
+          
+          // Re-calculate derived active roles if needed
+          if (!prev) {
+             // Initial load logic effectively
+             let defaultRole: DashboardRole = "brand";
+                if (newState.hasEventOrganizerProfile && (!newState.hasBrandProfile || !newState.hasPieces)) {
+                    defaultRole = "eventOrganizer";
+                } else if (newState.hasBrandProfile || newState.hasPieces) {
+                    defaultRole = "brand";
+                } else if (newState.hasEventOrganizerProfile || newState.hasEvents) {
+                    defaultRole = "eventOrganizer";
+                }
+                setDetectedRole(defaultRole);
+                if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
+                     setActiveRoleState(defaultRole);
+                }
+          }
+          
+          return newState;
+      });
+      setLoading(false);
+  };
+
+  const checkCounts = async (uid: string) => {
       try {
-        setLoading(true);
+        const { collection, query, where, getCountFromServer } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase/firebaseConfig");
 
-        // Check for event organizer profile
-        const eventOrganizerRef = doc(db, "eventOrganizers", user.uid);
-        const eventOrganizerSnap = await getDoc(eventOrganizerRef);
-        const hasEventOrganizerProfile = eventOrganizerSnap.exists();
-        const organizerName = hasEventOrganizerProfile ? eventOrganizerSnap.data().organizerName : undefined;
-
-        // Check for brand profile
-        const brandRef = doc(db, "brands", user.uid);
-        const brandSnap = await getDoc(brandRef);
-        const hasBrandProfile = brandSnap.exists();
-        const brandName = hasBrandProfile ? brandSnap.data().brandName : undefined;
-
-        // Check for pieces (products)
-        const piecesQuery = query(
-          collection(db, "dropProducts"),
-          where("userId", "==", user.uid)
-        );
+        const piecesQuery = query(collection(db, "dropProducts"), where("userId", "==", uid));
         const piecesCount = await getCountFromServer(piecesQuery);
         const hasPieces = piecesCount.data().count > 0;
 
-        // Check for events
-        const eventsQuery = query(
-          collection(db, "events"),
-          where("createdBy", "==", user.uid)
-        );
+        const eventsQuery = query(collection(db, "events"), where("createdBy", "==", uid));
         const eventsCount = await getCountFromServer(eventsQuery);
         const hasEvents = eventsCount.data().count > 0;
 
-        const detection: RoleDetectionResult = {
-          hasEventOrganizerProfile,
-          hasBrandProfile,
-          hasPieces,
-          hasEvents,
-          brandName,
-          organizerName,
-        };
-        setRoleDetection(detection);
-
-        // Determine default role based on detection
-        // Event Organizer if: has organizer profile AND (no brand profile OR no pieces)
-        // Brand if: has brand profile OR has pieces
-        let defaultRole: DashboardRole = "brand";
-
-        if (hasEventOrganizerProfile && (!hasBrandProfile || !hasPieces)) {
-          defaultRole = "eventOrganizer";
-        } else if (hasBrandProfile || hasPieces) {
-          defaultRole = "brand";
-        } else if (hasEventOrganizerProfile || hasEvents) {
-          defaultRole = "eventOrganizer";
-        }
-
-        setDetectedRole(defaultRole);
-
-        // Check localStorage for saved preference
-        const savedRole = localStorage.getItem(STORAGE_KEY) as DashboardRole | null;
-        
-        // Only use saved role if user has access to that role
-        if (savedRole) {
-          const canUseSavedRole = 
-            (savedRole === "brand" && (hasBrandProfile || hasPieces)) ||
-            (savedRole === "eventOrganizer" && (hasEventOrganizerProfile || hasEvents));
-          
-          if (canUseSavedRole) {
-            setActiveRoleState(savedRole);
-          } else {
-            setActiveRoleState(defaultRole);
-          }
-        } else {
-          setActiveRoleState(defaultRole);
-        }
-
-      } catch (error) {
-        console.error("Error detecting dashboard role:", error);
-        setActiveRoleState("brand"); // Fallback to brand
-        setDetectedRole("brand");
-      } finally {
-        setLoading(false);
+        updateDetectionState(prev => ({ ...prev, hasPieces, hasEvents }));
+      } catch (err) {
+          console.error("Error fetching counts", err);
       }
-    };
-
-    detectRole();
-  }, [user?.uid]);
+  };
 
   // Set active role with persistence
   const setActiveRole = useCallback((role: DashboardRole) => {

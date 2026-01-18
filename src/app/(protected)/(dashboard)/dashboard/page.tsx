@@ -6,6 +6,7 @@ import { useBrandSpace, BrandSpaceFilters } from "@/hooks/useBrandSpace";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { useEventDashboard } from "@/hooks/useEventDashboard";
+import { useAnalytics } from "@/hooks/useAnalytics";
 import BrandSpaceControls from "@/components/dashboard/BrandSpaceControls";
 import BrandHealthSection from "@/components/dashboard/BrandHealthSection";
 import MomentumSection from "@/components/dashboard/MomentumSection";
@@ -16,6 +17,8 @@ import EventRevenueSnapshot from "@/components/dashboard/EventRevenueSnapshot";
 import DashboardContextSwitch from "@/components/dashboard/DashboardContextSwitch";
 import EventTimelineControls from "@/components/dashboard/EventTimelineControls";
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
+import AdvancedHealth from "@/components/pro/AdvancedHealth";
 
 export default function DashboardPage() {
 	const [filters, setFilters] = React.useState<BrandSpaceFilters>({
@@ -44,6 +47,9 @@ export default function DashboardPage() {
 	// Commerce data
 	const { data: dashboardData, loading: dashboardLoading } = useDashboard();
 
+	// Analytics data
+	const { summary: analytics } = useAnalytics();
+
 	// Event dashboard data with timeline
 	const {
 		data: eventData,
@@ -56,6 +62,9 @@ export default function DashboardPage() {
 	const handleFiltersChange = (newFilters: BrandSpaceFilters) => {
 		setFilters(newFilters);
 	};
+
+	// Pro status (for potential Pro-only insights)
+	const isPro = detectionData?.brandSubscriptionTier === "pro";
 
 	// Loading state
 	const loading =
@@ -71,104 +80,6 @@ export default function DashboardPage() {
 					<div className="text-text-muted">
 						Please sign in to view your dashboard
 					</div>
-				</div>
-			</div>
-		);
-	}
-
-	if (loading) {
-		return (
-			<div className="space-y-8">
-				{/* Header */}
-				<div className="flex items-center justify-between">
-					<div>
-						<h1 className="font-heading text-2xl font-semibold">Dashboard</h1>
-						<p className="text-text-muted mt-1">
-							{activeRole === "brand"
-								? "Your brand intelligence overview"
-								: "Your event organizer overview"}
-						</p>
-					</div>
-					<div className="animate-pulse">
-						<div className="h-10 w-40 bg-stroke rounded-lg"></div>
-					</div>
-				</div>
-
-				{/* Skeleton sections */}
-				<div className="space-y-4">
-					<div>
-						<div className="h-6 w-32 bg-stroke rounded animate-pulse mb-2" />
-						<div className="h-4 w-48 bg-stroke rounded animate-pulse" />
-					</div>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-						{[1, 2, 3].map((i) => (
-							<div
-								key={i}
-								className="rounded-xl bg-surface border border-stroke p-5"
-							>
-								<div className="animate-pulse space-y-3">
-									<div className="h-4 w-24 bg-stroke rounded" />
-									<div className="h-10 w-20 bg-stroke rounded" />
-									<div className="h-3 w-32 bg-stroke rounded" />
-								</div>
-							</div>
-						))}
-					</div>
-				</div>
-
-				<div className="space-y-4">
-					<div>
-						<div className="h-6 w-40 bg-stroke rounded animate-pulse mb-2" />
-						<div className="h-4 w-64 bg-stroke rounded animate-pulse" />
-					</div>
-					<div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-						<div className="space-y-4">
-							<div className="h-5 w-32 bg-stroke rounded animate-pulse" />
-							<div className="space-y-3">
-								{[1, 2, 3].map((i) => (
-									<div
-										key={i}
-										className="h-24 rounded-xl bg-stroke animate-pulse"
-									/>
-								))}
-							</div>
-						</div>
-						<div className="space-y-4">
-							<div className="h-5 w-32 bg-stroke rounded animate-pulse" />
-							<div className="space-y-3">
-								{[1, 2, 3].map((i) => (
-									<div
-										key={i}
-										className="h-16 rounded-lg bg-stroke animate-pulse"
-									/>
-								))}
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
-	if (error && activeRole === "brand") {
-		return (
-			<div className="space-y-6">
-				<div>
-					<h1 className="font-heading text-2xl font-semibold">Dashboard</h1>
-					<p className="text-text-muted mt-1">
-						Your brand intelligence overview
-					</p>
-				</div>
-
-				<div className="rounded-lg bg-surface border border-stroke p-8 text-center">
-					<div className="text-red-600 mb-2">Error loading dashboard</div>
-					<div className="text-text-muted mb-4">{error}</div>
-					<button
-						onClick={refresh}
-						className="px-4 py-2 bg-cta text-text rounded-lg hover:bg-cta/90 transition-colors"
-					>
-						Try Again
-					</button>
 				</div>
 			</div>
 		);
@@ -212,8 +123,17 @@ export default function DashboardPage() {
 			<div className="flex flex-col gap-4">
 				<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
 					<div>
-						<h1 className="font-heading text-2xl font-semibold">{title}</h1>
-						<p className="text-text-muted mt-1">{subtitle}</p>
+						{contextLoading ? (
+							<div className="space-y-2">
+								<div className="h-8 w-48 bg-stroke rounded animate-pulse" />
+								<div className="h-4 w-64 bg-stroke rounded animate-pulse" />
+							</div>
+						) : (
+							<>
+								<h1 className="font-heading text-2xl font-semibold">{title}</h1>
+								<p className="text-text-muted mt-1">{subtitle}</p>
+							</>
+						)}
 					</div>
 					<div className="flex items-center gap-3">
 						{activeRole === "brand" && <BrandStoreToggle />}
@@ -232,6 +152,31 @@ export default function DashboardPage() {
 					onRoleChange={setActiveRole}
 					canSwitch={canSwitchRoles}
 				/>
+				{/* Onboarding Checklist (Only for Brand) */}
+				{activeRole === "brand" && <OnboardingChecklist />}
+
+				{/* Upgrade CTA for Free Plan */}
+				{activeRole === "brand" &&
+					detectionData?.brandSubscriptionTier !== "pro" && (
+						<div className="rounded-xl border border-cta/20 bg-gradient-to-r from-cta/5 to-transparent p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+							<div>
+								<h3 className="font-heading font-semibold text-text flex items-center gap-2">
+									<span className="text-lg">✨</span> Unlock your brand’s full
+									potential
+								</h3>
+								<p className="text-sm text-text-muted mt-1 max-w-xl">
+									Get a custom storefront, advanced analytics, and remove Labeld
+									branding with Pro.
+								</p>
+							</div>
+							<button
+								onClick={() => (window.location.href = "/pricing")}
+								className="shrink-0 px-4 py-2 bg-cta text-text font-semibold rounded-lg hover:bg-cta/90 transition-all shadow-sm hover:shadow-md text-sm"
+							>
+								Upgrade to Pro
+							</button>
+						</div>
+					)}
 			</div>
 
 			{/* Controls - different for each role */}
@@ -254,11 +199,19 @@ export default function DashboardPage() {
 			{/* === BRAND VIEW === */}
 			{activeRole === "brand" && brandData && (
 				<>
-					{/* Section A: Brand Health - Is your brand alive? */}
 					<BrandHealthSection
 						data={brandData}
 						loading={loadingProgress.kpis || loadingProgress.engagement}
-					/>
+					>
+						{/* 4.3 Advanced Brand Health (Pro) */}
+						{isPro && (
+							<AdvancedHealth
+								brandData={brandData}
+								dashboardData={dashboardData}
+								analytics={analytics}
+							/>
+						)}
+					</BrandHealthSection>
 
 					{/* Section C: Money Snapshot - Is attention turning into money? */}
 					<MoneySnapshot

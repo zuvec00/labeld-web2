@@ -1,4 +1,3 @@
-// src/app/(dashboard)/reports/page.tsx
 "use client";
 
 import React, { useState } from "react";
@@ -10,9 +9,17 @@ import {
 	FileSpreadsheet,
 	FileType,
 	AlertCircle,
+	Lock,
 } from "lucide-react";
 import { useBrandSpace } from "@/hooks/useBrandSpace";
-import { useDashboard } from "@/hooks/useDashboard";
+import { useDashboard, DashboardRange } from "@/hooks/useDashboard";
+import { useDashboardContext } from "@/hooks/useDashboardContext";
+import { getAllStoreOrders } from "@/lib/firebase/queries/storeOrders";
+// import { useAuth } from "@/lib/firebase/context/AuthContext";
+import { getDateRangeFromPerformanceRange } from "@/components/dashboard/PerformanceTimelineControls";
+import ProBadge from "@/components/pro/ProBadge";
+import UpgradeBanner from "@/components/pro/UpgradeBanner";
+import { useAuth } from "@/lib/auth/AuthContext";
 
 type DateRangeOption = "7days" | "30days" | "90days" | "custom";
 
@@ -32,35 +39,48 @@ const REPORT_TYPES: ReportType[] = [
 		description:
 			"Overview of heat score, followers, engagement, and content performance.",
 		icon: FileText,
-		formats: ["csv", "pdf"],
-		isAvailable: false, // TODO: Implement export
+		formats: ["csv"], // PDF temporarily removed until generator is ready
+		isAvailable: true,
 	},
 	{
 		id: "orders",
 		title: "Orders Report",
 		description:
-			"Detailed breakdown of all orders, products sold, and revenue.",
+			"Detailed breakdown of all store orders, products sold, and revenue.",
 		icon: FileSpreadsheet,
 		formats: ["csv"],
-		isAvailable: false, // TODO: Implement export
+		isAvailable: true,
 	},
-	{
-		id: "events",
-		title: "Events Report",
-		description: "Ticket sales, attendee data, and event performance metrics.",
-		icon: FileSpreadsheet,
-		formats: ["csv"],
-		isAvailable: false, // TODO: Implement export
-	},
-	{
-		id: "wallet",
-		title: "Wallet Statement",
-		description: "Transaction history, payouts, and earnings breakdown.",
-		icon: FileType,
-		formats: ["csv", "pdf"],
-		isAvailable: false, // TODO: Implement export
-	},
+	// {
+	// 	id: "events",
+	// 	title: "Events Report",
+	// 	description: "Ticket sales, attendee data, and event performance metrics.",
+	// 	icon: FileSpreadsheet,
+	// 	formats: ["csv"],
+	// 	isAvailable: false, // Disabled as per request
+	// },
+	// {
+	// 	id: "wallet",
+	// 	title: "Wallet Statement",
+	// 	description: "Transaction history, payouts, and earnings breakdown.",
+	// 	icon: FileType,
+	// 	formats: ["csv", "pdf"],
+	// 	isAvailable: false, // Disabled as per request
+	// },
 ];
+
+// Helpers for CSV Generation
+const generateCSV = (headers: string[], rows: (string | number)[][]) => {
+	const csvContent = [
+		headers.join(","),
+		...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")), // Simple escape
+	].join("\n");
+
+	const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+	return URL.createObjectURL(blob);
+};
+
+const formatDate = (date: Date) => date.toLocaleDateString("en-GB");
 
 function DateRangeSelector({
 	value,
@@ -95,20 +115,112 @@ function DateRangeSelector({
 function ReportCard({
 	report,
 	dateRange,
+	dateRangeObj,
+	isPro,
+	brandData,
+	dashboardData,
+	userId,
 }: {
 	report: ReportType;
 	dateRange: DateRangeOption;
+	dateRangeObj?: { start: Date; end: Date };
+	isPro: boolean;
+	brandData?: ReturnType<typeof useBrandSpace>["data"];
+	dashboardData?: ReturnType<typeof useDashboard>["data"];
+	userId?: string;
 }) {
 	const Icon = report.icon;
+	const [exporting, setExporting] = useState(false);
 
-	const handleExport = (format: "csv" | "pdf") => {
-		// TODO: [DEV] Implement actual export functionality
-		console.log(`Exporting ${report.id} as ${format} for ${dateRange}`);
-		alert(
-			`Export functionality coming soon!\n\nReport: ${
-				report.title
-			}\nFormat: ${format.toUpperCase()}\nDate Range: ${dateRange}`
-		);
+	const handleExport = async (format: "csv" | "pdf") => {
+		if (!isPro) return;
+
+		try {
+			setExporting(true);
+
+			let downloadUrl = "";
+			let filename = `${report.id}-${new Date().toISOString().split("T")[0]}.${format}`;
+
+			if (report.id === "brand-summary" && format === "csv") {
+				// Generate Brand Summary CSV
+				const headers = ["Metric", "Value", "Notes"];
+				const rows = [
+					["Report Date", new Date().toLocaleDateString(), ""],
+					[
+						"Heat Score",
+						brandData?.kpis.heatScore.toFixed(2) || "N/A",
+						"Current",
+					],
+					["Followers", brandData?.kpis.followersCount || 0, "Current"],
+					["Total Orders", dashboardData?.kpis.orders || 0, "Selected Period"],
+					[
+						"Total Revenue",
+						((dashboardData?.kpis.gmv || 0) / 100).toFixed(2),
+						"Selected Period (NGN)",
+					],
+					[
+						"Avg Order Value",
+						((dashboardData?.kpis.aov || 0) / 100).toFixed(2),
+						"Selected Period (NGN)",
+					],
+					[
+						"Engagement Rate",
+						`${(
+							((brandData?.engagement?.totalInteractions || 0) /
+								(brandData?.engagement?.uniqueUsers || 1)) *
+							100
+						).toFixed(1)}%`,
+						"Estimated",
+					],
+				];
+				downloadUrl = generateCSV(headers, rows);
+			} else if (report.id === "orders" && format === "csv" && userId) {
+				// Generate Orders Report CSV
+				const { start, end } = dateRangeObj || {
+					start: new Date(0),
+					end: new Date(),
+				};
+				const orders = await getAllStoreOrders(userId, start, end);
+
+				const headers = [
+					"Order ID",
+					"Date",
+					"Customer ID",
+					"Items",
+					"Total (NGN)",
+					"Status",
+					"Fulfillment",
+				];
+				const rows = orders.map((order) => [
+					order.id,
+					new Date(order.createdAt.toDate()).toLocaleDateString(),
+					order.buyerUserId || "Guest",
+					order.lineItems.map((i) => `${i.qty}x ${i.name}`).join("; "),
+					(order.amount.totalMinor / 100).toFixed(2),
+					order.status,
+					// Basic fulfillment check (can be refined)
+					order.status === "completed" ? "Delivered" : "Pending",
+				]);
+
+				downloadUrl = generateCSV(headers, rows);
+			}
+
+			if (downloadUrl) {
+				const link = document.createElement("a");
+				link.href = downloadUrl;
+				link.download = filename;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			} else {
+				alert("Report generation failed or not implemented for this type.");
+			}
+		} catch (error) {
+			console.error("Export failed:", error);
+			alert("Failed to generate report. Please try again.");
+		} finally {
+			setExporting(false);
+		}
 	};
 
 	return (
@@ -118,24 +230,37 @@ function ReportCard({
 					<Icon className="w-6 h-6 text-cta" />
 				</div>
 				<div className="flex-1">
-					<h3 className="text-sm font-medium text-text mb-1">{report.title}</h3>
+					<div className="flex items-center gap-2 mb-1">
+						<h3 className="text-sm font-medium text-text">{report.title}</h3>
+						{!isPro && <ProBadge size="sm" />}
+					</div>
 					<p className="text-xs text-text-muted mb-4">{report.description}</p>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 flex-wrap">
 						{report.formats.map((format) => (
-							<button
-								key={format}
-								onClick={() => handleExport(format)}
-								disabled={!report.isAvailable}
-								className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-									report.isAvailable
-										? "bg-cta/10 text-cta hover:bg-cta/20"
-										: "bg-stroke/50 text-text-muted cursor-not-allowed"
-								}`}
-							>
-								<Download className="w-3 h-3" />
-								{format.toUpperCase()}
-							</button>
+							<div key={format} className="relative group">
+								<button
+									onClick={() => handleExport(format)}
+									disabled={!isPro || !report.isAvailable || exporting}
+									className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+										isPro && report.isAvailable
+											? "bg-cta/10 text-cta hover:bg-cta/20"
+											: "bg-stroke/50 text-text-muted cursor-not-allowed relative"
+									}`}
+								>
+									{!isPro && <Lock className="w-3 h-3" />}
+									{isPro && !exporting && <Download className="w-3 h-3" />}
+									{isPro && exporting && (
+										<div className="w-3 h-3 border-2 border-cta/30 border-t-cta rounded-full animate-spin" />
+									)}
+									{format.toUpperCase()}
+								</button>
+								{!isPro && (
+									<div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-bg border border-stroke rounded text-[10px] text-text whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-sm">
+										Available on Pro
+									</div>
+								)}
+							</div>
 						))}
 						{!report.isAvailable && (
 							<span className="text-[10px] text-text-muted ml-2">
@@ -191,6 +316,17 @@ function BrandSummaryPreview({
 
 export default function ReportsPage() {
 	const [dateRange, setDateRange] = useState<DateRangeOption>("30days");
+	const { user } = useAuth();
+	
+	// Pro status
+	const { roleDetection } = useDashboardContext();
+	const isPro = roleDetection?.brandSubscriptionTier === "pro";
+
+	// Calculate actual date objects for filtering
+	const dateRangeObj = getDateRangeFromPerformanceRange(dateRange as any) || {
+		start: new Date(new Date().setDate(new Date().getDate() - 30)),
+		end: new Date(),
+	};
 
 	// Map DateRangeOption to BrandSpaceRange for useBrandSpace
 	// Note: 90days is not supported by useBrandSpace, so we default to 30days
@@ -251,6 +387,15 @@ export default function ReportsPage() {
 				dashboardData={dashboardData}
 			/>
 
+			{/* Pro Gate Banner */}
+			{!isPro && (
+				<UpgradeBanner
+					title="Unlock data exports"
+					description="Export detailed reports to share with stakeholders, track progress over time, and maintain accountability."
+					variant="subtle"
+				/>
+			)}
+
 			{/* Available Reports */}
 			<div>
 				<h2 className="text-sm font-medium text-text mb-4">
@@ -258,7 +403,16 @@ export default function ReportsPage() {
 				</h2>
 				<div className="space-y-4">
 					{REPORT_TYPES.map((report) => (
-						<ReportCard key={report.id} report={report} dateRange={dateRange} />
+						<ReportCard
+							key={report.id}
+							report={report}
+							dateRange={dateRange}
+							dateRangeObj={dateRangeObj}
+							isPro={isPro}
+							brandData={brandData}
+							dashboardData={dashboardData}
+							userId={user?.uid}
+						/>
 					))}
 				</div>
 			</div>

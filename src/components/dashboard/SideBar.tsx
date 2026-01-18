@@ -7,6 +7,11 @@ import { NAV_SECTIONS } from "./nav";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
+import { useDashboardContext } from "@/hooks/useDashboardContext";
+import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
+import MaintenanceModal from "@/components/modals/MaintenanceModal";
+import { Eye } from "lucide-react";
+
 export default function Sidebar({
 	onItemClick,
 	isMobile = false,
@@ -17,23 +22,72 @@ export default function Sidebar({
 	const pathname = usePathname();
 	const { signOutApp } = useAuth();
 
+	// Logic duplicated from Topbar for mobile compatibility
+	const { activeRole, roleDetection } = useDashboardContext();
+	const { isComplete } = useBrandOnboardingStatus();
+	const [showMaintenance, setShowMaintenance] = useState(false);
+
+	const handleViewStore = () => {
+		if (activeRole !== "brand") return;
+
+		if (isComplete) {
+			const username = roleDetection?.brandUsername;
+			const slug = roleDetection?.brandSlug || username;
+			const isPro = roleDetection?.brandSubscriptionTier === "pro";
+
+			if (slug) {
+				const url = isPro
+					? `https://${slug}.labeld.app`
+					: `https://shop.labeld.app/${slug}`;
+
+				window.open(url, "_blank");
+			}
+		} else {
+			setShowMaintenance(true);
+		}
+	};
+
 	return (
 		<nav className="w-full h-full flex flex-col bg-surface border-r border-stroke">
 			{/* Brand Header */}
 			<div className="h-16 lg:h-[72px] flex items-center gap-2 px-4 border-b border-stroke flex-shrink-0">
-				<div className="flex flex-col justify-center size-8">
-					<Image
-						src="/1.svg"
-						alt="Labeld"
-						width={32}
-						height={32}
-						className="h-8 w-8"
-					/>
-				</div>
-				<span className="font-heading font-semibold text-lg text-text">
-					LABELD STUDIO
-				</span>
+				{isMobile && activeRole === "brand" ? (
+					// Mobile Header - View Store Button
+					<div className="w-full flex items-center justify-between">
+						<button
+							onClick={handleViewStore}
+							className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-stroke bg-bg/50 hover:bg-surface hover:border-accent/50 transition-all group"
+						>
+							<span className="text-sm font-medium text-text group-hover:text-accent transition-colors">
+								View Store
+							</span>
+							<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
+						</button>
+					</div>
+				) : (
+					// Desktop Header - Logo
+					<>
+						<div className="flex flex-col justify-center size-8">
+							<Image
+								src="/1.svg"
+								alt="Labeld"
+								width={32}
+								height={32}
+								className="h-8 w-8"
+							/>
+						</div>
+						<span className="font-heading font-semibold text-lg text-text">
+							LABELD STUDIO
+						</span>
+					</>
+				)}
 			</div>
+
+			<MaintenanceModal
+				isOpen={showMaintenance}
+				onClose={() => setShowMaintenance(false)}
+			/>
+
 			{/* Brand header - Hidden on mobile sidebar wrapper as it has its own header, or keep it consistent? 
                 The design requested removing the hamburger from here. 
                 On desktop, this header area might be unneeded if the Topbar covers branding.
@@ -59,9 +113,15 @@ export default function Sidebar({
 						<ul className="space-y-0.5">
 							{section.items.map((item) => {
 								// Check if active
+								const isSiteCustomization = pathname?.startsWith(
+									"/brand-space/site-customization"
+								);
 								const active =
 									pathname === item.href ||
-									(item.href !== "/" && pathname?.startsWith(item.href + "/"));
+									(item.href !== "/" &&
+										pathname?.startsWith(item.href + "/") &&
+										// explicit exception for brand-space parent when on site-customization
+										!(item.href === "/brand-space" && isSiteCustomization));
 
 								return (
 									<li key={item.href}>

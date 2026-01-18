@@ -65,16 +65,24 @@ export default function WalletPage() {
 		);
 	}
 
-	if (!walletData.summary) {
-		return (
-			<div className="text-center py-12">
-				<div className="text-text-muted text-lg mb-2">No wallet found</div>
-				<p className="text-text-muted/70">
-					Your wallet will be created when you make your first sale
-				</p>
-			</div>
-		);
-	}
+	// Create a default summary if none exists (for new users)
+	const defaultSummary = {
+		currency: "NGN",
+		eligibleBalanceMinor: 0,
+		onHoldMinor: 0,
+		payout: {
+			frequency: "weekly",
+			dayOfWeek: 5,
+			cutOffDayOfWeek: 4,
+			cutOffHourLocal: 12,
+			payoutHourLocal: 14,
+			bank: null,
+		},
+		lastUpdatedAt: Date.now(),
+	};
+
+	// Use actual summary or fall back to default
+	const displaySummary = (walletData.summary || defaultSummary) as any; // Cast to any to avoid strict type mismatch with partial default
 
 	return (
 		<div className="space-y-8">
@@ -84,15 +92,15 @@ export default function WalletPage() {
 
 			{/* Header Summary */}
 
-			<BalanceHeader summary={walletData.summary} />
+			<BalanceHeader summary={displaySummary} />
 
 			{/* Bank Account Status Banner */}
-			{walletData.summary && <BankAccountBanner summary={walletData.summary} />}
+			<BankAccountBanner summary={displaySummary} />
 
 			{/* Earnings Overview */}
 			<EarningsOverview
 				entries={walletData.entries}
-				walletSummary={walletData.summary}
+				walletSummary={displaySummary}
 			/>
 
 			{/* Filters Bar */}
@@ -102,7 +110,7 @@ export default function WalletPage() {
 			<LedgerTable entries={walletData.entries} filters={filters} />
 
 			{/* Payouts */}
-			<PayoutsTable payouts={payouts} walletSummary={walletData.summary} />
+			<PayoutsTable payouts={payouts} walletSummary={displaySummary} />
 
 			{/* Help Panel */}
 			<HelpPanel />

@@ -1,15 +1,20 @@
-// components/settings/ShippingSettings.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase/firebaseConfig";
-import { auth } from "@/lib/firebase/firebaseConfig";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Trash2, Save } from "lucide-react";
+import { db, auth } from "@/lib/firebase/firebaseConfig";
+import { Spinner } from "@/components/ui/spinner";
+import {
+	Plus,
+	Trash2,
+	CheckCircle2,
+	MapPin,
+	Globe,
+	Truck,
+	Store,
+} from "lucide-react";
+import { formatWithCommasDouble } from "@/lib/format";
 
 interface ShippingSettings {
 	mode: "flat_all" | "flat_by_state";
@@ -19,27 +24,26 @@ interface ShippingSettings {
 	pickupAddress?: string;
 }
 
-interface StateFee {
-	state: string;
-	feeMinor: number;
-}
-
 export default function ShippingSettings() {
 	const router = useRouter();
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [saveSuccess, setSaveSuccess] = useState(false);
-	const [settings, setSettings] = useState<ShippingSettings>({
-		mode: "flat_all",
-		flatAllFeeMinor: 0,
-		stateFeesMinor: {},
-		pickupEnabled: false,
-		pickupAddress: "",
-	});
-	const [newStateFee, setNewStateFee] = useState<StateFee>({
-		state: "",
-		feeMinor: 0,
-	});
+
+	// Form State
+	const [mode, setMode] = useState<"flat_all" | "flat_by_state">("flat_all");
+	const [flatFee, setFlatFee] = useState<string>(""); // Store as string for input handling
+	const [stateFees, setStateFees] = useState<Record<string, number>>({});
+	const [pickupEnabled, setPickupEnabled] = useState(false);
+	const [pickupAddress, setPickupAddress] = useState("");
+
+	// Helper for dirty checking
+	const [initialSettings, setInitialSettings] =
+		useState<ShippingSettings | null>(null);
+
+	// New Rate Input State
+	const [newStateName, setNewStateName] = useState("");
+	const [newStateFee, setNewStateFee] = useState("");
 
 	useEffect(() => {
 		loadSettings();
@@ -60,7 +64,23 @@ export default function ShippingSettings() {
 			const settingsSnap = await getDoc(settingsRef);
 
 			if (settingsSnap.exists()) {
-				setSettings(settingsSnap.data() as ShippingSettings);
+				const data = settingsSnap.data() as ShippingSettings;
+				setInitialSettings(data);
+
+				// Hydrate local state
+				setMode(data.mode || "flat_all");
+				setFlatFee(
+					data.flatAllFeeMinor ? (data.flatAllFeeMinor / 100).toString() : "0"
+				);
+				setStateFees(data.stateFeesMinor || {});
+				setPickupEnabled(!!data.pickupEnabled);
+				setPickupAddress(data.pickupAddress || "");
+			} else {
+				// Defaults for new users
+				const defaults: ShippingSettings = {
+					mode: "flat_all",
+				};
+				setInitialSettings(defaults);
 			}
 		} catch (error) {
 			console.error("Error loading shipping settings:", error);
@@ -81,15 +101,25 @@ export default function ShippingSettings() {
 				"shippingRules",
 				"settings"
 			);
-			await setDoc(settingsRef, settings, { merge: true });
 
-			// Show success message
+			const flatFeeMinor = Math.round(parseFloat(flatFee || "0") * 100);
+
+			const newSettings: ShippingSettings = {
+				mode,
+				flatAllFeeMinor: flatFeeMinor,
+				stateFeesMinor: stateFees,
+				pickupEnabled,
+				pickupAddress,
+			};
+
+			await setDoc(settingsRef, newSettings, { merge: true });
+
+			setInitialSettings(newSettings);
 			setSaveSuccess(true);
 
-			// Auto navigate back after 1.5 seconds
 			setTimeout(() => {
-				router.back();
-			}, 1500);
+				setSaveSuccess(false);
+			}, 3000);
 		} catch (error) {
 			console.error("Error saving shipping settings:", error);
 		} finally {
@@ -97,342 +127,359 @@ export default function ShippingSettings() {
 		}
 	};
 
-	const addStateFee = () => {
-		if (newStateFee.state.trim() && newStateFee.feeMinor > 0) {
-			setSettings((prev) => ({
-				...prev,
-				stateFeesMinor: {
-					...prev.stateFeesMinor,
-					[newStateFee.state.trim()]: newStateFee.feeMinor,
-				},
-			}));
-			setNewStateFee({ state: "", feeMinor: 0 });
-		}
+	const handleAddRate = () => {
+		if (!newStateName.trim() || !newStateFee) return;
+		const feeMinor = Math.round(parseFloat(newStateFee) * 100);
+
+		setStateFees((prev) => ({
+			...prev,
+			[newStateName.trim()]: feeMinor,
+		}));
+
+		setNewStateName("");
+		setNewStateFee("");
 	};
 
-	const removeStateFee = (state: string) => {
-		setSettings((prev) => {
-			const newStateFees = { ...prev.stateFeesMinor };
-			delete newStateFees[state];
-			return {
-				...prev,
-				stateFeesMinor: newStateFees,
-			};
+	const handleRemoveRate = (state: string) => {
+		setStateFees((prev) => {
+			const next = { ...prev };
+			delete next[state];
+			return next;
 		});
 	};
 
-	const updateStateFee = (state: string, feeMinor: number) => {
-		setSettings((prev) => ({
-			...prev,
-			stateFeesMinor: {
-				...prev.stateFeesMinor,
-				[state]: feeMinor,
-			},
-		}));
-	};
+	// Dirty Check
+	const isDirty = (() => {
+		if (!initialSettings) return false;
+		// Check simple fields
+		if (mode !== initialSettings.mode) return true;
+		if (pickupEnabled !== !!initialSettings.pickupEnabled) return true;
+		if (pickupAddress !== (initialSettings.pickupAddress || "")) return true;
+
+		// Check flat fee
+		const currentFlatFeeMinor = Math.round(parseFloat(flatFee || "0") * 100);
+		if (currentFlatFeeMinor !== (initialSettings.flatAllFeeMinor || 0))
+			return true;
+
+		// Check state fees (deep compare)
+		const initialFees = initialSettings.stateFeesMinor || {};
+		const keys1 = Object.keys(stateFees);
+		const keys2 = Object.keys(initialFees);
+		if (keys1.length !== keys2.length) return true;
+		for (const key of keys1) {
+			if (stateFees[key] !== initialFees[key]) return true;
+		}
+
+		return false;
+	})();
 
 	if (loading) {
 		return (
-			<div className="space-y-6">
-				<div className="animate-pulse">
-					<div className="h-6 bg-stroke rounded w-1/4 mb-4"></div>
-					<div className="space-y-4">
-						<div className="h-4 bg-stroke rounded w-3/4"></div>
-						<div className="h-4 bg-stroke rounded w-1/2"></div>
-						<div className="h-4 bg-stroke rounded w-2/3"></div>
-					</div>
-				</div>
+			<div className="h-[400px] flex items-center justify-center">
+				<Spinner size="lg" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
-			{/* Success Message */}
-			{saveSuccess && (
-				<div className="bg-accent/10 border border-accent/20 rounded-lg p-4 flex items-center gap-3">
-					<div className="w-6 h-6 rounded-full bg-accent flex items-center justify-center">
-						<svg
-							className="w-4 h-4 text-bg"
-							fill="currentColor"
-							viewBox="0 0 20 20"
-						>
-							<path
-								fillRule="evenodd"
-								d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-								clipRule="evenodd"
-							/>
-						</svg>
-					</div>
-					<div>
-						<p className="text-accent font-medium">
-							Settings saved successfully!
-						</p>
-						<p className="text-accent/80 text-sm">
-							Redirecting back to settings...
-						</p>
-					</div>
-				</div>
-			)}
-
-			<div>
-				<h2 className="text-xl font-heading font-semibold text-text mb-2">
-					Shipping Settings
-				</h2>
-				<p className="text-text-muted">
-					Configure shipping rules and fees for your merchandise orders.
+		<div className="max-w-4xl mx-auto space-y-12 pb-24">
+			{/* Header */}
+			<div className="space-y-1">
+				<h1 className="text-2xl md:text-3xl font-heading font-medium text-white tracking-tight">
+					How do you deliver your orders?
+				</h1>
+				<p className="text-text-muted text-lg font-light">
+					Choose how customers receive purchases from your store.
 				</p>
 			</div>
 
-			<div className="bg-surface border border-stroke rounded-lg p-6 space-y-6">
-				{/* Shipping Mode */}
-				<div>
-					<h3 className="text-lg font-medium text-text mb-4">Shipping Mode</h3>
-					<div className="space-y-3">
-						<label className="flex items-center gap-3 cursor-pointer">
-							<input
-								type="radio"
-								name="shippingMode"
-								value="flat_all"
-								checked={settings.mode === "flat_all"}
-								onChange={(e) =>
-									setSettings((prev) => ({
-										...prev,
-										mode: e.target.value as "flat_all",
-									}))
-								}
-								className="w-4 h-4 accent-cta"
-							/>
-							<div>
-								<div className="font-medium text-text">
-									Flat Rate for All Locations
-								</div>
-								<div className="text-sm text-text-muted">
-									Charge the same shipping fee regardless of destination
-								</div>
-							</div>
-						</label>
-
-						<label className="flex items-center gap-3 cursor-pointer">
-							<input
-								type="radio"
-								name="shippingMode"
-								value="flat_by_state"
-								checked={settings.mode === "flat_by_state"}
-								onChange={(e) =>
-									setSettings((prev) => ({
-										...prev,
-										mode: e.target.value as "flat_by_state",
-									}))
-								}
-								className="w-4 h-4 accent-cta"
-							/>
-							<div>
-								<div className="font-medium text-text">
-									Different Rates by State
-								</div>
-								<div className="text-sm text-text-muted">
-									Set different shipping fees for each state
-								</div>
-							</div>
-						</label>
-					</div>
-				</div>
-
-				{/* Flat All Fee */}
-				{settings.mode === "flat_all" && (
-					<div>
-						<label className="block text-sm font-medium text-text mb-2">
-							Flat Shipping Fee (₦)
-						</label>
-						<Input
-							type="number"
-							value={
-								settings.flatAllFeeMinor ? settings.flatAllFeeMinor / 100 : ""
+			{/* Shipping Strategy */}
+			<div className="space-y-4">
+				<h2 className="text-white font-medium text-lg">Shipping Strategy</h2>
+				<div className="grid md:grid-cols-2 gap-4">
+					{/* Card A - Flat Rate */}
+					<button
+						onClick={() => setMode("flat_all")}
+						className={`
+              relative flex flex-col p-6 rounded-2xl text-left border transition-all duration-300 group
+              ${
+								mode === "flat_all"
+									? "bg-surface border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)] scale-[1.01]"
+									: "bg-surface-neutral/30 border-stroke/50 hover:bg-surface hover:border-stroke hover:scale-[1.005]"
 							}
-							onChange={(e) =>
-								setSettings((prev) => ({
-									...prev,
-									flatAllFeeMinor:
-										e.target.value === ""
-											? 0
-											: Math.round(parseFloat(e.target.value || "0") * 100),
-								}))
-							}
-							placeholder="0.00"
-							min="0"
-							step="0.01"
-							className="max-w-xs bg-surface"
-						/>
-						<p className="text-xs text-text-muted mt-1">
-							This fee will be charged for all orders regardless of location
-						</p>
-					</div>
-				)}
-
-				{/* State Fees */}
-				{settings.mode === "flat_by_state" && (
-					<div>
-						<h3 className="text-lg font-medium text-text mb-4">
-							State Shipping Fees
+            `}
+					>
+						{mode === "flat_all" && (
+							<div className="absolute top-4 right-4 text-green-500">
+								<CheckCircle2 className="w-5 h-5" />
+							</div>
+						)}
+						<div className="p-3 bg-surface-neutral/50 w-fit rounded-xl mb-4 group-hover:bg-green-500/10 group-hover:text-green-400 transition-colors">
+							<Globe className="w-6 h-6" />
+						</div>
+						<h3 className="text-xl font-bold text-white mb-2">
+							Flat Rate Shipping
 						</h3>
+						<p className="text-sm text-text-muted leading-relaxed">
+							Charge the same delivery fee for all locations. Simple and
+							predictable for customers.
+						</p>
+					</button>
 
-						{/* Add New State Fee */}
-						<div className="flex items-center gap-3 mb-4 p-3 bg-surface rounded-lg border border-stroke">
-							<Input
-								type="text"
-								placeholder="State name (e.g., Lagos)"
-								value={newStateFee.state}
-								onChange={(e) =>
-									setNewStateFee((prev) => ({ ...prev, state: e.target.value }))
-								}
-								className="w-32 bg-surface"
-							/>
-							<Input
+					{/* Card B - Location Based */}
+					<button
+						onClick={() => setMode("flat_by_state")}
+						className={`
+              relative flex flex-col p-6 rounded-2xl text-left border transition-all duration-300 group
+              ${
+								mode === "flat_by_state"
+									? "bg-surface border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.1)] scale-[1.01]"
+									: "bg-surface-neutral/30 border-stroke/50 hover:bg-surface hover:border-stroke hover:scale-[1.005]"
+							}
+            `}
+					>
+						{mode === "flat_by_state" && (
+							<div className="absolute top-4 right-4 text-green-500">
+								<CheckCircle2 className="w-5 h-5" />
+							</div>
+						)}
+						<div className="p-3 bg-surface-neutral/50 w-fit rounded-xl mb-4 group-hover:bg-green-500/10 group-hover:text-green-400 transition-colors">
+							<MapPin className="w-6 h-6" />
+						</div>
+						<h3 className="text-xl font-bold text-white mb-2">
+							Location-based Shipping
+						</h3>
+						<p className="text-sm text-text-muted leading-relaxed">
+							Set different fees by state or region. Charge more for distant
+							locations.
+						</p>
+					</button>
+				</div>
+			</div>
+
+			{/* Shipping Rates Configuration (Conditional) */}
+			<div className="bg-surface/30 border border-stroke/30 rounded-2xl p-6 md:p-8 animate-in fade-in slide-in-from-top-4 duration-500">
+				{mode === "flat_all" ? (
+					/* Flat Rate Config */
+					<div className="max-w-md">
+						<label className="block text-sm font-medium text-text-muted mb-3">
+							Global Shipping Fee
+						</label>
+						<div className="relative">
+							<span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
+								₦
+							</span>
+							<input
 								type="number"
-								placeholder="Fee (₦)"
-								value={newStateFee.feeMinor ? newStateFee.feeMinor / 100 : ""}
-								onChange={(e) =>
-									setNewStateFee((prev) => ({
-										...prev,
-										feeMinor:
-											e.target.value === ""
-												? 0
-												: Math.round(parseFloat(e.target.value || "0") * 100),
-									}))
-								}
-								min="0"
-								step="0.01"
-								className=" bg-surface"
-							/>
-							<Button
-								text=""
-								onClick={addStateFee}
-								disabled={
-									!newStateFee.state.trim() || newStateFee.feeMinor <= 0
-								}
-								leftIcon={<Plus className="w-4 h-4" />}
-								className="bg-cta hover:bg-cta/90 text-text px-3 py-2"
+								value={flatFee}
+								onChange={(e) => setFlatFee(e.target.value)}
+								className="w-full bg-surface border border-stroke rounded-xl pl-10 pr-4 py-4 text-2xl font-bold text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/20"
+								placeholder="0.00"
 							/>
 						</div>
+						<p className="text-xs text-text-muted/60 mt-3">
+							This amount will be added to checkout for every shipping order.
+						</p>
+					</div>
+				) : (
+					/* Location Fees Config */
+					<div className="space-y-6">
+						<h3 className="text-lg font-medium text-white">
+							Shipping Rates by Location
+						</h3>
 
-						{/* State Fees List */}
-						<div className="space-y-2">
-							{Object.entries(settings.stateFeesMinor || {}).map(
-								([state, feeMinor]) => (
+						{/* Existing Rates List */}
+						<div className="space-y-1">
+							{Object.entries(stateFees).length === 0 ? (
+								<div className="text-center py-8 border border-dashed border-stroke/50 rounded-xl">
+									<p className="text-text-muted">No specific rates set yet.</p>
+								</div>
+							) : (
+								Object.entries(stateFees).map(([state, feeMinor]) => (
 									<div
 										key={state}
-										className="flex items-center gap-3 p-3 bg-surface rounded-lg border border-stroke"
+										className="group flex items-center justify-between p-4 rounded-xl hover:bg-surface border border-transparent hover:border-stroke/30 transition-all"
 									>
-										<span className="flex-1 font-medium text-text">
-											{state}
-										</span>
-										<Input
-											type="number"
-											value={feeMinor / 100 || ""}
-											onChange={(e) =>
-												updateStateFee(
-													state,
-													e.target.value === ""
-														? 0
-														: Math.round(
-																parseFloat(e.target.value || "0") * 100
-														  )
-												)
-											}
-											min="0"
-											step="0.01"
-											className="w-32 bg-bg"
-										/>
-										<Button
-											text=""
-											onClick={() => removeStateFee(state)}
-											variant="outline"
-											leftIcon={<Trash2 className="w-4 h-4" />}
-											className="text-alert border-alert hover:bg-alert/10 px-3 py-2"
-										/>
+										<div className="flex items-center gap-3">
+											<div className="w-2 h-2 rounded-full bg-green-500/50" />
+											<span className="text-white font-medium">{state}</span>
+										</div>
+										<div className="flex items-center gap-6">
+											<span className="font-mono text-text-muted">
+												₦{formatWithCommasDouble(feeMinor / 100)}
+											</span>
+											<button
+												onClick={() => handleRemoveRate(state)}
+												className="text-text-muted/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/5 rounded-lg"
+											>
+												<Trash2 className="w-4 h-4" />
+											</button>
+										</div>
 									</div>
-								)
+								))
 							)}
 						</div>
 
-						{Object.keys(settings.stateFeesMinor || {}).length === 0 && (
-							<div className="text-center py-6 text-text-muted">
-								<p>No state fees configured yet</p>
-								<p className="text-sm">
-									Add states above to set different shipping rates
-								</p>
+						{/* Add Rate Input */}
+						<div className="flex items-center gap-2 pt-4 border-t border-stroke/30">
+							<input
+								type="text"
+								value={newStateName}
+								onChange={(e) => setNewStateName(e.target.value)}
+								placeholder="Location (e.g. Lagos)"
+								className="w-36 md:w-90 bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
+							/>
+							<div className="relative flex-1">
+								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 text-sm">
+									₦
+								</span>
+								<input
+									type="number"
+									value={newStateFee}
+									onChange={(e) => setNewStateFee(e.target.value)}
+									placeholder="0.00"
+									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
+								/>
 							</div>
-						)}
+							<button
+								onClick={handleAddRate}
+								disabled={!newStateName.trim() || !newStateFee}
+								className="bg-white/5 border border-white/10 hover:bg-white/10 text-white p-3 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+							>
+								<Plus className="w-5 h-5" />
+							</button>
+						</div>
 					</div>
 				)}
+			</div>
 
-				{/* Pickup Settings */}
-				<div>
-					<h3 className="text-lg font-medium text-text mb-4">Pickup Options</h3>
-					<div className="space-y-4">
-						<div className="flex items-center justify-between">
-							<div className="flex items-center space-x-3">
-								<input
-									type="checkbox"
-									id="enable-pickup"
-									checked={settings.pickupEnabled || false}
-									onChange={(e) =>
-										setSettings((prev) => ({
-											...prev,
-											pickupEnabled: e.target.checked,
-										}))
-									}
-									className="w-4 h-4 text-accent bg-surface border-stroke rounded focus:ring-accent focus:ring-2"
-								/>
-								<Label
-									htmlFor="enable-pickup"
-									className="font-medium text-text cursor-pointer"
-								>
-									Enable Pickup
-								</Label>
-							</div>
-							<div className="text-sm text-text-muted">
-								Allow customers to pick up orders instead of shipping
+			{/* Delivery Methods Section */}
+			<div className="space-y-6">
+				<h2 className="text-white font-medium text-lg">Delivery Methods</h2>
+
+				{/* Option 1: Shipping (Visual Only Toggle) */}
+				<div className="flex items-center justify-between p-4 rounded-xl border border-stroke/30 bg-surface/20 opacity-75">
+					<div className="flex items-center gap-4">
+						<div className="p-2 bg-purple-500/10 rounded-lg text-purple-400">
+							<Truck className="w-5 h-5" />
+						</div>
+						<div>
+							<div className="text-white font-medium">Ship Orders</div>
+							<div className="text-xs text-text-muted">
+								Deliver to customer address
 							</div>
 						</div>
-
-						{settings.pickupEnabled && (
-							<div>
-								<label className="block text-sm font-medium text-text mb-2">
-									Pickup Address
-								</label>
-								<Input
-									type="text"
-									value={settings.pickupAddress || ""}
-									onChange={(e) =>
-										setSettings((prev) => ({
-											...prev,
-											pickupAddress: e.target.value,
-										}))
-									}
-									placeholder="Enter pickup address"
-									className="max-w-md bg-surface"
-								/>
-								<p className="text-xs text-text-muted mt-1">
-									This address will be shown to customers who choose pickup
-								</p>
-							</div>
-						)}
+					</div>
+					{/* Fake Switch (Locked On) */}
+					<div className="w-11 h-6 bg-green-500/80 rounded-full relative opacity-50 cursor-not-allowed">
+						<div className="absolute right-1 top-1 w-4 h-4 bg-white rounded-full shadow-sm" />
 					</div>
 				</div>
 
-				{/* Save Button */}
-				<div className="pt-4 border-t border-stroke">
-					<Button
-						text={saving ? "Saving..." : "Save Settings"}
-						onClick={saveSettings}
-						disabled={saving}
-						leftIcon={<Save className="w-4 h-4" />}
-						className="bg-cta hover:bg-cta/90 text-text"
-					/>
+				{/* Option 2: Local Pickup */}
+				<div className="border border-stroke/30 rounded-xl overflow-hidden bg-surface/10">
+					<div className="flex items-center justify-between p-4">
+						<div className="flex items-center gap-4">
+							<div className="p-2 bg-orange-500/10 rounded-lg text-orange-400">
+								<Store className="w-5 h-5" />
+							</div>
+							<div>
+								<div className="text-white font-medium">Local Pickup</div>
+								<div className="text-xs text-text-muted">
+									Allow customers to collect orders
+								</div>
+							</div>
+						</div>
+						{/* Real Switch */}
+						<button
+							onClick={() => setPickupEnabled(!pickupEnabled)}
+							className={`w-11 h-6 rounded-full relative transition-colors duration-300 ${
+								pickupEnabled ? "bg-green-500" : "bg-surface-neutral"
+							}`}
+						>
+							<div
+								className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform duration-300 ${
+									pickupEnabled ? "translate-x-6" : "translate-x-1"
+								}`}
+							/>
+						</button>
+					</div>
+
+					{/* Collapsible Pickup Config */}
+					<div
+						className={`
+              grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]
+              ${
+								pickupEnabled
+									? "grid-rows-[1fr] border-t border-stroke/30"
+									: "grid-rows-[0fr]"
+							}
+            `}
+					>
+						<div className="overflow-hidden">
+							<div className="p-6 space-y-3">
+								<label className="text-sm font-medium text-text-muted">
+									Pickup Address
+								</label>
+								<input
+									type="text"
+									value={pickupAddress}
+									onChange={(e) => setPickupAddress(e.target.value)}
+									placeholder="123 Example Street, City, State"
+									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/30"
+								/>
+								<p className="text-xs text-text-muted/50">
+									This address will be shown to customers who choose pickup at
+									checkout.
+								</p>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
+
+			{/* Strategy Summary / Footer */}
+			<div className="flex justify-center pt-8 opacity-60">
+				<p className="text-sm text-text-muted text-center max-w-md">
+					Customers can receive orders via {pickupEnabled ? "shipping or " : ""}{" "}
+					shipping. Fees are applied automatically at checkout.
+				</p>
+			</div>
+
+			{/* Save Action */}
+			<div className="fixed bottom-8 right-8 z-50">
+				{isDirty && (
+					<button
+						onClick={saveSettings}
+						disabled={saving}
+						className={`
+              flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105
+              bg-white text-black font-bold text-lg
+              hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(74,222,128,0.4)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+					>
+						{saving ? (
+							<>
+								<Spinner className="w-5 h-5 border-black/30 border-t-black" />
+								<span>Saving...</span>
+							</>
+						) : (
+							<span>Save Changes</span>
+						)}
+					</button>
+				)}
+			</div>
+
+			{/* Success Toast */}
+			{saveSuccess && (
+				<div className="fixed bottom-24 right-8 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+					<div className="bg-green-500 text-black px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
+						<CheckCircle2 className="w-5 h-5" />
+						Changes Saved
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }

@@ -10,6 +10,7 @@ import {
 import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { BrandSpaceView } from "@/components/brand/brandspace/BrandSpaceView";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 
 type GateState =
 	| { status: "loading" }
@@ -99,14 +100,14 @@ export default function BrandspacePage() {
 				subtitle:
 					"Get started to share you content and let the culture see what your brand represents",
 				cta: "Start Onboarding",
-				href: "/brand/setup",
+				href: "/brand-space/setup",
 			},
 			"brand-doc-missing": {
 				title: "We couldn’t find your BrandSpace",
 				subtitle:
 					"Your setup shows as complete, but the brand record is missing. Let’s recreate it.",
-				cta: "Fix Now",
-				href: "/brand/setup",
+				cta: "Launch your Brand",
+				href: "/brand-space/setup",
 			},
 		}[state.reason]!;
 
@@ -127,5 +128,10 @@ export default function BrandspacePage() {
 	}
 
 	// ✅ status === "complete"
-	return <BrandSpaceView uid={state.uid} />;
+	return (
+		<div className="space-y-8">
+			<OnboardingChecklist />
+			<BrandSpaceView uid={state.uid} />
+		</div>
+	);
 }

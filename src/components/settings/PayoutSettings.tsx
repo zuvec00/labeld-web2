@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { getAuth } from "firebase/auth";
 import {
 	getFirestore,
@@ -10,11 +10,10 @@ import {
 	serverTimestamp,
 } from "firebase/firestore";
 import { PayoutScheduleType } from "@/types/payout";
-import PayoutScheduleSelector from "@/components/payout/PayoutScheduleSelector";
-import PayoutFeeCalculator from "@/components/payout/PayoutFeeCalculator";
-import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { useWallet } from "@/hooks/useWallet";
+import { Calendar, CheckCircle2 } from "lucide-react";
+import { formatWithCommasDouble } from "@/lib/format";
 
 export default function PayoutSettings() {
 	const { walletData } = useWallet();
@@ -33,14 +32,6 @@ export default function PayoutSettings() {
 	useEffect(() => {
 		loadCurrentSettings();
 	}, []);
-
-	// Debug: Log when selectedSchedule changes
-	useEffect(() => {
-		console.log(
-			"PayoutSettings - selectedSchedule changed to:",
-			selectedSchedule
-		);
-	}, [selectedSchedule]);
 
 	const loadCurrentSettings = async () => {
 		try {
@@ -70,12 +61,7 @@ export default function PayoutSettings() {
 		}
 	};
 
-	const handleScheduleSelect = (schedule: PayoutScheduleType) => {
-		console.log("PayoutSettings - handleScheduleSelect called with:", schedule);
-		setSelectedSchedule(schedule);
-	};
-
-	const handleScheduleChange = async (schedule: PayoutScheduleType) => {
+	const handleScheduleChange = async () => {
 		setIsSaving(true);
 		setError(null);
 		setSuccess(false);
@@ -94,7 +80,7 @@ export default function PayoutSettings() {
 			// Update brand payout settings
 			await updateDoc(brandRef, {
 				payoutSettings: {
-					schedule,
+					schedule: selectedSchedule,
 					updatedAt: serverTimestamp(),
 				},
 			});
@@ -103,20 +89,22 @@ export default function PayoutSettings() {
 			const walletRef = doc(db, "users", user.uid);
 			await updateDoc(walletRef, {
 				"wallet.payout.schedule": {
-					type: schedule,
-					feePercent: getFeePercent(schedule),
-					feeCapMinor: getFeeCap(schedule),
-					timelineDays: getTimelineDays(schedule),
-					label: getLabel(schedule),
+					type: selectedSchedule,
+					feePercent: getFeePercent(selectedSchedule),
+					feeCapMinor: getFeeCap(selectedSchedule),
+					timelineDays: getTimelineDays(selectedSchedule),
+					label: getLabel(selectedSchedule),
 				},
 				"wallet.payout.updatedAt": serverTimestamp(),
 			});
 
-			setCurrentSchedule(schedule);
+			setCurrentSchedule(selectedSchedule);
 			setSuccess(true);
 
 			// Clear success message after 3 seconds
-			setTimeout(() => setSuccess(false), 3000);
+			setTimeout(() => {
+				setSuccess(false);
+			}, 3000);
 		} catch (err) {
 			console.error("Error updating payout settings:", err);
 			setError("Failed to save settings. Please try again.");
@@ -125,7 +113,7 @@ export default function PayoutSettings() {
 		}
 	};
 
-	// Helper functions for schedule configuration
+	// --- Helper Configs ---
 	const getFeePercent = (schedule: PayoutScheduleType): number => {
 		const configs = {
 			weekly: 0,
@@ -161,153 +149,226 @@ export default function PayoutSettings() {
 
 	const getLabel = (schedule: PayoutScheduleType): string => {
 		const configs = {
-			weekly: "Standard",
-			"5days": "Early",
-			"3days": "Priority",
-			"2days": "Fast",
-			"1day": "Instant",
+			weekly: "Weekly",
+			"5days": "5 Days",
+			"3days": "3 Days",
+			"2days": "2 Days",
+			"1day": "1 Day",
 		};
 		return configs[schedule];
 	};
 
+	// --- Derived Calculations ---
+	const feePercent = getFeePercent(selectedSchedule);
+	const feeCap = getFeeCap(selectedSchedule);
+
+	const estimatedFee = useMemo(() => {
+		if (feePercent === 0) return 0;
+		const calculated = (estimatedEarnings * feePercent) / 100;
+		return Math.min(calculated, feeCap);
+	}, [estimatedEarnings, feePercent, feeCap]);
+
+	const finalPayout = estimatedEarnings - estimatedFee;
+	const isDirty = selectedSchedule !== currentSchedule;
+
 	if (isLoading) {
 		return (
-			<div className="space-y-6">
-				<div className="animate-pulse">
-					<div className="h-8 bg-stroke rounded mb-4"></div>
-					<div className="space-y-3">
-						{Array.from({ length: 3 }).map((_, i) => (
-							<div key={i} className="h-20 bg-stroke rounded-2xl"></div>
-						))}
-					</div>
-				</div>
+			<div className="h-[400px] flex items-center justify-center">
+				<Spinner size="lg" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="max-w-5xl mx-auto space-y-12 pb-20">
 			{/* Header */}
-			<div>
-				<h2 className="text-2xl font-heading font-semibold text-text mb-2">
-					Earnings Payout Settings
-				</h2>
-				<p className="text-text-muted">
-					Configure how quickly you receive your earnings from sales.
+			<div className="space-y-1">
+				<h1 className="text-2xl md:text-3xl font-heading font-medium text-white tracking-tight">
+					When do you want to receive your earnings?
+				</h1>
+				<p className="text-text-muted text-lg font-light">
+					Choose how quickly your store payouts are processed.
 				</p>
 			</div>
 
-			{/* Event Schedule Info */}
-			<div className="bg-accent/10 border border-accent/20 rounded-2xl p-6">
-				<h3 className="text-lg font-semibold text-text mb-2">
-					Event Earnings Schedule
-				</h3>
-				<div className="flex items-center gap-3">
-					<div className="w-3 h-3 bg-accent rounded-full"></div>
-					<div>
-						<span className="font-medium text-text">
-							Weekly (Every Friday at 2:00 PM)
+			{/* Store Earnings Schedule */}
+			<div className="space-y-4">
+				<div className="flex items-center justify-between">
+					<h2 className="text-white font-medium text-lg">
+						Store Earnings Schedule
+					</h2>
+					{/* Current Selection Pill */}
+					<div className="px-3 py-1 rounded-full bg-surface-neutral border border-stroke flex items-center gap-2">
+						<div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+						<span className="text-xs text-text-muted font-medium uppercase tracking-wide">
+							Current: {getLabel(currentSchedule)} ·{" "}
+							{getTimelineDays(currentSchedule)} Business Days
 						</span>
-						<p className="text-sm text-text-muted">
-							Cutoff: Thursday at 12:00 PM
+					</div>
+				</div>
+
+				{/* Cards Grid */}
+				<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+					{(
+						[
+							"weekly",
+							"5days",
+							"3days",
+							"2days",
+							"1day",
+						] as PayoutScheduleType[]
+					).map((schedule) => {
+						const isSelected = selectedSchedule === schedule;
+						const fee = getFeePercent(schedule);
+						const cap = getFeeCap(schedule);
+
+						return (
+							<button
+								key={schedule}
+								onClick={() => setSelectedSchedule(schedule)}
+								className={`
+                  relative flex flex-col justify-between p-4 rounded-xl min-h-[140px] text-left transition-all duration-300
+                  ${
+										isSelected
+											? "bg-surface border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.15)] scale-[1.02] z-10"
+											: "bg-surface-neutral/50 border-stroke/50 hover:bg-surface hover:border-stroke hover:scale-[1.01]"
+									}
+                  border
+                `}
+							>
+								{/* Selection Indicator */}
+								{isSelected && (
+									<div className="absolute top-3 right-3 text-green-500">
+										<CheckCircle2 className="w-4 h-4" />
+									</div>
+								)}
+
+								<div className="space-y-1">
+									<div
+										className={`text-xl font-bold tracking-tight ${
+											isSelected ? "text-green-400" : "text-text"
+										}`}
+									>
+										{getLabel(schedule)}
+									</div>
+									<div className="text-xs text-text-muted font-medium">
+										{schedule === "weekly"
+											? "Standard Speed"
+											: schedule === "1day"
+											? "Fastest Option"
+											: "Expedited"}
+									</div>
+								</div>
+
+								<div className="space-y-0.5 pt-4 border-t border-white/5 mt-4">
+									<div className="flex items-baseline justify-between">
+										<span className="text-xs text-text-muted">Fee</span>
+										<span
+											className={`text-sm font-semibold ${
+												isSelected ? "text-white" : "text-text-muted"
+											}`}
+										>
+											{fee === 0 ? "Free" : `${fee}%`}
+										</span>
+									</div>
+									{fee > 0 && (
+										<div className="flex items-baseline justify-between">
+											<span className="text-[10px] text-text-muted/50 uppercase">
+												Max Cap
+											</span>
+											<span className="text-[10px] text-text-muted/70">
+												₦{formatWithCommasDouble(cap / 100)}
+											</span>
+										</div>
+									)}
+								</div>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			{/* Inline Breakdown & Event Earnings */}
+			<div className="grid md:grid-cols-2 gap-8 items-start">
+				{/* Dynamic Fee Breakdown */}
+				<div className="space-y-2">
+					<div className="text-sm text-text-muted">
+						Estimated payout (based on current balance)
+					</div>
+					<div className="flex items-center gap-3 text-lg font-mono">
+						<span className="text-text-muted">
+							₦{formatWithCommasDouble(estimatedEarnings / 100)}
+						</span>
+						<span className="text-text-muted/50">-</span>
+						<span className="text-red-400/80">
+							₦{formatWithCommasDouble(estimatedFee / 100)} fee
+						</span>
+						<span className="text-text-muted/50">→</span>
+						<span className="text-green-400 font-bold border-b border-green-500/30 pb-0.5">
+							₦{formatWithCommasDouble(finalPayout / 100)}
+						</span>
+					</div>
+					{selectedSchedule !== "weekly" && (
+						<p className="text-xs text-text-muted/50 max-w-sm leading-relaxed">
+							* Fees are capped at ₦{formatWithCommasDouble(feeCap / 100)} per
+							payout. You will never be charged more than this amount regardless
+							of withdrawal size.
+						</p>
+					)}
+				</div>
+
+				{/* Event Earnings (De-emphasized) */}
+				<div className="flex items-start gap-4 p-4 rounded-xl border border-dashed border-stroke/50 bg-surface-neutral/20">
+					<div className="mt-1 p-2 rounded-lg bg-surface text-text-muted">
+						<Calendar className="w-4 h-4" />
+					</div>
+					<div>
+						<h3 className="text-sm font-medium text-text-muted mb-1">
+							Event Earnings
+						</h3>
+						<p className="text-sm text-text-muted/70 leading-relaxed">
+							Event earnings are paid weekly every Friday at 2PM. No fees apply
+							to event payouts. This schedule cannot be changed to ensure smooth
+							event settlements.
 						</p>
 					</div>
 				</div>
 			</div>
 
-			{/* Success Message */}
+			{/* Save Action */}
+			<div className="fixed bottom-8 right-8 z-50">
+				{isDirty && (
+					<button
+						onClick={handleScheduleChange}
+						disabled={isSaving}
+						className={`
+              flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105
+              bg-white text-black font-bold text-lg
+              hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(74,222,128,0.4)]
+              disabled:opacity-50 disabled:cursor-not-allowed
+            `}
+					>
+						{isSaving ? (
+							<>
+								<Spinner className="w-5 h-5 border-black/30 border-t-black" />
+								<span>Saving...</span>
+							</>
+						) : (
+							<span>Save Schedule</span>
+						)}
+					</button>
+				)}
+			</div>
+
+			{/* Success Toast / Notification */}
 			{success && (
-				<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
-					<p className="text-green-800 dark:text-green-200 text-sm font-medium">
-						✅ Payout settings updated successfully!
-					</p>
-				</div>
-			)}
-
-			{/* Error Message */}
-			{error && (
-				<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-					<p className="text-red-800 dark:text-red-200 text-sm font-medium">
-						❌ {error}
-					</p>
-				</div>
-			)}
-
-			{/* Current Schedule Info */}
-			<div className="bg-surface rounded-2xl p-6 border border-stroke">
-				<h3 className="text-lg font-semibold text-text mb-2">
-					Current Schedule
-				</h3>
-				<div className="flex items-center gap-3">
-					<div className="w-3 h-3 bg-accent rounded-full"></div>
-					<span className="font-medium text-text">
-						{getLabel(currentSchedule)} ({getTimelineDays(currentSchedule)}{" "}
-						business day
-						{getTimelineDays(currentSchedule) !== 1 ? "s" : ""})
-					</span>
-					{getFeePercent(currentSchedule) > 0 && (
-						<span className="text-sm text-text-muted">
-							- {getFeePercent(currentSchedule)}% fee
-						</span>
-					)}
-				</div>
-			</div>
-
-			{/* Schedule Selector */}
-			<PayoutScheduleSelector
-				currentSchedule={selectedSchedule}
-				onScheduleChange={handleScheduleSelect}
-				onSave={handleScheduleChange}
-				isLoading={isSaving}
-			/>
-
-			{/* Fee Calculator */}
-			<PayoutFeeCalculator
-				selectedSchedule={selectedSchedule}
-				estimatedEarnings={estimatedEarnings}
-			/>
-
-			{/* Info Section */}
-			<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
-				<h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-3">
-					💡 How Payout Schedules Work
-				</h3>
-				<div className="space-y-4">
-					<div>
-						<h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-							Event Earnings
-						</h4>
-						<ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-							<li>• Always paid weekly (every Friday at 2 PM)</li>
-							<li>• No fees for event earnings</li>
-							<li>• Automatic processing</li>
-						</ul>
-					</div>
-					<div>
-						<h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
-							Store Earnings
-						</h4>
-						<ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-							<li>
-								• <strong>Standard (Weekly):</strong> No fees, every 7 business
-								days
-							</li>
-							<li>
-								• <strong>Faster Options:</strong> Pay a small fee to receive
-								sooner
-							</li>
-							<li>
-								• <strong>Fee Cap:</strong> Maximum fee is capped to protect
-								your earnings
-							</li>
-							<li>
-								• <strong>Customizable:</strong> Choose your preferred schedule
-								above
-							</li>
-						</ul>
+				<div className="fixed bottom-24 right-8 z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+					<div className="bg-green-500 text-black px-6 py-3 rounded-full font-bold shadow-lg flex items-center gap-2">
+						<CheckCircle2 className="w-5 h-5" />
+						Settings Saved
 					</div>
 				</div>
-			</div>
+			)}
 		</div>
 	);
 }
