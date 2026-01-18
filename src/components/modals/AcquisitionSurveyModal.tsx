@@ -141,7 +141,7 @@ export default function AcquisitionSurveyModal({
 							}`}
 						>
 							<div className="flex items-center gap-3">
-								<span className="text-xl">{opt.icon}</span>
+								<span className="text-lg md:text-xl">{opt.icon}</span>
 								<span className="font-medium text-text">{opt.label}</span>
 							</div>
 							{selectedOption?.id === opt.id && (
@@ -224,7 +224,7 @@ export default function AcquisitionSurveyModal({
 					<div className="w-12 h-12 bg-accent/10 rounded-full flex items-center justify-center mb-4 text-accent">
 						<MessageSquareHeart className="w-6 h-6" />
 					</div>
-					<h2 className="text-2xl font-heading font-semibold mb-2">
+					<h2 className="text-xl md:text-2xl font-heading font-semibold mb-2">
 						Where did you hear about us?
 					</h2>
 					<p className="text-text-muted text-sm leading-relaxed">
@@ -247,8 +247,10 @@ export default function AcquisitionSurveyModal({
 					</button>
 
 					<Button
-						text={isSubmitting ? "Saving..." : "Submit Feedback"}
-						disabled={!canSubmit || isSubmitting}
+						text="Submit Feedback"
+						isLoading={isSubmitting}
+						loadingText="Saving..."
+						disabled={!canSubmit}
 						onClick={() => handleSubmit(false)}
 						className="min-w-[120px]"
 					/>
