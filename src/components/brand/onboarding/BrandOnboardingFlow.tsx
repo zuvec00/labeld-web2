@@ -297,9 +297,12 @@ export default function BrandOnboardingFlow({
 		}
 	};
 
+	const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+
 	const handleCompleteSignup = async (mode: "signup") => {
 		// mode is kept for compatibility with AuthForm props, but we always treat it as "execute"
 		setLoading(true);
+		setLoadingMessage("Creating your account...");
 		setError(null);
 
 		try {
@@ -313,6 +316,7 @@ export default function BrandOnboardingFlow({
 			// 1. Update user profile (if data provided)
 			let profileImageUrl: string | null = null;
 			if (profileData.profileFile) {
+				setLoadingMessage("Uploading profile photo...");
 				try {
 					profileImageUrl = await uploadProfileImageCloudinary(
 						profileData.profileFile,
@@ -323,6 +327,7 @@ export default function BrandOnboardingFlow({
 				}
 			}
 
+			setLoadingMessage("Saving user profile...");
 			// Only update user if we have new data or it's the initial signup
 			// For dashboard usage, we might verify what needs updating, but updating again is safe enough
 			await updateUserCF({
@@ -352,11 +357,14 @@ export default function BrandOnboardingFlow({
 
 			// 2. Create brand if not skipped
 			if (!skipBrandSetup) {
+				setLoadingMessage("Setting up your brand...");
 				// Upload brand images
 				let logoUrl: string;
 				try {
 					// Check if file exists, or if we need to reuse checking
 					if (!brandData.logoFile) throw new Error("Logo is required"); // Should be caught by validation, but double check
+
+					setLoadingMessage("Uploading brand logo...");
 					logoUrl = await uploadBrandImageCloudinary(
 						brandData.logoFile!,
 						user.uid
@@ -370,6 +378,7 @@ export default function BrandOnboardingFlow({
 
 				let coverImageUrl: string | null = null;
 				if (brandData.coverFile) {
+					setLoadingMessage("Uploading cover image...");
 					try {
 						coverImageUrl = await uploadBrandImageCloudinary(
 							brandData.coverFile,
@@ -381,6 +390,7 @@ export default function BrandOnboardingFlow({
 				}
 
 				// Create brand
+				setLoadingMessage("Finalizing brand profile...");
 				await addBrandCF({
 					brandName: brandData.brandName,
 					username: brandData.brandUsername,
@@ -398,6 +408,7 @@ export default function BrandOnboardingFlow({
 				});
 			}
 
+			setLoadingMessage("Done! Redirecting...");
 			// 3. Clear saved data and redirect
 			localStorage.removeItem("brandOnboardingProfile");
 			brandData.reset();
@@ -413,6 +424,7 @@ export default function BrandOnboardingFlow({
 			setError(e instanceof Error ? e.message : "Something went wrong");
 		} finally {
 			setLoading(false);
+			setLoadingMessage(null);
 		}
 	};
 
@@ -596,6 +608,7 @@ export default function BrandOnboardingFlow({
 							mode="signup"
 							onModeChange={() => {}}
 							onSignupComplete={handleCompleteSignup}
+							submitButtonText={loadingMessage || "Create Account"}
 						/>
 					</div>
 				)}
@@ -625,7 +638,7 @@ export default function BrandOnboardingFlow({
 							className="flex items-center gap-2 px-4 py-2 rounded-lg bg-cta text-text font-medium hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition"
 						>
 							{loading
-								? "Creating..."
+								? loadingMessage || "Creating..."
 								: auth.currentUser
 								? "Create Brand"
 								: "Create Account"}

@@ -244,11 +244,14 @@ export default function EventOrganizerOnboardingModal({
 		}
 	};
 
+	const [loadingMessage, setLoadingMessage] = useState<string | null>(null);
+
 	const handleCompleteSignup = async (mode?: "signup") => {
 		// If called from events page (onComplete exists), don't require signup mode
 		if (!onComplete && mode !== "signup") return;
 
 		setLoading(true);
+		setLoadingMessage("Creating your account...");
 		setError(null);
 
 		try {
@@ -262,6 +265,7 @@ export default function EventOrganizerOnboardingModal({
 			if (!onComplete) {
 				let profileImageUrl: string | null = null;
 				if (profileData.profileFile) {
+					setLoadingMessage("Uploading profile photo...");
 					try {
 						profileImageUrl = await uploadProfileImageCloudinary(
 							profileData.profileFile,
@@ -272,6 +276,7 @@ export default function EventOrganizerOnboardingModal({
 					}
 				}
 
+				setLoadingMessage("Saving user profile...");
 				await updateUserCF({
 					email: user.email,
 					username: profileData.username,
@@ -285,9 +290,11 @@ export default function EventOrganizerOnboardingModal({
 
 			// 2. Create event organizer if not skipped
 			if (!skipEventSetup) {
+				setLoadingMessage("Setting up event organizer...");
 				// Upload event organizer images
 				let logoUrl: string;
 				try {
+					setLoadingMessage("Uploading organizer logo...");
 					logoUrl = await uploadProfileImageCloudinary(
 						eventData.data.profileFile!,
 						user.uid
@@ -299,6 +306,7 @@ export default function EventOrganizerOnboardingModal({
 
 				let coverImageUrl: string | null = null;
 				if (eventData.data.coverFile) {
+					setLoadingMessage("Uploading organizer cover...");
 					try {
 						coverImageUrl = await uploadProfileImageCloudinary(
 							eventData.data.coverFile,
@@ -313,6 +321,7 @@ export default function EventOrganizerOnboardingModal({
 				}
 
 				// Create event organizer document directly in Firestore
+				setLoadingMessage("Finalizing organizer profile...");
 				const eventOrganizerRef = doc(db, "eventOrganizers", user.uid);
 				await setDoc(eventOrganizerRef, {
 					uid: user.uid,
@@ -335,6 +344,7 @@ export default function EventOrganizerOnboardingModal({
 				});
 			}
 
+			setLoadingMessage("Done! Redirecting...");
 			// 3. Clear saved data and handle completion
 			localStorage.removeItem("eventOnboardingProfile");
 			eventData.reset();
@@ -352,6 +362,7 @@ export default function EventOrganizerOnboardingModal({
 			setError(e instanceof Error ? e.message : "Something went wrong");
 		} finally {
 			setLoading(false);
+			setLoadingMessage(null);
 		}
 	};
 

@@ -71,10 +71,29 @@ export function useDashboardContext(): UseDashboardContextReturn {
     // We need to manage subscriptions
     let unsubscribeBrand: (() => void) | undefined;
     let unsubscribeOrganizer: (() => void) | undefined;
+    let unsubscribeUser: (() => void) | undefined;
 
     const setupListeners = async () => {
        const { db } = await import("@/lib/firebase/firebaseConfig");
        const { doc, onSnapshot } = await import("firebase/firestore");
+
+       // Real-time listener for User Profile (for Acquisition Survey & other user-level flags)
+       unsubscribeUser = onSnapshot(doc(db, "users", user.uid), async (snap) => {
+           const userData = snap.data();
+           const surveyRaw = userData?.acquisitionSurvey;
+           
+           const acquisitionSurvey = surveyRaw ? {
+               ...surveyRaw,
+               respondedAt: surveyRaw.respondedAt && typeof surveyRaw.respondedAt.toDate === 'function' 
+                   ? surveyRaw.respondedAt.toDate() 
+                   : (surveyRaw.respondedAt instanceof Date ? surveyRaw.respondedAt : new Date())
+           } : undefined;
+
+           updateDetectionState((prev) => ({
+               ...prev,
+               acquisitionSurvey
+           }));
+       });
        
        // Real-time listener for Event Organizer Profile
        unsubscribeOrganizer = onSnapshot(doc(db, "eventOrganizers", user.uid), async (snap) => {
@@ -114,15 +133,6 @@ export function useDashboardContext(): UseDashboardContextReturn {
                ? endsAtRaw.toDate() 
                : undefined;
 
-           // Acquisition Survey
-           const surveyRaw = hasBrandProfile ? snap.data().acquisitionSurvey : undefined;
-           const acquisitionSurvey = surveyRaw ? {
-               ...surveyRaw,
-               respondedAt: surveyRaw.respondedAt && typeof surveyRaw.respondedAt.toDate === 'function' 
-                   ? surveyRaw.respondedAt.toDate() 
-                   : (surveyRaw.respondedAt instanceof Date ? surveyRaw.respondedAt : new Date())
-           } : undefined;
-
            updateDetectionState((prev) => ({
                ...prev,
                hasBrandProfile,
@@ -136,7 +146,6 @@ export function useDashboardContext(): UseDashboardContextReturn {
                brandSubscriptionStatus,
                brandBillingCycle,
                brandSubscriptionEndsAt,
-               acquisitionSurvey
            }));
        });
        
@@ -148,6 +157,7 @@ export function useDashboardContext(): UseDashboardContextReturn {
     return () => {
         if (unsubscribeBrand) unsubscribeBrand();
         if (unsubscribeOrganizer) unsubscribeOrganizer();
+        if (unsubscribeUser) unsubscribeUser();
     };
   }, [user?.uid]);
 

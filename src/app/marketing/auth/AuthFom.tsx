@@ -17,6 +17,7 @@ interface Props {
 	mode: Mode;
 	onModeChange?: (mode: Mode) => void;
 	onSignupComplete?: (mode: "signup") => Promise<void>;
+	submitButtonText?: string;
 }
 
 interface FirebaseError {
@@ -28,6 +29,7 @@ export default function AuthForm({
 	mode,
 	onModeChange,
 	onSignupComplete,
+	submitButtonText,
 }: Props) {
 	const router = useRouter();
 	const {
@@ -358,9 +360,7 @@ export default function AuthForm({
 
 	// For the submit button text:
 	const submitText = submitting
-		? mode === "login"
-			? "Entering..."
-			: "Joining..."
+		? submitButtonText || (mode === "login" ? "Entering..." : "Joining...")
 		: mode === "login"
 		? "Enter the Culture"
 		: "Join the Culture";
