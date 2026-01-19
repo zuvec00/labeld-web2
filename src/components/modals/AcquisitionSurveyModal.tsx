@@ -140,12 +140,14 @@ export default function AcquisitionSurveyModal({
 									: "border-stroke hover:border-text-muted/50 hover:bg-surface"
 							}`}
 						>
-							<div className="flex items-center gap-3">
-								<span className="text-lg md:text-xl">{opt.icon}</span>
+							<div className="flex items-center gap-3 text-left">
+								<span className="text-lg md:text-xl flex-shrink-0">
+									{opt.icon}
+								</span>
 								<span className="font-medium text-text">{opt.label}</span>
 							</div>
 							{selectedOption?.id === opt.id && (
-								<CheckCircle2 className="w-5 h-5 text-accent" />
+								<CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" />
 							)}
 						</button>
 					))}
@@ -176,9 +178,11 @@ export default function AcquisitionSurveyModal({
 										: "border-stroke hover:border-text-muted/50 hover:bg-surface"
 								}`}
 							>
-								<span className="font-medium text-text">{sub.label}</span>
+								<span className="font-medium text-text text-left">
+									{sub.label}
+								</span>
 								{subSelection === sub.id && (
-									<CheckCircle2 className="w-5 h-5 text-accent" />
+									<CheckCircle2 className="w-5 h-5 text-accent flex-shrink-0" />
 								)}
 							</button>
 						))}
@@ -204,7 +208,7 @@ export default function AcquisitionSurveyModal({
 					</h4>
 					<input
 						autoFocus
-						className="w-full p-3 rounded-xl border border-stroke bg-surface focus:border-accent outline-none transition-colors"
+						className="w-full p-3 rounded-xl border border-stroke bg-surface focus:border-accent outline-none transition-colors text-base"
 						placeholder={selectedOption?.detailPlaceholder}
 						value={detailInput}
 						onChange={(e) => setDetailInput(e.target.value)}
