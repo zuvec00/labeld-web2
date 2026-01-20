@@ -236,7 +236,7 @@ export default function PublicPricingPage() {
 
 	async function handleUpgradeClick() {
 		if (!user) {
-			router.push(`/?auth=login&plan=pro&billing=${billing}`);
+			router.push(`/`);
 			return;
 		}
 
@@ -498,7 +498,7 @@ export default function PublicPricingPage() {
 								variant="outline"
 								className="w-full justify-center h-12 text-base"
 								text={freeButton.text}
-								onClick={() => router.push("/?auth=signup&plan=free")}
+								onClick={() => router.push("/")}
 								disabled={freeButton.disabled}
 							/>
 							{/* Promo Teaser for Free Users */}
@@ -689,8 +689,8 @@ export default function PublicPricingPage() {
 								{proButton.disabled
 									? "Change plan settings via support"
 									: canClaimPromo
-									? "Limited time offer. Terms apply."
-									: "Built for brands ready to grow"}
+										? "Limited time offer. Terms apply."
+										: "Built for brands ready to grow"}
 							</p>
 						</div>
 					</div>
@@ -723,6 +723,7 @@ export default function PublicPricingPage() {
 								</tr>
 							</thead>
 							<tbody className="text-base text-text-muted">
+								{/* --- Selling & Commerce --- */}
 								<tr className="border-b border-stroke">
 									<td
 										colSpan={3}
@@ -734,7 +735,7 @@ export default function PublicPricingPage() {
 								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
 									<td className="py-5 pl-4 text-text">Marketplace listing</td>
 									<td className="py-5 text-center text-text">
-										<Check className="w-5 h-5 mx-auto" />
+										<Check className="w-5 h-5 mx-auto opacity-70" />
 									</td>
 									<td className="py-5 text-center text-accent">
 										<Check className="w-5 h-5 mx-auto" />
@@ -745,7 +746,7 @@ export default function PublicPricingPage() {
 										Secure checkout & payouts
 									</td>
 									<td className="py-5 text-center text-text">
-										<Check className="w-5 h-5 mx-auto" />
+										<Check className="w-5 h-5 mx-auto opacity-70" />
 									</td>
 									<td className="py-5 text-center text-accent">
 										<Check className="w-5 h-5 mx-auto" />
@@ -755,12 +756,15 @@ export default function PublicPricingPage() {
 									<td className="py-5 pl-4 text-text">
 										0% Labeld fees on storefront sales
 									</td>
-									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-text-muted/20 pb-4">
+										<span className="text-xs">Standard fees</span>
+									</td>
 									<td className="py-5 text-center text-accent">
 										<Check className="w-5 h-5 mx-auto" />
 									</td>
 								</tr>
 
+								{/* --- Brand Presence --- */}
 								<tr className="border-b border-stroke">
 									<td
 										colSpan={3}
@@ -772,7 +776,7 @@ export default function PublicPricingPage() {
 								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
 									<td className="py-5 pl-4 text-text">Basic Brand Profile</td>
 									<td className="py-5 text-center text-text">
-										<Check className="w-5 h-5 mx-auto" />
+										<Check className="w-5 h-5 mx-auto opacity-70" />
 									</td>
 									<td className="py-5 text-center text-accent">
 										<Check className="w-5 h-5 mx-auto" />
@@ -780,7 +784,10 @@ export default function PublicPricingPage() {
 								</tr>
 								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
 									<td className="py-5 pl-4 text-text">
-										Custom store URL (Subdomain)
+										<span className="font-semibold text-accent">
+											Custom Store URL
+										</span>{" "}
+										(Subdomain)
 									</td>
 									<td className="py-5 text-center text-text-muted/20">—</td>
 									<td className="py-5 text-center text-accent">
@@ -788,8 +795,115 @@ export default function PublicPricingPage() {
 									</td>
 								</tr>
 
-								{/* ... other rows ... */}
-								{/* Keeping it slightly shorter for reliability if needed, but trying to be complete */}
+								{/* --- Storefront Customization --- */}
+								<tr className="border-b border-stroke">
+									<td
+										colSpan={3}
+										className="pt-16 pb-6 pl-4 font-heading font-semibold text-xl text-text"
+									>
+										Storefront Customization
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">Default "Clean" Theme</td>
+									<td className="py-5 text-center text-text">
+										<Check className="w-5 h-5 mx-auto opacity-70" />
+									</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Multiple Theme Layouts
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Section Ordering & Visibility
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Dark / Light Mode Toggle
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Custom Hero & Banner Content
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+
+								{/* --- Analytics & Insights --- */}
+								<tr className="border-b border-stroke">
+									<td
+										colSpan={3}
+										className="pt-16 pb-6 pl-4 font-heading font-semibold text-xl text-text"
+									>
+										Analytics & Insights
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">Total Sales & Revenue</td>
+									<td className="py-5 text-center text-text">
+										<Check className="w-5 h-5 mx-auto opacity-70" />
+									</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">Basic Order History</td>
+									<td className="py-5 text-center text-text">
+										<Check className="w-5 h-5 mx-auto opacity-70" />
+									</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Conversion Rate & Trends
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										Traffic Source Breakdown
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
+								<tr className="border-b border-stroke/20 hover:bg-surface/5 transition-colors">
+									<td className="py-5 pl-4 text-text">
+										"Plain English" Business Insights
+									</td>
+									<td className="py-5 text-center text-text-muted/20">—</td>
+									<td className="py-5 text-center text-accent">
+										<Check className="w-5 h-5 mx-auto" />
+									</td>
+								</tr>
 							</tbody>
 						</table>
 					</div>
@@ -815,7 +929,7 @@ export default function PublicPricingPage() {
 							variant="outline"
 							className="w-full sm:w-auto h-12 text-base  border border-text-muted text-text-muted hover:text-text"
 							text="Start Free"
-							onClick={() => router.push("/?auth=signup")}
+							onClick={() => router.push("/")}
 						/>
 					</div>
 				</div>

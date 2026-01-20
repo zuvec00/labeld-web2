@@ -42,10 +42,19 @@ export interface WalletLedgerSummary {
   createdAt: number;
 }
 
+export interface StoreOrderSummary {
+  id: string;
+  brandId: string;
+  status: string;
+  totalMinor: number;
+  createdAt: any;
+}
+
 export interface CleanupSummary {
   events: Array<{ id: string; title: string; createdAt: any }>;
   attendeeTickets: AttendeeTicketSummary[];
   orders: OrderSummary[];
+  storeOrders: StoreOrderSummary[];
   walletLedger: WalletLedgerSummary[];
   currentWalletBalanceMinor: number;
 }
@@ -163,6 +172,36 @@ export async function fetchWalletLedger(vendorId: string): Promise<WalletLedgerS
 }
 
 /**
+ * Fetch store orders for a user (brand)
+ */
+export async function fetchStoreOrders(userId: string): Promise<StoreOrderSummary[]> {
+  const db = getFirestore();
+  
+  // First get brandId from user
+  const userDoc = await getDoc(doc(db, "users", userId));
+  const brandId = userDoc.exists() ? (userDoc.data().brandId || userId) : userId;
+
+  const ordersRef = collection(db, "storeOrders");
+  const q = query(ordersRef, where("brandId", "==", brandId));
+  const snapshot = await getDocs(q);
+
+  const orders: StoreOrderSummary[] = [];
+
+  snapshot.docs.forEach((doc) => {
+    const data = doc.data();
+    orders.push({
+      id: doc.id,
+      brandId: data.brandId || "",
+      status: data.status || "",
+      totalMinor: data.amount?.totalMinor || 0,
+      createdAt: data.createdAt,
+    });
+  });
+
+  return orders;
+}
+
+/**
  * Get current wallet balance for a user
  */
 export async function getCurrentWalletBalance(userId: string) {
@@ -183,10 +222,11 @@ export async function fetchCleanupSummary(userId: string): Promise<CleanupSummar
   const events = await fetchUserEvents(userId);
   const eventIds = events.map((e) => e.id);
 
-  const [attendeeTickets, orders, walletLedger, currentWalletBalanceMinor] =
+  const [attendeeTickets, orders, storeOrders, walletLedger, currentWalletBalanceMinor] =
     await Promise.all([
       fetchAttendeeTickets(eventIds),
       fetchOrders(eventIds),
+      fetchStoreOrders(userId),
       fetchWalletLedger(userId),
       getCurrentWalletBalance(userId),
     ]);
@@ -195,6 +235,7 @@ export async function fetchCleanupSummary(userId: string): Promise<CleanupSummar
     events,
     attendeeTickets,
     orders,
+    storeOrders,
     walletLedger,
     currentWalletBalanceMinor,
   };
@@ -299,6 +340,39 @@ export async function deleteWalletLedger(vendorId: string) {
 }
 
 /**
+ * Delete store orders for a user (brand)
+ */
+export async function deleteStoreOrders(userId: string) {
+  const db = getFirestore();
+  
+  // First get brandId from user
+  const userDoc = await getDoc(doc(db, "users", userId));
+  const brandId = userDoc.exists() ? (userDoc.data().brandId || userId) : userId;
+
+  const ordersRef = collection(db, "storeOrders");
+  const q = query(ordersRef, where("brandId", "==", brandId));
+  const snapshot = await getDocs(q);
+
+  let deletedCount = 0;
+
+  // Delete in batches of 500 (Firestore batch limit)
+  const docs = snapshot.docs;
+  for (let i = 0; i < docs.length; i += 500) {
+    const batch = writeBatch(db);
+    const batchDocs = docs.slice(i, i + 500);
+
+    batchDocs.forEach((docSnap) => {
+      batch.delete(docSnap.ref);
+    });
+
+    await batch.commit();
+    deletedCount += batchDocs.length;
+  }
+
+  return deletedCount;
+}
+
+/**
  * Reset wallet balance to 0 for a user
  */
 export async function resetWalletBalance(userId: string) {
@@ -319,6 +393,7 @@ export async function executeCleanup(
   options: {
     deleteAttendeeTickets: boolean;
     deleteOrders: boolean;
+    deleteStoreOrders: boolean;
     deleteWalletLedger: boolean;
     resetWallet: boolean;
   }
@@ -329,6 +404,7 @@ export async function executeCleanup(
   const results = {
     attendeeTicketsDeleted: 0,
     ordersDeleted: 0,
+    storeOrdersDeleted: 0,
     walletLedgerDeleted: 0,
     walletReset: false,
   };
@@ -339,6 +415,10 @@ export async function executeCleanup(
 
   if (options.deleteOrders) {
     results.ordersDeleted = await deleteOrders(eventIds);
+  }
+
+  if (options.deleteStoreOrders) {
+    results.storeOrdersDeleted = await deleteStoreOrders(userId);
   }
 
   if (options.deleteWalletLedger) {

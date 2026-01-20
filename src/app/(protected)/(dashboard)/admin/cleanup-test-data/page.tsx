@@ -30,6 +30,7 @@ export default function CleanupTestDataPage() {
 	const [options, setOptions] = useState({
 		deleteAttendeeTickets: true,
 		deleteOrders: true,
+		deleteStoreOrders: true,
 		deleteWalletLedger: true,
 		resetWallet: true,
 	});
@@ -38,6 +39,7 @@ export default function CleanupTestDataPage() {
 	const [results, setResults] = useState<{
 		attendeeTicketsDeleted: number;
 		ordersDeleted: number;
+		storeOrdersDeleted: number;
 		walletLedgerDeleted: number;
 		walletReset: boolean;
 	} | null>(null);
@@ -202,12 +204,31 @@ export default function CleanupTestDataPage() {
 									<p className="text-xs text-text-muted mt-1">
 										Total value:{" "}
 										{formatCurrency(
-											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0)
+											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0),
 										)}
 									</p>
 								</div>
 								<span className="text-2xl font-bold text-cta">
 									{summary.orders.length}
+								</span>
+							</div>
+
+							{/* Store Orders */}
+							<div className="flex justify-between items-center py-3 border-b border-stroke">
+								<div>
+									<p className="font-medium">Store Orders</p>
+									<p className="text-xs text-text-muted mt-1">
+										Total value:{" "}
+										{formatCurrency(
+											summary.storeOrders.reduce(
+												(sum, o) => sum + o.totalMinor,
+												0,
+											),
+										)}
+									</p>
+								</div>
+								<span className="text-2xl font-bold text-cta">
+									{summary.storeOrders.length}
 								</span>
 							</div>
 
@@ -220,8 +241,8 @@ export default function CleanupTestDataPage() {
 										{formatCurrency(
 											summary.walletLedger.reduce(
 												(sum, l) => sum + l.amountMinor,
-												0
-											)
+												0,
+											),
 										)}
 									</p>
 								</div>
@@ -372,6 +393,42 @@ export default function CleanupTestDataPage() {
 						</div>
 					)}
 
+					{/* Store Orders Details */}
+					{summary.storeOrders.length > 0 && (
+						<div className="bg-surface border border-stroke rounded-2xl p-6">
+							<h3 className="font-heading font-semibold mb-4">
+								Store Orders ({summary.storeOrders.length})
+							</h3>
+							<div className="space-y-2 max-h-96 overflow-y-auto">
+								{summary.storeOrders.map((order) => (
+									<div
+										key={order.id}
+										className="p-3 rounded-lg bg-bg border border-stroke text-sm"
+									>
+										<div className="flex justify-between items-start mb-2">
+											<div>
+												<p className="font-medium font-mono text-xs">
+													Order #{order.id.slice(0, 8)}
+												</p>
+												<p className="text-xs text-text-muted mt-1">
+													🛍️ Store Order
+												</p>
+											</div>
+											<div className="text-right">
+												<span className="text-xs px-2 py-1 rounded-full bg-stroke">
+													{order.status}
+												</span>
+												<p className="text-sm font-semibold mt-1">
+													{formatCurrency(order.totalMinor)}
+												</p>
+											</div>
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
 					{/* Wallet Ledger Details */}
 					{summary.walletLedger.length > 0 && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
@@ -454,13 +511,38 @@ export default function CleanupTestDataPage() {
 									<p className="text-xs text-text-muted">
 										{summary.orders.length} orders (
 										{formatCurrency(
-											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0)
+											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0),
 										)}
 										)
 									</p>
 								</div>
 							</label>
-
+							<label className="flex items-center gap-3 p-3 rounded-lg hover:bg-bg cursor-pointer">
+								<input
+									type="checkbox"
+									checked={options.deleteStoreOrders}
+									onChange={(e) =>
+										setOptions({
+											...options,
+											deleteStoreOrders: e.target.checked,
+										})
+									}
+									className="w-5 h-5 rounded border-stroke text-accent focus:ring-accent"
+								/>
+								<div>
+									<p className="font-medium">Delete Store Orders</p>
+									<p className="text-xs text-text-muted">
+										{summary.storeOrders.length} orders (
+										{formatCurrency(
+											summary.storeOrders.reduce(
+												(sum, o) => sum + o.totalMinor,
+												0,
+											),
+										)}
+										)
+									</p>
+								</div>
+							</label>
 							<label className="flex items-center gap-3 p-3 rounded-lg hover:bg-bg cursor-pointer">
 								<input
 									type="checkbox"
@@ -480,8 +562,8 @@ export default function CleanupTestDataPage() {
 										{formatCurrency(
 											summary.walletLedger.reduce(
 												(sum, l) => sum + l.amountMinor,
-												0
-											)
+												0,
+											),
 										)}
 										)
 									</p>
@@ -571,6 +653,9 @@ export default function CleanupTestDataPage() {
 								{options.deleteOrders && (
 									<li>{summary.orders.length} orders</li>
 								)}
+								{options.deleteStoreOrders && (
+									<li>{summary.storeOrders.length} store orders</li>
+								)}
 								{options.deleteWalletLedger && (
 									<li>{summary.walletLedger.length} wallet ledger entries</li>
 								)}
@@ -623,6 +708,12 @@ export default function CleanupTestDataPage() {
 						{results.ordersDeleted > 0 && (
 							<p className="text-sm">
 								✓ Deleted <strong>{results.ordersDeleted}</strong> orders
+							</p>
+						)}
+						{results.storeOrdersDeleted > 0 && (
+							<p className="text-sm">
+								✓ Deleted <strong>{results.storeOrdersDeleted}</strong> store
+								orders
 							</p>
 						)}
 						{results.walletLedgerDeleted > 0 && (
