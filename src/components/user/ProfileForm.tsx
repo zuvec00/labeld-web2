@@ -32,7 +32,7 @@ export default function ProfileForm({
 
 	return (
 		<div className="items-center">
-			<div className="mb-32"></div>
+			<div className="mb-2"></div>
 			{/* Title */}
 			<div className="mb-6">
 				<h1 className="font-heading font-semibold text-2xl">Set Your Label</h1>

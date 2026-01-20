@@ -530,8 +530,8 @@ export default function BrandOnboardingFlow({
 				)}
 
 				{currentStep === 1 && (
-					<div className="space-y-6">
-						<div>
+					<div className="space-y-0">
+						{/* <div>
 							<h3 className="font-semibold text-lg mb-2">
 								Profile Information
 							</h3>
@@ -539,7 +539,7 @@ export default function BrandOnboardingFlow({
 								Let's start with the basics. This information will be used for
 								your account.
 							</p>
-						</div>
+						</div> */}
 						<ProfileForm
 							value={profileData}
 							onChange={setProfileData}
