@@ -117,7 +117,7 @@ const ProductPicker = ({
 							onClick={() => handleToggle(prod.id)}
 							className={cn(
 								"flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors border border-transparent",
-								isSelected ? "bg-accent/5 border-accent/20" : "hover:bg-bg"
+								isSelected ? "bg-accent/5 border-accent/20" : "hover:bg-bg",
 							)}
 						>
 							<div className="w-10 h-10 rounded bg-stroke/20 overflow-hidden relative flex-shrink-0">
@@ -136,7 +136,7 @@ const ProductPicker = ({
 							<div
 								className={cn(
 									"w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
-									isSelected ? "bg-accent border-accent" : "border-stroke"
+									isSelected ? "bg-accent border-accent" : "border-stroke",
 								)}
 							>
 								{isSelected && <Check className="w-3 h-3 text-white" />}
@@ -201,7 +201,7 @@ const CollectionPicker = ({
 							onClick={() => handleToggle(col.id)}
 							className={cn(
 								"flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors border border-transparent",
-								isSelected ? "bg-accent/5 border-accent/20" : "hover:bg-bg"
+								isSelected ? "bg-accent/5 border-accent/20" : "hover:bg-bg",
 							)}
 						>
 							<div className="w-10 h-10 rounded bg-stroke/20 overflow-hidden relative flex-shrink-0">
@@ -224,7 +224,7 @@ const CollectionPicker = ({
 							<div
 								className={cn(
 									"w-5 h-5 rounded-full border flex items-center justify-center transition-colors",
-									isSelected ? "bg-accent border-accent" : "border-stroke"
+									isSelected ? "bg-accent border-accent" : "border-stroke",
 								)}
 							>
 								{isSelected && <Check className="w-3 h-3 text-white" />}
@@ -278,6 +278,44 @@ export default function SectionInspector({
 		}[]
 	>([]);
 
+	const [isFetchingHandle, setIsFetchingHandle] = useState(false);
+	const hasFetchedHandleRef = React.useRef<string | null>(null);
+
+	useEffect(() => {
+		if (section.type === "socialProof" && user?.uid) {
+			const currentHandle = localOverrides.handle;
+			// Only fetch if we haven't fetched for this section session yet and no handle is set
+			if (
+				hasFetchedHandleRef.current !== section.id &&
+				(currentHandle === undefined || currentHandle === "")
+			) {
+				hasFetchedHandleRef.current = section.id;
+				setIsFetchingHandle(true);
+
+				import("@/lib/firebase/queries/brandspace")
+					.then(({ fetchBrandDoc }) => {
+						fetchBrandDoc(user.uid).then((brand) => {
+							if (brand?.instagram) {
+								const raw = brand.instagram;
+								const handle = raw.includes("instagram.com/")
+									? raw.split("instagram.com/")[1].split("/")[0].split("?")[0]
+									: raw;
+								const final = handle.startsWith("@") ? handle : `@${handle}`;
+
+								// Update if still empty (don't overwrite if user started typing)
+								// Since we're in a closure, we trust the async flow or check ref/state if needed
+								// but here we'll just apply it.
+								handleChange("handle", final);
+								handleSave("handle", final);
+							}
+							setIsFetchingHandle(false);
+						});
+					})
+					.catch(() => setIsFetchingHandle(false));
+			}
+		}
+	}, [section.type, section.id, user?.uid]); // simplified deps
+
 	useEffect(() => {
 		if (!user?.uid) return;
 
@@ -300,16 +338,15 @@ export default function SectionInspector({
 				// We need to import this dynamically or move import to top if possible,
 				// but for now relying on existing import instructions or adding it.
 				// Assuming getCollectionListForBrand is available from import update.
-				const { getCollectionListForBrand } = await import(
-					"@/lib/firebase/queries/collection"
-				);
+				const { getCollectionListForBrand } =
+					await import("@/lib/firebase/queries/collection");
 				const collectionList = await getCollectionListForBrand(user!.uid);
 
 				const now = new Date();
 				const today = new Date(
 					now.getFullYear(),
 					now.getMonth(),
-					now.getDate()
+					now.getDate(),
 				);
 
 				const mappedCollections = collectionList.map((c: any) => {
@@ -325,10 +362,10 @@ export default function SectionInspector({
 						const dayLaunch = new Date(
 							launchDate.getFullYear(),
 							launchDate.getMonth(),
-							launchDate.getDate()
+							launchDate.getDate(),
 						);
 						const daysDiff = Math.floor(
-							(dayLaunch.getTime() - today.getTime()) / 86400000
+							(dayLaunch.getTime() - today.getTime()) / 86400000,
 						);
 
 						if (daysDiff > 0) status = `Drops in ${daysDiff}d`;
@@ -506,45 +543,6 @@ export default function SectionInspector({
 			</div>
 		);
 	}
-
-	// Auto-fetch Social Handle if empty
-	const [isFetchingHandle, setIsFetchingHandle] = useState(false);
-	const hasFetchedHandleRef = React.useRef<string | null>(null);
-
-	useEffect(() => {
-		if (section.type === "socialProof" && user?.uid) {
-			const currentHandle = localOverrides.handle;
-			// Only fetch if we haven't fetched for this section session yet and no handle is set
-			if (
-				hasFetchedHandleRef.current !== section.id &&
-				(currentHandle === undefined || currentHandle === "")
-			) {
-				hasFetchedHandleRef.current = section.id;
-				setIsFetchingHandle(true);
-
-				import("@/lib/firebase/queries/brandspace")
-					.then(({ fetchBrandDoc }) => {
-						fetchBrandDoc(user.uid).then((brand) => {
-							if (brand?.instagram) {
-								const raw = brand.instagram;
-								const handle = raw.includes("instagram.com/")
-									? raw.split("instagram.com/")[1].split("/")[0].split("?")[0]
-									: raw;
-								const final = handle.startsWith("@") ? handle : `@${handle}`;
-
-								// Update if still empty (don't overwrite if user started typing)
-								// Since we're in a closure, we trust the async flow or check ref/state if needed
-								// but here we'll just apply it.
-								handleChange("handle", final);
-								handleSave("handle", final);
-							}
-							setIsFetchingHandle(false);
-						});
-					})
-					.catch(() => setIsFetchingHandle(false));
-			}
-		}
-	}, [section.type, section.id, user?.uid]); // simplified deps
 
 	const renderFields = () => {
 		switch (section.type) {
@@ -743,7 +741,7 @@ export default function SectionInspector({
 								placeholder="e.g. Exclusive access via App"
 								className={cn(
 									"bg-surface",
-									localOverrides.cardSubtext === "" && "text-text-muted italic"
+									localOverrides.cardSubtext === "" && "text-text-muted italic",
 								)}
 							/>
 							{localOverrides.cardSubtext === "" && (
@@ -770,7 +768,7 @@ export default function SectionInspector({
 								placeholder="e.g. Shop Collection (Leave empty to hide)"
 								className={cn(
 									"bg-surface",
-									localOverrides.title === "" && "text-text-muted italic"
+									localOverrides.title === "" && "text-text-muted italic",
 								)}
 							/>
 							{localOverrides.title === "" && (
@@ -921,7 +919,7 @@ export default function SectionInspector({
 								onChange={(e) =>
 									handleChange(
 										"followerCount",
-										e.target.value ? parseInt(e.target.value) : null
+										e.target.value ? parseInt(e.target.value) : null,
 									)
 								}
 								onBlur={handleBlur}
