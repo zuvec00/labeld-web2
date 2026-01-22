@@ -18,6 +18,7 @@ interface Props {
 	onModeChange?: (mode: Mode) => void;
 	onSignupComplete?: (mode: "signup") => Promise<void>;
 	submitButtonText?: string;
+	redirectPath?: string;
 }
 
 interface FirebaseError {
@@ -30,6 +31,7 @@ export default function AuthForm({
 	onModeChange,
 	onSignupComplete,
 	submitButtonText,
+	redirectPath,
 }: Props) {
 	const router = useRouter();
 	const {
@@ -86,18 +88,18 @@ export default function AuthForm({
 
 			// (optional) brand flow
 			if (data?.isBrand === true && data?.brandSpaceSetupComplete !== true) {
-				if (!cancelled) router.replace("/brand/setup"); // adjust if your route differs
+				if (!cancelled) router.replace("/brand-space/setup"); // adjust if your route differs
 				return;
 			}
 
 			// 4) fully onboarded → dashboard
-			if (!cancelled) router.replace("/dashboard"); // route is /dashboard (not /(protected)/dashboard)
+			if (!cancelled) router.replace(redirectPath || "/dashboard"); // route is /dashboard (not /(protected)/dashboard)
 		})();
 
 		return () => {
 			cancelled = true;
 		};
-	}, [user, router, onSignupComplete]);
+	}, [user, router, onSignupComplete, redirectPath]);
 
 	useEffect(() => {
 		if (typeof navigator !== "undefined") {
@@ -143,8 +145,8 @@ export default function AuthForm({
 					duration: 5000,
 				});
 
-				// go to onboarding
-				router.push("/user/setup");
+				// go to onboarding or custom redirect
+				router.push(redirectPath || "/user/setup");
 			} else {
 				await signInWithEmail(email, password);
 
@@ -155,7 +157,7 @@ export default function AuthForm({
 				});
 
 				// optional OneSignal + notif via CF later
-				router.replace("/dashboard");
+				router.replace(redirectPath || "/dashboard");
 			}
 		} catch (err: unknown) {
 			// Handle Firebase Auth errors with user-friendly messages
@@ -248,7 +250,9 @@ export default function AuthForm({
 			});
 
 			// optional: await sendNotificationCF({ title:"Back in the culture 💚", content:"Let's pick up where you left off.", externalUserIds:[u.uid] });
-			router.replace(mode === "signup" ? "/user/setup" : "/dashboard");
+			router.replace(
+				redirectPath || (mode === "signup" ? "/user/setup" : "/dashboard"),
+			);
 		} catch (err: unknown) {
 			// Handle Google sign-in specific errors
 			const errorCode = (err as FirebaseError)?.code;
@@ -312,7 +316,9 @@ export default function AuthForm({
 				duration: 4000,
 			});
 
-			router.replace(mode === "signup" ? "/user/setup" : "/dashboard");
+			router.replace(
+				redirectPath || (mode === "signup" ? "/user/setup" : "/dashboard"),
+			);
 		} catch (err: unknown) {
 			console.error("Apple sign-in error:", err);
 
@@ -362,8 +368,8 @@ export default function AuthForm({
 	const submitText = submitting
 		? submitButtonText || (mode === "login" ? "Entering..." : "Joining...")
 		: mode === "login"
-		? "Enter the Culture"
-		: "Join the Culture";
+			? "Enter the Culture"
+			: "Join the Culture";
 
 	const headline = mode === "login" ? "Welcome Back" : "Sign up";
 	const subcopy =
@@ -377,7 +383,7 @@ export default function AuthForm({
 	return (
 		<div className="">
 			{/* Top-left logo */}
-			<div className="mb-32">
+			{/* <div className="mb-32">
 				<Image
 					src="/labeld_logo.png"
 					alt="Labeld"
@@ -386,7 +392,7 @@ export default function AuthForm({
 					className="h-20 w-20"
 					priority
 				/>
-			</div>
+			</div> */}
 
 			<div>
 				{/* Header & subcopy */}

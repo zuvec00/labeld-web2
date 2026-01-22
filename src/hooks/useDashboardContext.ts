@@ -15,6 +15,7 @@ interface RoleDetectionResult {
   brandName?: string;
   phoneNumber?: string | null;
   organizerName?: string;
+  organizerLogoUrl?: string;
   brandPhoneNumber?: string | null;
   brandSubscriptionTier?: "free" | "pro";
   brandSubscriptionStatus?: "active" | "expired" | "past_due" | "cancelled";
@@ -44,17 +45,49 @@ interface UseDashboardContextReturn {
 
 const STORAGE_KEY = "labeld-dashboard-role";
 
+// Helper to determine the best role based on available data
+function determineDefaultRole(state: RoleDetectionResult): DashboardRole {
+  const hasBrandData = state.hasBrandProfile || state.hasPieces;
+  const hasEventData = state.hasEventOrganizerProfile || state.hasEvents;
+
+  // If user has brand data, prefer brand
+  if (hasBrandData) return "brand";
+  // If user only has event data, use event organizer
+  if (hasEventData) return "eventOrganizer";
+  // Default fallback (new user with no data yet)
+  return "brand";
+}
+
+// Helper to validate if a stored role is valid for the user's current data
+function isRoleValidForUser(role: DashboardRole, state: RoleDetectionResult): boolean {
+  if (role === "brand") {
+    return state.hasBrandProfile || state.hasPieces;
+  }
+  if (role === "eventOrganizer") {
+    return state.hasEventOrganizerProfile || state.hasEvents;
+  }
+  return false;
+}
+
 export function useDashboardContext(): UseDashboardContextReturn {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeRole, setActiveRoleState] = useState<DashboardRole>("brand");
   const [detectedRole, setDetectedRole] = useState<DashboardRole>("brand");
   const [roleDetection, setRoleDetection] = useState<RoleDetectionResult | null>(null);
+  const [hasInitializedRole, setHasInitializedRole] = useState(false);
 
   // Auth state listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
+      if (!user) {
+        // Reset state when user logs out
+        setRoleDetection(null);
+        setHasInitializedRole(false);
+        setActiveRoleState("brand");
+        setDetectedRole("brand");
+      }
     });
     return () => unsubscribe();
   }, []);
@@ -99,11 +132,13 @@ export function useDashboardContext(): UseDashboardContextReturn {
        unsubscribeOrganizer = onSnapshot(doc(db, "eventOrganizers", user.uid), async (snap) => {
            const hasEventOrganizerProfile = snap.exists();
            const organizerName = hasEventOrganizerProfile ? snap.data().organizerName : undefined;
+           const organizerLogoUrl = hasEventOrganizerProfile ? snap.data().logoUrl : undefined;
            
            updateDetectionState((prev) => ({
                ...prev,
                hasEventOrganizerProfile,
-               organizerName
+               organizerName,
+               organizerLogoUrl
            }));
        });
 
@@ -161,7 +196,7 @@ export function useDashboardContext(): UseDashboardContextReturn {
     };
   }, [user?.uid]);
 
-  // Helper to update state and derive active roles
+  // Helper to update state
   const updateDetectionState = (updater: (prev: RoleDetectionResult) => RoleDetectionResult) => {
       setRoleDetection(prev => {
           const defaultState: RoleDetectionResult = {
@@ -171,28 +206,58 @@ export function useDashboardContext(): UseDashboardContextReturn {
               hasEvents: false,
           };
           const newState = updater(prev || defaultState);
-          
-          // Re-calculate derived active roles if needed
-          if (!prev) {
-             // Initial load logic effectively
-             let defaultRole: DashboardRole = "brand";
-                if (newState.hasEventOrganizerProfile && (!newState.hasBrandProfile || !newState.hasPieces)) {
-                    defaultRole = "eventOrganizer";
-                } else if (newState.hasBrandProfile || newState.hasPieces) {
-                    defaultRole = "brand";
-                } else if (newState.hasEventOrganizerProfile || newState.hasEvents) {
-                    defaultRole = "eventOrganizer";
-                }
-                setDetectedRole(defaultRole);
-                if (typeof window !== 'undefined' && !localStorage.getItem(STORAGE_KEY)) {
-                     setActiveRoleState(defaultRole);
-                }
-          }
-          
           return newState;
       });
       setLoading(false);
   };
+
+  // Effect to set the active role based on detection results
+  // This runs whenever roleDetection changes
+  useEffect(() => {
+    if (!roleDetection) return;
+
+    // Only initialize once we have checked both profiles
+    // (We wait until we have actual profile data, not just defaults)
+    const hasCheckedProfiles = roleDetection.hasBrandProfile !== undefined || 
+                                roleDetection.hasEventOrganizerProfile !== undefined;
+    
+    if (!hasCheckedProfiles) return;
+
+    // Calculate the best role based on current data
+    const bestRole = determineDefaultRole(roleDetection);
+    setDetectedRole(bestRole);
+
+    // Only set active role if not already initialized
+    if (!hasInitializedRole) {
+      // Check stored preference
+      const storedRole = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) as DashboardRole | null : null;
+
+      if (storedRole && isRoleValidForUser(storedRole, roleDetection)) {
+        // Stored role is valid, use it
+        setActiveRoleState(storedRole);
+      } else {
+        // No stored role or stored role is invalid (e.g., user had brand before, now only has event)
+        setActiveRoleState(bestRole);
+        // Clear invalid stored role and save the correct one
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, bestRole);
+        }
+      }
+
+      setHasInitializedRole(true);
+    } else {
+      // Already initialized, but check if current activeRole is still valid
+      // This handles the case where data loads in pieces
+      const storedRole = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) as DashboardRole | null : null;
+      if (storedRole && !isRoleValidForUser(storedRole, roleDetection)) {
+        // Stored role became invalid (e.g., brand data was deleted), switch to valid role
+        setActiveRoleState(bestRole);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(STORAGE_KEY, bestRole);
+        }
+      }
+    }
+  }, [roleDetection, hasInitializedRole]);
 
   const checkCounts = async (uid: string) => {
       try {

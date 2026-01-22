@@ -99,14 +99,14 @@ export default function PiecesPage() {
 				subtitle:
 					"Get started to share you content and let the culture see what your brand represents",
 				cta: "Start Onboarding",
-				href: "/brand/setup",
+				href: "/brand-space/setup",
 			},
 			"brand-doc-missing": {
 				title: "We couldn't find your BrandSpace",
 				subtitle:
 					"Your setup shows as complete, but the brand record is missing. Let's recreate it.",
 				cta: "Fix Now",
-				href: "/brand/setup",
+				href: "/brand-space/setup",
 			},
 		}[state.reason]!;
 

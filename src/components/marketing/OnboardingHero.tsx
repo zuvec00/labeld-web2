@@ -1,6 +1,7 @@
 "use client";
 
 import AuthForm from "@/app/marketing/auth/AuthFom";
+import { useAuth } from "@/lib/auth/AuthContext";
 import BrandOnboardingModal from "./BrandOnboardingModal";
 import EventOrganizerOnboardingModal from "./EventOrganizerOnboardingModal";
 import Image from "next/image";
@@ -158,11 +159,13 @@ function AuthModal({
 	onClose,
 	mode,
 	onModeChange,
+	redirectPath,
 }: {
 	isOpen: boolean;
 	onClose: () => void;
 	mode: "login" | "signup";
 	onModeChange: (mode: "login" | "signup") => void;
+	redirectPath?: string;
 }) {
 	if (!isOpen) return null;
 
@@ -196,7 +199,11 @@ function AuthModal({
 					</svg>
 				</button>
 
-				<AuthForm mode={mode} onModeChange={onModeChange} />
+				<AuthForm
+					mode={mode}
+					onModeChange={onModeChange}
+					redirectPath={redirectPath}
+				/>
 			</div>
 		</div>
 	);
@@ -225,13 +232,16 @@ export default function OnboardingSplit() {
 	const [showBrandModal, setShowBrandModal] = useState(false);
 	const [showRegistrationModal, setShowRegistrationModal] = useState(false);
 	const [showEventModal, setShowEventModal] = useState(false);
+	const [authRedirectPath, setAuthRedirectPath] = useState<string | undefined>(
+		undefined,
+	);
 
 	const router = useRouter();
 	const pathname = usePathname();
+	const { user } = useAuth();
 
 	const handleLaunchBrand = () => {
-		// Show brand onboarding modal instead of auth modal
-		setShowBrandModal(true);
+		router.push("/onboarding?step=profile");
 	};
 
 	const handleRegistrationClose = () => {
@@ -246,7 +256,9 @@ export default function OnboardingSplit() {
 
 	const handleDropEvents = () => {
 		// Show event organizer onboarding modal instead of auth modal
-		setShowEventModal(true);
+		// setShowEventModal(true);
+		// New Flow:
+		router.push("/onboarding?mode=event&step=profile");
 	};
 
 	const handleLoginClick = () => {
@@ -445,9 +457,13 @@ export default function OnboardingSplit() {
 			{/* Auth Modal */}
 			<AuthModal
 				isOpen={showAuthModal}
-				onClose={() => setShowAuthModal(false)}
+				onClose={() => {
+					setShowAuthModal(false);
+					setAuthRedirectPath(undefined);
+				}}
 				mode={mode}
 				onModeChange={setMode}
+				redirectPath={authRedirectPath}
 			/>
 
 			{/* Brand Onboarding Modal (Original) */}

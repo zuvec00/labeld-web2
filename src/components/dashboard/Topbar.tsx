@@ -97,25 +97,35 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 		}
 	};
 
-	// Name to display
-	const displayName =
-		activeRole === "brand"
-			? roleDetection?.brandName || "Brand"
-			: roleDetection?.organizerName || "Organizer";
+	// Determine what to show based on actual available data
+	const hasBrand = roleDetection?.hasBrandProfile;
+	const hasOrganizer = roleDetection?.hasEventOrganizerProfile;
 
-	// Plan Badge (for Brand)
-	const planBadge =
-		activeRole === "brand" ? (
-			roleDetection?.brandSubscriptionTier === "pro" ? (
-				<span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
-					PRO
-				</span>
-			) : (
-				<span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full bg-stroke text-text-muted text-xs font-medium border border-stroke">
-					FREE
-				</span>
-			)
-		) : null;
+	// Name to display - prioritize based on active role and available data
+	let displayName = "My Account";
+	let accountTypeLabel = "User Profile";
+	let logoUrl: string | null = null;
+
+	if (activeRole === "brand" && hasBrand) {
+		displayName = roleDetection?.brandName || "Brand";
+		accountTypeLabel = "Brand Account";
+		logoUrl = roleDetection?.brandLogoUrl || null;
+	} else if (activeRole === "eventOrganizer" && hasOrganizer) {
+		displayName = roleDetection?.organizerName || "Organizer";
+		accountTypeLabel = "Event Organizer";
+		logoUrl = roleDetection?.organizerLogoUrl || null;
+	} else if (hasOrganizer && !hasBrand) {
+		// User only has organizer account
+		displayName = roleDetection?.organizerName || "Organizer";
+		accountTypeLabel = "Event Organizer";
+		logoUrl = roleDetection?.organizerLogoUrl || null;
+	} else if (hasBrand && !hasOrganizer) {
+		// User only has brand account
+		displayName = roleDetection?.brandName || "Brand";
+		accountTypeLabel = "Brand Account";
+		logoUrl = roleDetection?.brandLogoUrl || null;
+	}
+	// else: falls through to default "My Account" / "User Profile"
 
 	return (
 		<>
@@ -167,16 +177,35 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 								<span className="text-sm font-medium text-text">
 									{displayName}
 								</span>
-								{planBadge}
+								{/* Plan Badge (Brand Only) */}
+								{hasBrand && roleDetection?.brandSubscriptionTier === "pro" ? (
+									<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
+										PRO
+									</span>
+								) : hasBrand ? (
+									<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-stroke text-text-muted text-xs font-medium border border-stroke">
+										FREE
+									</span>
+								) : null}
 							</div>
-							<span className="text-xs text-text-muted capitalize">
-								{activeRole === "brand" ? "Brand Account" : "Event Organizer"}
+							<span className="text-xs text-text-muted">
+								{accountTypeLabel}
 							</span>
 						</div>
 
 						<div className="h-9 w-9 rounded-full overflow-hidden border border-stroke ring-2 ring-transparent hover:ring-accent/20 transition-all cursor-pointer">
 							{loading ? (
 								<div className="h-full w-full bg-stroke animate-pulse" />
+							) : logoUrl ? (
+								<Image
+									src={logoUrl}
+									alt={displayName}
+									width={36}
+									height={36}
+									className="object-cover h-full w-full"
+									onClick={() => router.push("/brand-space/profile/edit")}
+									onError={() => {}}
+								/>
 							) : profileImageUrl ? (
 								<Image
 									src={profileImageUrl}

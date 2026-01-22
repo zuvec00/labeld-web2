@@ -7,18 +7,25 @@ import { create } from "zustand";
  * - UI-only draft values during onboarding
  ***************************************/
 export type BrandOnboardState = {
-  // Step 1
+  // Step 0: User Profile
+  userDisplayName: string;
+  userUsername: string;
+  userProfileFile: File | null;
+
+  // Step 1: Brand Identity
   brandName: string;
   brandUsername: string; // @handle rules applied in UI
   phoneNumber: string;   // NEW
   brandCategory: string | null;
+
+  // Step 2: Visuals
   logoFile: File | null;  // local file before upload
   coverFile: File | null; // local file before upload
   instagram: string;
   youtube: string;
   tiktok: string;
 
-  // Step 2
+  // Step 3: Story & Location
   bio: string;
   tags: string[];        // up to 3 -> maps to brandTags
   country: string | null;
@@ -30,6 +37,10 @@ export type BrandOnboardState = {
 };
 
 export const useBrandOnboard = create<BrandOnboardState>((set) => ({
+  userDisplayName: "",
+  userUsername: "",
+  userProfileFile: null,
+
   brandName: "",
   brandUsername: "",
   phoneNumber: "",
@@ -46,6 +57,9 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
   set: (key, value) => set({ [key]: value } ),
   reset: () =>
     set({
+      userDisplayName: "",
+      userUsername: "",
+      userProfileFile: null,
       brandName: "",
       brandUsername: "",
       phoneNumber: "",

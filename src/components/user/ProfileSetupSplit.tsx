@@ -111,7 +111,7 @@ export default function ProfileSetupSplit() {
 			// 6) navigate based on isBrand
 			if (data.isBrand) {
 				// stay on brand flow, or route to brand setup step 2, etc.
-				router.push("/brand/setup"); // change to your brand flow route
+				router.push("/brand-space/setup"); // change to your brand flow route
 			} else {
 				router.push("/dashboard");
 			}
