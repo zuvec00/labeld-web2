@@ -56,7 +56,7 @@ export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 					{/* Brand Name */}
 					<div className="space-y-2">
 						<label className="text-sm font-medium text-text-muted uppercase tracking-wider">
-							Display Name <span className="text-accent">*</span>
+							Brand Name <span className="text-accent">*</span>
 						</label>
 						<input
 							type="text"

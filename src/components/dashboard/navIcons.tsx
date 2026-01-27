@@ -29,7 +29,7 @@ export const getNavIcon = (iconName: string) => {
 			return <Globe {...iconProps} />;
 		case "Radar":
 			return <Radar {...iconProps} />;
-		case "Pieces":
+		case "Products":
 			return <Package {...iconProps} />;
 		case "Collections":
 			return <Layers {...iconProps} />;

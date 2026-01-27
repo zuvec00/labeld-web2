@@ -5,7 +5,7 @@ import RadarTab from "./Radar/RadarTab";
 import PiecesTab from "./pieces/PiecesTab";
 import CollectionsTab from "./collections/CollectionTab";
 
-const TAB_LABELS = ["Pieces", "Radar", "Collections", "Behind the Label"];
+const TAB_LABELS = ["Products", "Radar", "Collections", "Behind the Label"];
 
 export default function BrandTabs({ uid }: { uid: string }) {
 	const [tab, setTab] = useState(0);
@@ -42,7 +42,7 @@ export default function BrandTabs({ uid }: { uid: string }) {
 				<p className="text-xs text-text-muted animate-in fade-in slide-in-from-top-1 duration-300 transform">
 					{
 						[
-							"Pieces — live works & creative assets",
+							"Products — live works & creative assets",
 							"Radar — discovery & visibility engine",
 							"Collections — curated drops & seasons",
 							"Behind the Label — story & intent",

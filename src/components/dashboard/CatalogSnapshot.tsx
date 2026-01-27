@@ -96,7 +96,7 @@ export default function CatalogSnapshot({
 					className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1"
 				>
 					<ExternalLink className="w-3 h-3" />
-					Manage Pieces
+					Manage Products
 				</button>
 			</div>
 

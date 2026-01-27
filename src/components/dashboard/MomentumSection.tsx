@@ -200,7 +200,7 @@ export default function MomentumSection({
 					Momentum & Content
 				</h2>
 				<p className="text-sm text-text-muted">
-					Your latest Radar posts and Pieces driving brand culture.
+					Your latest Radar posts and Products driving brand culture.
 				</p>
 			</div>
 
@@ -241,7 +241,7 @@ export default function MomentumSection({
 				{/* Catalog Snapshot */}
 				<div className="space-y-4">
 					<div className="flex items-center justify-between">
-						<h3 className="text-sm font-medium text-text">Recent Pieces</h3>
+						<h3 className="text-sm font-medium text-text">Recent Products</h3>
 						<Link
 							href="/pieces"
 							className="text-xs text-cta hover:text-cta/80 transition-colors flex items-center gap-1"

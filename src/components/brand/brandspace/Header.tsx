@@ -7,7 +7,14 @@ import { getHeatColor } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
-import { Calendar, Copy, ExternalLink, MoreHorizontal, Package, Settings2 } from "lucide-react";
+import {
+	Calendar,
+	Copy,
+	ExternalLink,
+	MoreHorizontal,
+	Package,
+	Settings2,
+} from "lucide-react";
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 
 /* --- Header --- */
@@ -72,8 +79,8 @@ export default function BrandHeader({
 	const daysSinceLastDrop = lastDropDate
 		? Math.floor(
 				(new Date().getTime() - new Date(lastDropDate).getTime()) /
-					(1000 * 3600 * 24)
-		  )
+					(1000 * 3600 * 24),
+			)
 		: 999;
 	const isActive = daysSinceLastDrop <= 30;
 
@@ -90,7 +97,7 @@ export default function BrandHeader({
 		? new Date(joinedAt).toLocaleDateString(undefined, {
 				month: "long",
 				year: "numeric",
-		  })
+			})
 		: "";
 
 	return (
@@ -141,7 +148,7 @@ export default function BrandHeader({
 						)}
 						<div className="flex items-center gap-1.5">
 							<Package className="w-3.5 h-3.5" />
-							<span>{productCount} Pieces</span>
+							<span>{productCount} Products</span>
 						</div>
 					</div>
 				</div>

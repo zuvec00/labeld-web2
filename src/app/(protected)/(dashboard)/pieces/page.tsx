@@ -74,7 +74,7 @@ export default function PiecesPage() {
 						Sign in to continue
 					</h1>
 					<p className="text-text-muted mt-2">
-						You need an account to access Pieces.
+						You need an account to access Products.
 					</p>
 					<Button
 						text="Go to Sign In"

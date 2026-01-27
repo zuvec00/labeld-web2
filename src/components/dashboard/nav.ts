@@ -21,7 +21,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     items: [
       { label: "Brand Space", href: "/brand-space", feature: "brandspace", icon: getNavIcon("BrandSpace") },
       { label: "Radar", href: "/radar", feature: "brandspace", icon: getNavIcon("Radar") },
-      { label: "Pieces", href: "/pieces", feature: "brandspace", icon: getNavIcon("Pieces") },
+      { label: "Products", href: "/pieces", feature: "brandspace", icon: getNavIcon("Products") },
       { label: "Collections", href: "/collections", feature: "brandspace", icon: getNavIcon("Collections") },
       { label: "Site Customization", href: "/brand-space/site-customization", feature: "brandspace", icon: getNavIcon("SiteCustomization"),badge: "PRO"  },
     ],

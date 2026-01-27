@@ -67,7 +67,7 @@ export interface FinalizeOrderPayload {
     merchItemId?: string;
     qty: number;
     size?: string; // for merch size
-    color?: string; // for merch color
+    color?: string | { label: string; hex: string }; // for merch color
   }>;
   clientTotals: {
     currency: Currency;

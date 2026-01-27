@@ -83,6 +83,9 @@ export default function EditPiecePage() {
 	const [description, setDescription] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
 	const [sizes, setSizes] = useState<string[]>([]);
+	const [selectedColors, setSelectedColors] = useState<
+		Array<{ label: string; hex: string }>
+	>([]);
 	// const [copLink, setCopLink] = useState("");
 
 	// Stock management
@@ -117,7 +120,7 @@ export default function EditPiecePage() {
 					colsRaw.map((c: any) => ({
 						...c,
 						launchDate: asDate((c as any).launchDate),
-					}))
+					})),
 				);
 
 				setPieceName(p.dropName ?? "");
@@ -137,6 +140,7 @@ export default function EditPiecePage() {
 				setDescription(p.description ?? "");
 				setTags(p.styleTags ?? []);
 				setSizes(p.sizeOptions ?? []);
+				setSelectedColors(p.colors ?? []);
 				// setCopLink(p.copLink ?? "");
 
 				// Stock management
@@ -208,21 +212,21 @@ export default function EditPiecePage() {
 					});
 					console.log(
 						"✅ Main product image uploaded to Cloudinary:",
-						mainVisualUrl
+						mainVisualUrl,
 					);
 				} catch (cloudinaryError) {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					mainVisualUrl = await uploadFileGetURL(
 						mainFile,
-						`productImages/${userId}/${Date.now()}-${mainFile.name}`
+						`productImages/${userId}/${Date.now()}-${mainFile.name}`,
 					);
 					console.log(
 						"✅ Main product image uploaded to Firebase Storage:",
-						mainVisualUrl
+						mainVisualUrl,
 					);
 				}
 			}
@@ -241,22 +245,22 @@ export default function EditPiecePage() {
 						galleryImageUrls.push(url);
 						console.log(
 							"✅ Gallery product image uploaded to Cloudinary:",
-							url
+							url,
 						);
 					} catch (cloudinaryError) {
 						// Fallback: Upload to Firebase Storage
 						console.warn(
 							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
-							cloudinaryError
+							cloudinaryError,
 						);
 						const url = await uploadFileGetURL(
 							f,
-							`productImages/${userId}/${Date.now()}-${f.name}`
+							`productImages/${userId}/${Date.now()}-${f.name}`,
 						);
 						galleryImageUrls.push(url);
 						console.log(
 							"✅ Gallery product image uploaded to Firebase Storage:",
-							url
+							url,
 						);
 					}
 				}
@@ -275,21 +279,21 @@ export default function EditPiecePage() {
 					});
 					console.log(
 						"✅ Size guide image uploaded to Cloudinary:",
-						sizeGuideUrl
+						sizeGuideUrl,
 					);
 				} catch (cloudinaryError) {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed for size guide, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					sizeGuideUrl = await uploadFileGetURL(
 						sizeGuideFile,
-						`productImages/${userId}/${Date.now()}-${sizeGuideFile.name}`
+						`productImages/${userId}/${Date.now()}-${sizeGuideFile.name}`,
 					);
 					console.log(
 						"✅ Size guide image uploaded to Firebase Storage:",
-						sizeGuideUrl
+						sizeGuideUrl,
 					);
 				}
 			}
@@ -307,7 +311,7 @@ export default function EditPiecePage() {
 							abbreviation: selectedCurrency.abbreviation,
 							name: selectedCurrency.name,
 							flag: selectedCurrency.flag,
-					  }
+						}
 					: null,
 				launchDate: launch,
 				isAvailableNow: availableNow,
@@ -315,14 +319,15 @@ export default function EditPiecePage() {
 				stockRemaining: unlimitedStock
 					? null
 					: Number.isFinite(Number(stockQuantity))
-					? Number(stockQuantity)
-					: null,
+						? Number(stockQuantity)
+						: null,
 				mainVisualUrl,
 				galleryImages: galleryImageUrls ?? null,
 				sizeGuideUrl: sizeGuideUrl || null,
 				description: description.trim() ? description.trim() : null,
 				styleTags: tags.length ? tags : null,
 				sizeOptions: sizes.length ? sizes : null,
+				colors: selectedColors.length ? selectedColors : null,
 				copLink: null, // Set to null for store orders
 				discountPercent:
 					hasDiscount && Number.isFinite(Number(discountPercent))
@@ -483,6 +488,15 @@ export default function EditPiecePage() {
 
 					<Divider />
 
+					{/* Colors */}
+					<div>
+						<Label text="Color Options" />
+						<ColorPicker colors={selectedColors} onChange={setSelectedColors} />
+						<Hint text="Add color variants if applicable (e.g. Midnight Blue, #191970)" />
+					</div>
+
+					<Divider />
+
 					{/* Stock Second */}
 					<div>
 						<Label text="Stock Management" />
@@ -524,7 +538,7 @@ export default function EditPiecePage() {
 								c.id === collectionId &&
 								c.launchDate &&
 								launchDate &&
-								+c.launchDate! === +launchDate!
+								+c.launchDate! === +launchDate!,
 						) && <Hint text="Piece matches drop collection launch date." />}
 					<div className="mt-4">
 						<Toggle
@@ -633,7 +647,7 @@ export default function EditPiecePage() {
 											<div className="text-text-muted text-sm mt-1">
 												Discounted price: {selectedCurrency?.abbreviation || ""}{" "}
 												{formatWithCommasDouble(
-													parsedPrice * (1 - Number(discountPercent) / 100)
+													parsedPrice * (1 - Number(discountPercent) / 100),
 												)}{" "}
 												<span className="text-green-600">
 													({discountPercent}% off)
@@ -745,6 +759,99 @@ function Textarea({
 	);
 }
 
+function ColorPicker({
+	colors,
+	onChange,
+}: {
+	colors: { label: string; hex: string }[];
+	onChange: (v: { label: string; hex: string }[]) => void;
+}) {
+	const [label, setLabel] = useState("");
+	const [hex, setHex] = useState("#000000");
+
+	function addColor() {
+		if (!label.trim()) return;
+		// Ensure hex is full 6 chars if user typed it manually, or trust the picker
+		// Simple validation:
+		const cleanHex = hex.startsWith("#") ? hex : `#${hex}`;
+		onChange([...colors, { label: label.trim(), hex: cleanHex }]);
+		setLabel("");
+		setHex("#000000");
+	}
+
+	function removeColor(index: number) {
+		onChange(colors.filter((_, i) => i !== index));
+	}
+
+	return (
+		<div className="space-y-3">
+			{/* List of added colors */}
+			{colors.length > 0 && (
+				<div className="flex flex-wrap gap-2">
+					{colors.map((c, i) => (
+						<div
+							key={i}
+							className="flex items-center gap-2 rounded-full border border-stroke pl-1 pr-3 py-1 bg-surface"
+						>
+							<div
+								className="w-4 h-4 rounded-full border border-stroke/20"
+								style={{ backgroundColor: c.hex }}
+							/>
+							<span className="text-sm font-medium">{c.label}</span>
+							<button
+								type="button"
+								onClick={() => removeColor(i)}
+								className="text-text-muted hover:text-alert ml-1"
+							>
+								×
+							</button>
+						</div>
+					))}
+				</div>
+			)}
+
+			{/* Input row */}
+			<div className="flex gap-2 items-end">
+				<div className="flex-1">
+					<div className="text-xs text-text-muted mb-1 ml-1">Label</div>
+					<input
+						className={baseFieldClasses()}
+						placeholder="e.g. Navy Blue"
+						value={label}
+						onChange={(e) => setLabel(e.target.value)}
+						onKeyDown={(e) => {
+							if (e.key === "Enter") {
+								e.preventDefault();
+								addColor();
+							}
+						}}
+					/>
+				</div>
+				<div>
+					<div className="text-xs text-text-muted mb-1 ml-1">Color</div>
+					<div className="h-[42px] w-[50px] relative rounded-xl border border-stroke overflow-hidden cursor-pointer">
+						<input
+							type="color"
+							value={hex}
+							onChange={(e) => setHex(e.target.value)}
+							className="absolute -top-2 -left-2 w-[200%] h-[200%] cursor-pointer p-0 m-0 opacity-0"
+						/>
+						<div className="w-full h-full" style={{ backgroundColor: hex }} />
+					</div>
+				</div>
+				<button
+					type="button"
+					onClick={addColor}
+					disabled={!label.trim()}
+					className="h-[42px] px-4 rounded-xl border border-stroke bg-surface hover:bg-surface-neutral disabled:opacity-50 transition-colors font-medium text-sm"
+				>
+					Add
+				</button>
+			</div>
+		</div>
+	);
+}
+
 function Select({
 	value,
 	onChange,
@@ -800,7 +907,7 @@ function CurrencyDropdown({
 }: {
 	value: { flag: string; abbreviation: string; name: string } | null;
 	onChange: (
-		v: { flag: string; abbreviation: string; name: string } | null
+		v: { flag: string; abbreviation: string; name: string } | null,
 	) => void;
 }) {
 	const val = value?.abbreviation ?? "";
@@ -1003,7 +1110,7 @@ function MultiImagePicker({
 			setMsg(
 				`Only ${slotsLeft} more image${
 					slotsLeft === 1 ? "" : "s"
-				} allowed (max ${MAX}).`
+				} allowed (max ${MAX}).`,
 			);
 		} else {
 			setMsg(null);

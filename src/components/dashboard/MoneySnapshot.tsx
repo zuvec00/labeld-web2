@@ -61,7 +61,7 @@ function MetricCard({
 				<div
 					className={`p-2 rounded-lg bg-opacity-10 ${iconColor.replace(
 						"text-",
-						"bg-"
+						"bg-",
 					)}/10`}
 				>
 					<Icon className={`w-4 h-4 ${iconColor}`} />
@@ -216,7 +216,7 @@ export default function MoneySnapshot({
 							href="/pieces"
 							className="px-4 py-2 text-xs bg-cta text-text rounded-lg hover:bg-cta/90 transition-colors"
 						>
-							Add Pieces
+							Add Products
 						</Link>
 						<Link
 							href="/events"

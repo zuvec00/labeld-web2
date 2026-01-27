@@ -17,11 +17,14 @@ export default function MerchList({
 }: MerchListProps) {
 	const { updateQty, addItem, items } = useCheckoutCart();
 
+	const getColorStr = (c: any) =>
+		typeof c === "object" ? c?.label || "" : c || "";
+
 	const handleQtyChange = (
 		merchItemId: string,
 		qty: number,
 		size?: string,
-		color?: string
+		color?: string,
 	) => {
 		const merchItem = merchItems.find((item) => item.id === merchItemId);
 		if (!merchItem) return;
@@ -35,17 +38,20 @@ export default function MerchList({
 		// Check stock limit
 		if (merchItem.stockRemaining !== null && qty > merchItem.stockRemaining) {
 			console.warn(
-				`Cannot select more than ${merchItem.stockRemaining} items for ${merchItem.name}`
+				`Cannot select more than ${merchItem.stockRemaining} items for ${merchItem.name}`,
 			);
 			return;
 		}
 
-		const variantKey = `${size || ""}-${color || ""}`;
+		const getColorStr = (c: any) =>
+			typeof c === "object" ? c?.label || "" : c || "";
+
+		const variantKey = `${size || ""}-${getColorStr(color)}`;
 		const existingItem = items.find(
 			(item) =>
 				item._type === "merch" &&
 				item.merchItemId === merchItemId &&
-				`${item.size || ""}-${item.color || ""}` === variantKey
+				`${item.size || ""}-${getColorStr(item.color)}` === variantKey,
 		);
 
 		if (existingItem) {
@@ -56,7 +62,7 @@ export default function MerchList({
 					id: merchItemId,
 					variantKey: variantKey,
 				},
-				qty
+				qty,
 			);
 		} else {
 			// Add new item to cart
@@ -80,14 +86,14 @@ export default function MerchList({
 	const getCurrentQty = (
 		merchItemId: string,
 		size?: string,
-		color?: string
+		color?: string,
 	) => {
-		const variantKey = `${size || ""}-${color || ""}`;
+		const variantKey = `${size || ""}-${getColorStr(color)}`;
 		const cartItem = items.find(
 			(item) =>
 				item._type === "merch" &&
 				item.merchItemId === merchItemId &&
-				`${item.size || ""}-${item.color || ""}` === variantKey
+				`${item.size || ""}-${getColorStr(item.color)}` === variantKey,
 		);
 		return cartItem?.qty || 0;
 	};
@@ -130,7 +136,7 @@ interface MerchCardProps {
 		merchItemId: string,
 		qty: number,
 		size?: string,
-		color?: string
+		color?: string,
 	) => void;
 	getCurrentQty: (merchItemId: string, size?: string, color?: string) => number;
 }
@@ -205,8 +211,8 @@ function MerchCard({ merchItem, onQtyChange, getCurrentQty }: MerchCardProps) {
 									isSoldOut
 										? "border-stroke/50 text-text-muted/50 cursor-not-allowed"
 										: selectedSize === size
-										? "border-accent bg-accent/20 text-accent"
-										: "border-stroke text-text-muted hover:border-accent/50"
+											? "border-accent bg-accent/20 text-accent"
+											: "border-stroke text-text-muted hover:border-accent/50"
 								}`}
 							>
 								{size}
@@ -232,8 +238,8 @@ function MerchCard({ merchItem, onQtyChange, getCurrentQty }: MerchCardProps) {
 									isSoldOut
 										? "border-stroke/50 text-text-muted/50 cursor-not-allowed"
 										: selectedColor === color
-										? "border-accent bg-accent/20 text-accent"
-										: "border-stroke text-text-muted hover:border-accent/50"
+											? "border-accent bg-accent/20 text-accent"
+											: "border-stroke text-text-muted hover:border-accent/50"
 								}`}
 							>
 								{color}

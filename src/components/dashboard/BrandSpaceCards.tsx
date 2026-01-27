@@ -75,14 +75,14 @@ export function HeatScoreCard({
 		kpis.heatTrend === "up"
 			? TrendingUp
 			: kpis.heatTrend === "down"
-			? TrendingDown
-			: Minus;
+				? TrendingDown
+				: Minus;
 	const trendColor =
 		kpis.heatTrend === "up"
 			? "text-green-500"
 			: kpis.heatTrend === "down"
-			? "text-red-500"
-			: "text-gray-500";
+				? "text-red-500"
+				: "text-gray-500";
 
 	return (
 		<div className="rounded-lg bg-surface border border-stroke p-4 hover:border-cta/20 transition-colors">
@@ -102,8 +102,8 @@ export function HeatScoreCard({
 						{kpis.heatTrend === "up"
 							? "+"
 							: kpis.heatTrend === "down"
-							? "-"
-							: ""}
+								? "-"
+								: ""}
 					</div>
 				)}
 			</div>
@@ -155,7 +155,7 @@ export function PiecesCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 	return (
 		<div className="rounded-lg bg-surface border border-stroke p-4 hover:border-cta/20 transition-colors">
 			<div className="flex items-center justify-between mb-2">
-				<h3 className="text-sm font-medium text-text-muted">Pieces</h3>
+				<h3 className="text-sm font-medium text-text-muted">Products</h3>
 				<Package className="w-4 h-4 text-text-muted" />
 			</div>
 

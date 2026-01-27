@@ -28,7 +28,7 @@ export interface MerchLineItem {
   currency: Currency;
   qty: number;
   size: string | null;
-  color: string | null;
+  color: string | { label: string; hex: string } | null;
   subtotalMinor: number;
 }
 
@@ -40,7 +40,7 @@ export interface ProductLineItem {
   currency: Currency;
   qty: number;
   size: string | null;
-  color: string | null;
+  color: string | { label: string; hex: string } | null;
   subtotalMinor: number;
   absorbTransactionFee: boolean;
 }

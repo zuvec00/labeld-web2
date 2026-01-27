@@ -82,8 +82,8 @@ function UpcomingEventCard({
 									capacityPercent >= 80
 										? "bg-green-500"
 										: capacityPercent >= 50
-										? "bg-blue-500"
-										: "bg-orange-500"
+											? "bg-blue-500"
+											: "bg-orange-500"
 								}`}
 								style={{ width: `${Math.min(capacityPercent, 100)}%` }}
 							/>
@@ -305,7 +305,7 @@ export default function PromotionSection({
 								href="/events"
 								className="inline-block mt-2 text-xs text-orange-500 hover:text-orange-400"
 							>
-								Create Pieces →
+								Create Products →
 							</Link>
 						</div>
 					</div>

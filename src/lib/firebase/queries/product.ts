@@ -22,6 +22,11 @@ export type ProductLite = {
   launchDate?: Date | null;
 };
 
+export type ProductColor = {
+  label: string;
+  hex: string;
+};
+
 export type Product = {
   id: string;
   brandId: string;
@@ -38,6 +43,7 @@ export type Product = {
   description?: string | null;
   styleTags?: string[] | null;
   sizeOptions?: string[] | null;
+  colors?: ProductColor[] | null;
   copLink?: string | null;
   stockRemaining?: number | null;
   discountPercent?: number | null;
@@ -75,6 +81,7 @@ function toProduct(id: string, d: DocumentData): Product {
     description: d.description ?? null,
     styleTags: Array.isArray(d.styleTags) ? d.styleTags.map(String) : null,
     sizeOptions: Array.isArray(d.sizeOptions) ? d.sizeOptions.map(String) : null,
+    colors: Array.isArray(d.colors) ? d.colors : null,
     copLink: d.copLink ?? null,
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
@@ -121,6 +128,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     description: d.description ?? "",
     styleTags: Array.isArray(d.styleTags) ? d.styleTags.map(String) : [],
     sizeOptions: Array.isArray(d.sizeOptions) ? d.sizeOptions.map(String) : [],
+    colors: Array.isArray(d.colors) ? d.colors : [],
     copLink: d.copLink ?? "",
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,

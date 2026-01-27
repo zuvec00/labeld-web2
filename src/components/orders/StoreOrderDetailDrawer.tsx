@@ -125,7 +125,7 @@ export default function StoreOrderDetailDrawer({
 
 	const handleUpdateFulfillmentStatus = async (
 		lineKey: string,
-		status: string
+		status: string,
 	) => {
 		if (!order) return;
 
@@ -135,7 +135,7 @@ export default function StoreOrderDetailDrawer({
 		try {
 			// Find the current fulfillment line to get qtyFulfilled
 			const currentLine = fulfillmentLines.find(
-				(line) => line.lineKey === lineKey
+				(line) => line.lineKey === lineKey,
 			);
 			const qtyFulfilled = currentLine?.qtyFulfilled || 0;
 
@@ -233,14 +233,14 @@ export default function StoreOrderDetailDrawer({
 									<p className="text-sm text-text-muted">Fulfillment Status</p>
 									<p
 										className={`font-medium ${getFulfillmentColor(
-											order.fulfillmentAggregateStatus || "unfulfilled"
+											order.fulfillmentAggregateStatus || "unfulfilled",
 										)}`}
 									>
 										{order.fulfillmentAggregateStatus
 											? order.fulfillmentAggregateStatus
 													.charAt(0)
 													.toUpperCase() +
-											  order.fulfillmentAggregateStatus.slice(1)
+												order.fulfillmentAggregateStatus.slice(1)
 											: "Unfulfilled"}
 									</p>
 								</div>
@@ -290,7 +290,24 @@ export default function StoreOrderDetailDrawer({
 											<div className="text-sm text-text-muted space-x-2">
 												<span>Qty: {item.qty}</span>
 												{item.size && <span>Size: {item.size}</span>}
-												{item.color && <span>Color: {item.color}</span>}
+												{item.color && (
+													<span className="flex items-center gap-1">
+														Color:{" "}
+														{typeof item.color === "object" ? (
+															<>
+																{(item.color as any).label}
+																<span
+																	className="inline-block w-3 h-3 rounded-full border border-stroke/20 ml-1"
+																	style={{
+																		backgroundColor: (item.color as any).hex,
+																	}}
+																/>
+															</>
+														) : (
+															item.color
+														)}
+													</span>
+												)}
 											</div>
 										</div>
 										<div className="text-right">
@@ -330,7 +347,7 @@ export default function StoreOrderDetailDrawer({
 												<div className="flex items-center gap-2">
 													<span
 														className={`px-2 py-1 rounded text-xs font-medium ${getFulfillmentColor(
-															line.status
+															line.status,
 														)}`}
 													>
 														{line.status}
@@ -341,7 +358,7 @@ export default function StoreOrderDetailDrawer({
 															onChange={(e) =>
 																handleUpdateFulfillmentStatus(
 																	line.lineKey,
-																	e.target.value
+																	e.target.value,
 																)
 															}
 															disabled={updatingLines.has(line.lineKey)}
@@ -423,7 +440,7 @@ export default function StoreOrderDetailDrawer({
 									<span className="text-accent">
 										{formatCurrency(
 											order.amount.itemsSubtotalMinor +
-												(order.amount.shippingMinor ?? 0)
+												(order.amount.shippingMinor ?? 0),
 										)}
 									</span>
 								</div>

@@ -101,13 +101,11 @@ export default function BrandVisualsStep({
 							)}
 
 							<p className="text-sm font-medium text-text-muted group-hover:text-text transition-colors">
-								{coverFile
-									? "Change cover"
-									: "This is the specific aesthetic of your drop."}
+								{coverFile ? "Change cover" : "Your brand’s visual identity."}
 							</p>
 							{!coverFile && (
 								<p className="text-xs text-text-muted/60 mt-1">
-									It shows on the feed and preview cards.
+									How your brand appears across Labeld.
 								</p>
 							)}
 

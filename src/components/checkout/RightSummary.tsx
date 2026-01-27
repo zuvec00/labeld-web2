@@ -43,7 +43,7 @@ function toFinalizeLine(item: CartItem) {
 // Helper function to compute shipping fees for all vendors
 async function computeShippingFees(
 	items: CartItem[],
-	shippingAddress?: { state: string; city?: string }
+	shippingAddress?: { state: string; city?: string },
 ): Promise<number> {
 	if (!shippingAddress?.state) return 0;
 
@@ -65,13 +65,13 @@ async function computeShippingFees(
 		([vendorId, items]) => ({
 			vendorId,
 			items,
-		})
+		}),
 	);
 
 	const vendorsWithQuotes = await shippingService.quoteShippingForAllVendors(
 		vendors,
 		shippingAddress.state,
-		shippingAddress.city
+		shippingAddress.city,
 	);
 
 	return shippingService.calculateTotalShippingFee(vendorsWithQuotes);
@@ -87,8 +87,8 @@ function buildIdempotencyKey(
 		merchItemId?: string;
 		qty: number;
 		size?: string;
-		color?: string;
-	}>
+		color?: string | { label: string; hex: string };
+	}>,
 ): string {
 	const canonicalItems = lineItems
 		.slice()
@@ -126,7 +126,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 	});
 	const [finalizing, setFinalizing] = useState(false);
 	const [vendorShipping, setVendorShipping] = useState<VendorShippingInfo[]>(
-		[]
+		[],
 	);
 	const [shippingFees, setShippingFees] = useState(0);
 
@@ -138,7 +138,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 	}, [shippingFees]);
 
 	const hasTickets = items.some(
-		(item) => item._type === "ticket" && item.qty > 0
+		(item) => item._type === "ticket" && item.qty > 0,
 	);
 
 	const hasMerch = items.some((item) => item._type === "merch" && item.qty > 0);
@@ -159,7 +159,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 				// Log order type for debugging
 				console.log(
 					"Order type:",
-					hasTickets && hasMerch ? "mixed" : hasTickets ? "tickets" : "merch"
+					hasTickets && hasMerch ? "mixed" : hasTickets ? "tickets" : "merch",
 				);
 
 				// Build line items for finalizeOrder using helper function
@@ -171,7 +171,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 						? await computeShippingFees(items, {
 								state: shipping.address.state,
 								city: shipping.address.city,
-						  })
+							})
 						: 0;
 
 				console.log("💰 Final shipping fee:", shippingFeeMinor);
@@ -180,7 +180,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 				const idempotencyKey = buildIdempotencyKey(
 					eventId,
 					contact?.email || "",
-					lineItems
+					lineItems,
 				);
 
 				// Prepare shipping info for finalizeOrder
@@ -197,9 +197,9 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 												city: shipping.address?.city,
 												state: shipping.address?.state,
 												postalCode: shipping.address?.postalCode,
-										  }
+											}
 										: undefined,
-						  }
+							}
 						: undefined;
 
 				// Finalize order using the exact totals shown to user
@@ -230,7 +230,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 						},
 					},
 					items,
-					shippingInfo
+					shippingInfo,
 				);
 
 				// Fulfillment lines are now created automatically in finalizeOrder
@@ -242,7 +242,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 			} catch (err) {
 				console.error("Order finalization failed:", err);
 				setError(
-					"Payment succeeded but order could not be finalized. Please contact support."
+					"Payment succeeded but order could not be finalized. Please contact support.",
 				);
 				setIsProcessing(false);
 			} finally {
@@ -259,7 +259,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 			finalizing,
 			shipping,
 			vendorShipping,
-		]
+		],
 	);
 
 	const handlePaymentClose = useCallback(() => {
@@ -336,7 +336,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 					// For pickup orders, shipping fee is 0
 					if (shipping.method === "pickup") {
 						console.log(
-							"🚚 RightSummary: Pickup method selected - setting fee to 0"
+							"🚚 RightSummary: Pickup method selected - setting fee to 0",
 						);
 						setVendorShipping(vendors);
 						setShippingFees(0);
@@ -355,7 +355,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 							await shippingService.quoteShippingForAllVendors(
 								vendors,
 								shipping.address.state,
-								shipping.address.city
+								shipping.address.city,
 							);
 
 						console.log("🚚 RightSummary: Got vendor quotes", {
@@ -528,8 +528,8 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 						items.some((item) => item._type === "merch")
 							? "mixed"
 							: items.some((item) => item._type === "ticket")
-							? "tickets"
-							: "merch",
+								? "tickets"
+								: "merch",
 				};
 
 				// Initialize Paystack payment
@@ -539,7 +539,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 					metadata,
 					handlePaymentSuccess,
 					handlePaymentClose,
-					handlePaymentError
+					handlePaymentError,
 				);
 			} catch (err) {
 				console.error("Checkout failed:", err);
@@ -577,7 +577,11 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 								onRemove={() => {
 									const variantKey =
 										item._type === "merch"
-											? `${item.size || ""}-${item.color || ""}`
+											? `${item.size || ""}-${
+													typeof item.color === "object"
+														? (item.color as any).label
+														: item.color || ""
+												}`
 											: undefined;
 									removeItem({
 										_type: item._type,
@@ -596,7 +600,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 				{/* Fee Breakdown - Only show when transferFeesToGuest is true */}
 				{items.length > 0 &&
 					items.some(
-						(item) => item._type === "ticket" && item.transferFeesToGuest
+						(item) => item._type === "ticket" && item.transferFeesToGuest,
 					) && (
 						<div className="border-t border-stroke pt-4 mb-4">
 							<div className="flex items-center justify-between text-sm mb-2">
@@ -647,8 +651,8 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 										shippingFees > 0
 											? formatCurrency(shippingFees, totals.currency)
 											: shipping?.method === "pickup"
-											? "Free (Pickup)"
-											: "Calculating...";
+												? "Free (Pickup)"
+												: "Calculating...";
 									console.log("🚚 RightSummary: Shipping display value", {
 										shippingFees,
 										shippingMethod: shipping?.method,
@@ -677,7 +681,7 @@ export default function RightSummary({ eventId }: RightSummaryProps) {
 								totals.itemsSubtotalMinor +
 									totals.buyerFeesMinor +
 									shippingFees,
-								totals.currency
+								totals.currency,
 							)}
 						</span>
 					</div>

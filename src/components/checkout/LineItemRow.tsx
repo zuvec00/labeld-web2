@@ -34,7 +34,14 @@ export default function LineItemRow({ item, onRemove }: LineItemRowProps) {
 					)}
 					{item._type === "merch" && (item.size || item.color) && (
 						<span className="text-xs px-2 py-1 rounded-full bg-surface border border-stroke text-text-muted">
-							{[item.size, item.color].filter(Boolean).join(" / ")}
+							{[
+								item.size,
+								typeof item.color === "object"
+									? (item.color as any).label
+									: item.color,
+							]
+								.filter(Boolean)
+								.join(" / ")}
 						</span>
 					)}
 				</div>

@@ -22,7 +22,7 @@ export type CartItem =
       currency: "NGN" | "USD"; 
       qty: number; 
       size?: string; 
-      color?: string;
+      color?: string | { label: string; hex: string };
       brandId?: string; // Add brandId for shipping quotes
     };
 
@@ -59,6 +59,12 @@ type CartState = {
 };
 
 // Helper functions for cart operations
+const getColorString = (color: string | { label: string; hex: string } | undefined): string => {
+  if (!color) return "";
+  if (typeof color === "object") return color.label;
+  return color;
+};
+
 const mergeByKindAndVariant = (items: CartItem[], newItem: CartItem): CartItem[] => {
   const existingIndex = items.findIndex(item => {
     if (item._type !== newItem._type) return false;
@@ -66,8 +72,8 @@ const mergeByKindAndVariant = (items: CartItem[], newItem: CartItem): CartItem[]
       return item.ticketTypeId === newItem.ticketTypeId;
     }
     if (item._type === "merch" && newItem._type === "merch") {
-      const variantKey1 = `${item.size || ""}-${item.color || ""}`;
-      const variantKey2 = `${newItem.size || ""}-${newItem.color || ""}`;
+      const variantKey1 = `${item.size || ""}-${getColorString(item.color)}`;
+      const variantKey2 = `${newItem.size || ""}-${getColorString(newItem.color)}`;
       return item.merchItemId === newItem.merchItemId && variantKey1 === variantKey2;
     }
     return false;
@@ -99,7 +105,7 @@ const patchQty = (
       }
       
       if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
-        const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
+        const itemVariantKey = `${item.size || ""}-${getColorString(item.color)}`;
         return itemVariantKey !== (variantKey || "");
       }
       
@@ -116,7 +122,7 @@ const patchQty = (
     }
     
     if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
-      const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
+      const itemVariantKey = `${item.size || ""}-${getColorString(item.color)}`;
       return itemVariantKey === (variantKey || "");
     }
     
@@ -150,7 +156,7 @@ const removeLine = (
     }
     
     if (_type === "merch" && "merchItemId" in item && item.merchItemId === id) {
-      const itemVariantKey = `${item.size || ""}-${item.color || ""}`;
+      const itemVariantKey = `${item.size || ""}-${getColorString(item.color)}`;
       return itemVariantKey !== (variantKey || "");
     }
     

@@ -80,14 +80,14 @@ function HeatScoreCard({
 		kpis.heatTrend === "up"
 			? TrendingUp
 			: kpis.heatTrend === "down"
-			? TrendingDown
-			: Minus;
+				? TrendingDown
+				: Minus;
 	const trendColor =
 		kpis.heatTrend === "up"
 			? "text-green-500"
 			: kpis.heatTrend === "down"
-			? "text-red-500"
-			: "text-gray-500";
+				? "text-red-500"
+				: "text-gray-500";
 
 	return (
 		<div className="rounded-xl bg-surface border border-stroke p-5 hover:border-cta/30 transition-all hover:shadow-lg">
@@ -110,8 +110,8 @@ function HeatScoreCard({
 						kpis.heatTrend === "up"
 							? "bg-green-500/10 text-green-500"
 							: kpis.heatTrend === "down"
-							? "bg-red-500/10 text-red-500"
-							: "bg-gray-500/10 text-gray-500"
+								? "bg-red-500/10 text-red-500"
+								: "bg-gray-500/10 text-gray-500"
 					}`}
 				>
 					<TrendIcon className="w-3 h-3" />
@@ -119,8 +119,8 @@ function HeatScoreCard({
 						{kpis.heatTrend === "up"
 							? "Rising"
 							: kpis.heatTrend === "down"
-							? "Cooling"
-							: "Stable"}
+								? "Cooling"
+								: "Stable"}
 					</span>
 				</div>
 			</div>
@@ -201,8 +201,8 @@ function FollowersCard({ kpis }: { kpis: BrandSpaceKPIs }) {
 				{isPositive
 					? `+${kpis.followersChange7d} new`
 					: isNegative
-					? `${kpis.followersChange7d}`
-					: "No change"}{" "}
+						? `${kpis.followersChange7d}`
+						: "No change"}{" "}
 				this week
 			</p>
 		</div>
@@ -224,7 +224,7 @@ function EngagementVelocityCard({
 					<div className="p-2 rounded-lg bg-purple-500/10">
 						<Zap className="w-5 h-5 text-purple-500" />
 					</div>
-					<MetricTooltip content="Engagement spikes when Moments link to Pieces">
+					<MetricTooltip content="Engagement spikes when Moments link to Products">
 						<div className="flex items-center gap-1">
 							<h3 className="text-sm font-medium text-text">Engagement</h3>
 							<Info className="w-3 h-3 text-text-muted" />
@@ -266,7 +266,7 @@ function BrandGuidance({
 
 	if (kpis.postsCount === 0) {
 		messages.push(
-			"📝 Create your first Radar post to start building engagement"
+			"📝 Create your first Radar post to start building engagement",
 		);
 	}
 
@@ -284,8 +284,6 @@ function BrandGuidance({
 		</div>
 	);
 }
-
-
 
 export default function BrandHealthSection({
 	data,
