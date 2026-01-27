@@ -42,7 +42,7 @@ export default function OrderDetailDrawer({
 			(total, fulfillmentLine) => {
 				return total + (fulfillmentLine.shipping?.feeMinor || 0);
 			},
-			0
+			0,
 		);
 	};
 
@@ -251,7 +251,7 @@ export default function OrderDetailDrawer({
 									))}
 
 								{Object.values(order.fulfillmentLines || {}).filter(
-									(fl) => fl.shipping
+									(fl) => fl.shipping,
 								).length === 0 && (
 									<div className="text-sm text-text-muted">
 										No shipping information available
@@ -313,7 +313,25 @@ export default function OrderDetailDrawer({
 												{line._type === "merch" && (
 													<>
 														{line.size && <div>Size: {line.size}</div>}
-														{line.color && <div>Color: {line.color}</div>}
+														{line.color && (
+															<div className="flex items-center gap-1">
+																Color:{" "}
+																{typeof line.color === "object" ? (
+																	<>
+																		{(line.color as any).label}
+																		<span
+																			className="inline-block w-2 h-2 rounded-full border border-stroke/20"
+																			style={{
+																				backgroundColor: (line.color as any)
+																					.hex,
+																			}}
+																		/>
+																	</>
+																) : (
+																	line.color
+																)}
+															</div>
+														)}
 														<div>ID: {line.merchItemId}</div>
 													</>
 												)}
@@ -329,7 +347,7 @@ export default function OrderDetailDrawer({
 											</div>
 										</div>
 									</div>
-								)
+								),
 							)}
 						</div>
 					</div>

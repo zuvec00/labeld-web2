@@ -26,14 +26,14 @@ export default function FulfillmentLineManager({
 }: FulfillmentLineManagerProps) {
 	const [loading, setLoading] = useState<string | null>(null);
 	const [showTrackingModal, setShowTrackingModal] = useState<string | null>(
-		null
+		null,
 	);
 	const [showNoteModal, setShowNoteModal] = useState<string | null>(null);
 
 	// Get vendor-owned merch lines
 	const vendorOwnedLines = order.lineItems.filter(
 		(item): item is LineItem & { _type: "merch" } =>
-			item._type === "merch" && order.visibilityReason === "brand" // Only show for brand owners
+			item._type === "merch" && order.visibilityReason === "brand", // Only show for brand owners
 	);
 
 	const handleMarkFulfilled = async (lineKey: string) => {
@@ -78,7 +78,7 @@ export default function FulfillmentLineManager({
 	const handleAddTracking = async (
 		lineKey: string,
 		trackingNumber: string,
-		carrier: string
+		carrier: string,
 	) => {
 		if (!auth.currentUser) return;
 
@@ -153,8 +153,20 @@ export default function FulfillmentLineManager({
 											</span>
 										)}
 										{line.color && (
-											<span className="text-xs text-text-muted">
-												{line.color}
+											<span className="text-xs text-text-muted flex items-center gap-1">
+												{typeof line.color === "object" ? (
+													<>
+														{(line.color as any).label}
+														<span
+															className="inline-block w-2 h-2 rounded-full border border-stroke/20"
+															style={{
+																backgroundColor: (line.color as any).hex,
+															}}
+														/>
+													</>
+												) : (
+													line.color
+												)}
 											</span>
 										)}
 									</div>
