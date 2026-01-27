@@ -55,10 +55,10 @@ export default function RadarPromotionPopup({
 			v instanceof Date
 				? v.toISOString()
 				: typeof v?.toDate === "function"
-				? v.toDate().toISOString()
-				: typeof v === "string"
-				? v
-				: null;
+					? v.toDate().toISOString()
+					: typeof v === "string"
+						? v
+						: null;
 
 		const out = {
 			uid: b.uid,
@@ -79,7 +79,7 @@ export default function RadarPromotionPopup({
 			updatedAt: maybeISO(b.updatedAt),
 		};
 		Object.keys(out).forEach(
-			(k) => (out as any)[k] == null && delete (out as any)[k]
+			(k) => (out as any)[k] == null && delete (out as any)[k],
 		);
 		return out;
 	}
@@ -130,7 +130,7 @@ export default function RadarPromotionPopup({
 				brand: brandMap,
 			};
 			Object.keys(contentData).forEach(
-				(k) => contentData[k] == null && delete contentData[k]
+				(k) => contentData[k] == null && delete contentData[k],
 			);
 
 			// Debug: Log the content data to see what we're sending
@@ -192,7 +192,7 @@ export default function RadarPromotionPopup({
 						<div className="flex gap-4">
 							<img
 								src={pieceData.mainVisualUrl}
-								alt="Piece preview"
+								alt="Product preview"
 								className="w-20 h-20 rounded-xl object-cover border border-stroke"
 							/>
 							<div className="flex-1">

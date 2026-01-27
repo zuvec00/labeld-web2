@@ -166,7 +166,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 				<button
 					onClick={() => router.push("/pieces/new")}
 					className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-					title="Drop a Piece"
+					title="Drop a Product"
 				>
 					<Plus className="w-6 h-6" />
 				</button>
@@ -305,7 +305,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 			<button
 				onClick={() => router.push("/pieces/new")}
 				className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-				title="Drop a Piece"
+				title="Drop a Product"
 			>
 				<Plus className="w-6 h-6" />
 			</button>

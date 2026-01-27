@@ -210,10 +210,10 @@ export default function EditDropContentPage({
 
 			{err && <p className="mt-4 text-alert">{err}</p>}
 
-			{/* Group: Link to a Piece */}
+			{/* Group: Link to a Product */}
 			<div className="mt-6 rounded-2xl bg-surface border border-stroke p-6">
 				<label className="block text-sm text-text-muted mb-2">
-					Link This to a Piece <span className="text-cta">*</span>
+					Link This to a Product <span className="text-cta">*</span>
 				</label>
 				<select
 					className="w-full rounded-xl border border-stroke px-4 py-3 bg-bg text-text outline-none focus:border-accent"

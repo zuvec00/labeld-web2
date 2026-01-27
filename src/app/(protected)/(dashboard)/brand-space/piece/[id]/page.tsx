@@ -28,7 +28,7 @@ export default function PieceDetailsPage({
 				const p = await fetchProductById(id);
 				if (!mounted) return;
 				setPiece(p);
-				if (!p) setErr("Piece not found.");
+				if (!p) setErr("Product not found.");
 			} catch (e: any) {
 				if (!mounted) return;
 				setErr(e?.message ?? "Failed to load piece.");
@@ -44,7 +44,7 @@ export default function PieceDetailsPage({
 	const images = useMemo(() => {
 		if (!piece) return [];
 		return [piece.mainVisualUrl, ...(piece.galleryImages ?? [])].filter(
-			Boolean
+			Boolean,
 		);
 	}, [piece]);
 

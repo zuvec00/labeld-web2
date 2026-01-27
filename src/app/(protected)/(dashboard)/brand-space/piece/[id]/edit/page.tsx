@@ -108,7 +108,7 @@ export default function EditPiecePage() {
 				const p = await fetchProductById(id);
 				if (!mounted) return;
 				if (!p) {
-					setErr("Piece not found.");
+					setErr("Product not found.");
 					setLoading(false);
 					return;
 				}
@@ -380,7 +380,7 @@ export default function EditPiecePage() {
 		return (
 			<div className="min-h-dvh grid place-items-center">
 				<div className="text-center">
-					<p className="text-text-muted mb-4">{err ?? "Piece not found"}</p>
+					<p className="text-text-muted mb-4">{err ?? "Product not found"}</p>
 					<Button text="Back" onClick={() => router.back()} />
 				</div>
 			</div>
@@ -390,14 +390,14 @@ export default function EditPiecePage() {
 	return (
 		<div className="pb-24">
 			<div className="px-4 sm:px-6 pt-6">
-				<h1 className="font-heading font-semibold text-2xl">Edit Piece</h1>
+				<h1 className="font-heading font-semibold text-2xl">Edit Product</h1>
 				<p className="text-text-muted mt-1">Update your piece details below.</p>
 			</div>
 
 			<div className="px-4 sm:px-6 mt-6 space-y-4">
 				{/* 1. Identity */}
 				<Group>
-					<Label text="Piece Name" required />
+					<Label text="Product Name" required />
 					<Input
 						value={pieceName}
 						onChange={setPieceName}
@@ -539,7 +539,7 @@ export default function EditPiecePage() {
 								c.launchDate &&
 								launchDate &&
 								+c.launchDate! === +launchDate!,
-						) && <Hint text="Piece matches drop collection launch date." />}
+						) && <Hint text="Product matches drop collection launch date." />}
 					<div className="mt-4">
 						<Toggle
 							checked={availableNow}
@@ -554,7 +554,7 @@ export default function EditPiecePage() {
 
 				{/* 5. Visuals */}
 				<Group>
-					<Label text="Main Piece Visual" required />
+					<Label text="Main Product Visual" required />
 					<SingleImagePicker
 						existingUrl={onlineMain}
 						file={mainFile}
@@ -607,7 +607,7 @@ export default function EditPiecePage() {
 
 				{/* 7. Discovery */}
 				<Group>
-					<Label text="Piece Tags" />
+					<Label text="Product Tags" />
 					<TagsInput
 						value={tags}
 						onChange={setTags}
@@ -667,7 +667,7 @@ export default function EditPiecePage() {
 			<div className="fixed inset-x-0 bottom-0 bg-bg/80 backdrop-blur border-t border-stroke px-4 sm:px-6 py-3">
 				<div className="max-w-6xl mx-auto flex items-center justify-end gap-3">
 					<Button
-						text={deleting ? "Deleting…" : "Delete Piece"}
+						text={deleting ? "Deleting…" : "Delete Product"}
 						variant="outline"
 						outlineColor="alert"
 						onClick={onDelete}

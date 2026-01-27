@@ -405,7 +405,7 @@ export default function NewPiecePage() {
 	return (
 		<div className="pb-24">
 			<div className="px-4 sm:px-6 pt-6">
-				<h1 className="font-heading font-semibold text-2xl">Drop a Piece</h1>
+				<h1 className="font-heading font-semibold text-2xl">Drop a Product</h1>
 				<p className="text-text-muted mt-1">
 					Ready to show off your next masterpiece? Drop a piece and let your
 					fans fall in love.
@@ -415,7 +415,7 @@ export default function NewPiecePage() {
 			<div className="px-4 sm:px-6 mt-6 space-y-4">
 				{/* 1. Identity */}
 				<Group>
-					<Label text="Piece Name" required />
+					<Label text="Product Name" required />
 					<Input
 						value={pieceName}
 						onChange={setPieceName}
@@ -606,7 +606,7 @@ export default function NewPiecePage() {
 								c.launchDate &&
 								launchDate &&
 								+c.launchDate! === +launchDate!,
-						) && <Hint text="Piece matches drop collection launch date." />}
+						) && <Hint text="Product matches drop collection launch date." />}
 					<div className="mt-4">
 						<Toggle
 							checked={availableNow}
@@ -621,7 +621,7 @@ export default function NewPiecePage() {
 
 				{/* 5. Visuals */}
 				<Group>
-					<Label text="Main Piece Visual" required />
+					<Label text="Main Product Visual" required />
 					<SingleImagePicker file={mainFile} onPick={setMainFile} />
 					<Hint text="This is the first image people see" />
 
@@ -649,7 +649,7 @@ export default function NewPiecePage() {
 
 				{/* 7. Discovery */}
 				<Group>
-					<Label text="Piece Tags" />
+					<Label text="Product Tags" />
 					<TagsInput
 						value={tags}
 						onChange={setTags}
@@ -715,7 +715,7 @@ export default function NewPiecePage() {
 						className="text-text-muted hover:text-text"
 					/>
 					<Button
-						text={saving ? "Dropping..." : "Drop Piece"}
+						text={saving ? "Dropping..." : "Drop Product"}
 						onClick={onCreate}
 						disabled={isDisabled || saving}
 						variant="primary"

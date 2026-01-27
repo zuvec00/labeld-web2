@@ -41,7 +41,7 @@ export default function NewDropContentPage() {
 
 	const canSave = useMemo(
 		() => !!selectedProductId && !!teaserFile,
-		[selectedProductId, teaserFile]
+		[selectedProductId, teaserFile],
 	);
 
 	function serializeBrandForContent(b: any) {
@@ -50,10 +50,10 @@ export default function NewDropContentPage() {
 			v instanceof Date
 				? v.toISOString()
 				: typeof v?.toDate === "function"
-				? v.toDate().toISOString()
-				: typeof v === "string"
-				? v
-				: null;
+					? v.toDate().toISOString()
+					: typeof v === "string"
+						? v
+						: null;
 
 		const out = {
 			uid: b.uid,
@@ -74,7 +74,7 @@ export default function NewDropContentPage() {
 			updatedAt: maybeISO(b.updatedAt),
 		};
 		Object.keys(out).forEach(
-			(k) => (out as any)[k] == null && delete (out as any)[k]
+			(k) => (out as any)[k] == null && delete (out as any)[k],
 		);
 		return out;
 	}
@@ -136,19 +136,19 @@ export default function NewDropContentPage() {
 				// Primary: Upload to Cloudinary
 				teaserImageUrl = await uploadContentImageCloudinary(
 					teaserFile,
-					user.uid
+					user.uid,
 				);
 				console.log("✅ Teaser image uploaded to Cloudinary:", teaserImageUrl);
 			} catch (cloudinaryError) {
 				// Fallback: Upload to Firebase Storage
 				console.warn(
 					"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-					cloudinaryError
+					cloudinaryError,
 				);
 				teaserImageUrl = await uploadContentImageWeb(teaserFile, user.uid);
 				console.log(
 					"✅ Teaser image uploaded to Firebase Storage:",
-					teaserImageUrl
+					teaserImageUrl,
 				);
 			}
 
@@ -158,8 +158,8 @@ export default function NewDropContentPage() {
 				(selected as any)?.launchDate instanceof Date
 					? (selected as any).launchDate.toISOString()
 					: typeof (selected as any)?.launchDate === "string"
-					? new Date((selected as any).launchDate).toISOString()
-					: null;
+						? new Date((selected as any).launchDate).toISOString()
+						: null;
 
 			// 3) FETCH BRAND + serialize (this is the denormalized blob 👇)
 			const brand = await fetchBrandById(user.uid);
@@ -187,7 +187,7 @@ export default function NewDropContentPage() {
 				brand: brandMap,
 			};
 			Object.keys(contentData).forEach(
-				(k) => contentData[k] == null && delete contentData[k]
+				(k) => contentData[k] == null && delete contentData[k],
 			);
 
 			// 4) create via CF
@@ -227,10 +227,10 @@ export default function NewDropContentPage() {
 
 			{err && <p className="mt-4 text-alert">{err}</p>}
 
-			{/* Link to a Piece */}
+			{/* Link to a Product */}
 			<div className="mt-6 rounded-2xl bg-surface border border-stroke p-6">
 				<label className="block text-sm text-text-muted mb-2">
-					Link This to a Piece <span className="text-cta">*</span>
+					Link This to a Product <span className="text-cta">*</span>
 				</label>
 				<select
 					className="w-full rounded-xl border border-stroke px-4 py-3 bg-bg text-text outline-none focus:border-accent"
@@ -242,7 +242,7 @@ export default function NewDropContentPage() {
 					</option>
 					{products.map((p) => (
 						<option key={p.id} value={p.id}>
-							{(p as any).dropName ?? "Untitled Piece"}
+							{(p as any).dropName ?? "Untitled Product"}
 						</option>
 					))}
 				</select>
