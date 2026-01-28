@@ -151,7 +151,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 	if (!pieces.length) {
 		console.log(
 			"PiecesTab: Showing empty state, pieces.length:",
-			pieces.length
+			pieces.length,
 		);
 		return (
 			<div className="px-4 sm:px-6 py-16 text-center relative min-h-[50vh]">
@@ -194,7 +194,7 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 	const totalPages = Math.ceil(sortedPieces.length / ITEMS_PER_PAGE);
 	const paginatedPieces = sortedPieces.slice(
 		(currentPage - 1) * ITEMS_PER_PAGE,
-		currentPage * ITEMS_PER_PAGE
+		currentPage * ITEMS_PER_PAGE,
 	);
 
 	const handlePageChange = (newPage: number) => {
@@ -332,9 +332,28 @@ function PieceCard({
 	const currency = getCurrencyFromMap(piece.currency);
 
 	// Stock Logic
-	const isSoldOut = piece.stockRemaining === 0;
-	const isLowStock =
-		(piece.stockRemaining ?? 0) > 0 && (piece.stockRemaining ?? 0) < 5; // Threshold 5
+	let remaining = 0;
+	let isUnlimited = false;
+
+	if (piece.stockMode === "variants") {
+		// Variant Mode: Sum of all variant quantities
+		if (piece.variantStock) {
+			remaining = Object.values(piece.variantStock).reduce(
+				(acc, qty) => acc + (Number(qty) || 0),
+				0,
+			);
+		}
+	} else {
+		// Global Mode (Default)
+		if (piece.stockRemaining === null || piece.stockRemaining === undefined) {
+			isUnlimited = true;
+		} else {
+			remaining = Number(piece.stockRemaining) || 0;
+		}
+	}
+
+	const isSoldOut = !isUnlimited && remaining === 0;
+	const isLowStock = !isUnlimited && remaining > 0 && remaining < 5; // Threshold 5
 
 	return (
 		<div className="group cursor-pointer space-y-3" onClick={onOpen}>
@@ -406,7 +425,7 @@ function PieceCard({
 							</span>
 						) : isLowStock ? (
 							<span className="text-[10px] font-medium text-orange-500 uppercase">
-								{piece.stockRemaining} Left
+								{remaining} Left
 							</span>
 						) : null}
 						<div

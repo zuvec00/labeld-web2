@@ -91,6 +91,8 @@ export default function EditPiecePage() {
 	// Stock management
 	const [unlimitedStock, setUnlimitedStock] = useState(true);
 	const [stockQuantity, setStockQuantity] = useState("");
+	const [stockMode, setStockMode] = useState<"global" | "variants">("global");
+	const [variantStock, setVariantStock] = useState<Record<string, string>>({});
 
 	// Discount
 	const [hasDiscount, setHasDiscount] = useState(false);
@@ -145,12 +147,33 @@ export default function EditPiecePage() {
 
 				// Stock management
 				const stockRem = (p as any).stockRemaining;
-				if (stockRem === null || stockRem === undefined) {
+				const sMode = (p as any).stockMode;
+				const vStock = (p as any).variantStock;
+
+				setStockMode(sMode ?? "global");
+
+				if (sMode === "variants") {
+					// Load variant stock as strings
+					const loadedStock: Record<string, string> = {};
+					if (vStock) {
+						Object.entries(vStock).forEach(([k, v]) => {
+							loadedStock[k] = String(v);
+						});
+					}
+					setVariantStock(loadedStock);
+					// Also reset global fields just in case
 					setUnlimitedStock(true);
 					setStockQuantity("");
 				} else {
-					setUnlimitedStock(false);
-					setStockQuantity(String(stockRem));
+					// Global mode
+					if (stockRem === null || stockRem === undefined) {
+						setUnlimitedStock(true);
+						setStockQuantity("");
+					} else {
+						setUnlimitedStock(false);
+						setStockQuantity(String(stockRem));
+					}
+					setVariantStock({});
 				}
 
 				// Discount
@@ -320,6 +343,18 @@ export default function EditPiecePage() {
 					? null
 					: Number.isFinite(Number(stockQuantity))
 						? Number(stockQuantity)
+						: null,
+				stockMode,
+				variantStock:
+					stockMode === "variants"
+						? Object.entries(variantStock).reduce(
+								(acc, [key, val]) => {
+									const num = Number(val);
+									if (val && Number.isFinite(num)) acc[key] = num;
+									return acc;
+								},
+								{} as Record<string, number>,
+							)
 						: null,
 				mainVisualUrl,
 				galleryImages: galleryImageUrls ?? null,
@@ -500,42 +535,181 @@ export default function EditPiecePage() {
 					{/* Stock Second */}
 					<div>
 						<Label text="Stock Management" />
-						<div className="space-y-3">
-							<Toggle
-								checked={unlimitedStock}
-								onChange={(v) => {
-									setUnlimitedStock(v);
-									if (v) setStockQuantity("");
-								}}
-								label="Unlimited Stock"
+						<div className="space-y-4">
+							{/* 1. Overall Mode Toggle (Unified vs. Variant) */}
+							<div className="flex bg-surface-neutral p-1 rounded-lg w-fit">
+								<button
+									type="button"
+									onClick={() => setStockMode("global")}
+									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
+										stockMode === "global"
+											? "bg-white shadow text-bg"
+											: "text-text-muted hover:text-text"
+									}`}
+								>
+									Unified Stock
+								</button>
+								<button
+									type="button"
+									onClick={() => setStockMode("variants")}
+									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
+										stockMode === "variants"
+											? "bg-white shadow text-bg"
+											: "text-text-muted hover:text-text"
+									}`}
+								>
+									Stock by Variant
+								</button>
+							</div>
+
+							<Hint
+								text={
+									stockMode === "global"
+										? "Manage a single stock count for all variations of this product."
+										: "Set specific stock counts for each size and color combination."
+								}
 							/>
-							{unlimitedStock && (
-								<Hint text="Best for made-to-order or ongoing pieces" />
-							)}
-							{!unlimitedStock && (
-								<div className="mt-2 space-y-4">
+
+							{/* 2. Global Mode Logic */}
+							{stockMode === "global" && (
+								<div className="space-y-3 pt-2">
 									<Toggle
-										checked={
-											stockQuantity !== "" && Number(stockQuantity) === 0
-										}
+										checked={unlimitedStock}
 										onChange={(v) => {
-											if (v) setStockQuantity("0");
-											else setStockQuantity("");
+											setUnlimitedStock(v);
+											if (v) setStockQuantity("");
 										}}
-										label="Mark as Sold Out"
+										label="Unlimited Stock"
 									/>
-									{stockQuantity !== "" && Number(stockQuantity) === 0 ? (
-										<Hint text="Product checks out as sold out. Customers cannot purchase it." />
-									) : (
-										<div>
-											<Label text="Stock Quantity" required />
-											<Input
-												type="number"
-												value={stockQuantity}
-												onChange={setStockQuantity}
-												placeholder="Enter available quantity"
+									{unlimitedStock && (
+										<Hint text="Best for made-to-order or ongoing pieces" />
+									)}
+									{!unlimitedStock && (
+										<div className="mt-2 space-y-4">
+											<Toggle
+												checked={
+													stockQuantity !== "" && Number(stockQuantity) === 0
+												}
+												onChange={(v) => {
+													if (v) setStockQuantity("0");
+													else setStockQuantity("");
+												}}
+												label="Mark as Sold Out"
 											/>
-											<Hint text="Set how many units are available for purchase" />
+											{stockQuantity !== "" && Number(stockQuantity) === 0 ? (
+												<Hint text="Product checks out as sold out. Customers cannot purchase it." />
+											) : (
+												<div>
+													<Label text="Stock Quantity" required />
+													<Input
+														type="number"
+														value={stockQuantity}
+														onChange={setStockQuantity}
+														placeholder="Enter available quantity"
+													/>
+													<Hint text="Set how many units are available for purchase" />
+												</div>
+											)}
+										</div>
+									)}
+								</div>
+							)}
+
+							{/* 3. Variant Mode Logic */}
+							{stockMode === "variants" && (
+								<div className="pt-2">
+									{!sizes.length && !selectedColors.length ? (
+										<div className="p-4 bg-surface-neutral/50 rounded-xl text-center text-sm text-text-muted">
+											Add size or color options above to configure variant
+											stock.
+										</div>
+									) : (
+										<div className="border border-stroke rounded-xl overflow-hidden">
+											<div className="bg-surface-neutral/30 px-4 py-3 border-b border-stroke text-xs font-semibold uppercase text-text-muted tracking-wider">
+												Product Variants
+											</div>
+											<div className="divide-y divide-stroke/50 max-h-[400px] overflow-y-auto">
+												{(() => {
+													// Generate combinations
+													const sizeOpts = sizes.length ? sizes : [""];
+													const colorOpts = selectedColors.length
+														? selectedColors
+														: [{ label: "", hex: "" }];
+
+													const variants: {
+														key: string;
+														name: string;
+														colorHex?: string;
+													}[] = [];
+
+													sizeOpts.forEach((s) => {
+														colorOpts.forEach((c) => {
+															// Key format: size-colorLabel
+															const key = `${s}-${c.label}`;
+
+															// Display Name
+															let name = "";
+															if (s && c.label) name = `${s} / ${c.label}`;
+															else if (s) name = s;
+															else if (c.label) name = c.label;
+															else name = "General";
+
+															variants.push({
+																key,
+																name,
+																colorHex: c.hex,
+															});
+														});
+													});
+
+													return variants.map((v) => {
+														const qty = variantStock[v.key] ?? "";
+														const isSoldOut = qty !== "" && Number(qty) === 0;
+
+														return (
+															<div
+																key={v.key}
+																className="flex items-center justify-between p-4 bg-surface hover:bg-surface-neutral/20 transition-colors"
+															>
+																<div className="flex items-center gap-3">
+																	{v.colorHex && (
+																		<div
+																			className="w-4 h-4 rounded-full border border-stroke/20 shadow-sm"
+																			style={{ backgroundColor: v.colorHex }}
+																		/>
+																	)}
+																	<span className="font-medium text-text text-sm">
+																		{v.name}
+																	</span>
+																</div>
+																<div className="flex items-center gap-2">
+																	{isSoldOut ? (
+																		<span className="text-xs font-medium text-alert bg-alert/10 px-2 py-1 rounded">
+																			Sold Out
+																		</span>
+																	) : (
+																		<span className="text-xs font-medium text-green-600 bg-green-500/10 px-2 py-1 rounded">
+																			In Stock
+																		</span>
+																	)}
+																	<input
+																		type="number"
+																		placeholder="0"
+																		className="w-20 text-sm px-3 py-1.5 rounded-lg border border-stroke bg-bg outline-none focus:border-accent text-right"
+																		value={qty}
+																		onChange={(e) =>
+																			setVariantStock((prev) => ({
+																				...prev,
+																				[v.key]: e.target.value,
+																			}))
+																		}
+																	/>
+																</div>
+															</div>
+														);
+													});
+												})()}
+											</div>
 										</div>
 									)}
 								</div>

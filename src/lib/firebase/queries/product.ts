@@ -46,6 +46,8 @@ export type Product = {
   colors?: ProductColor[] | null;
   copLink?: string | null;
   stockRemaining?: number | null;
+  stockMode?: "global" | "variants" | null;
+  variantStock?: Record<string, number> | null;
   discountPercent?: number | null;
   feeSettings?: {
     absorbTransactionFee: boolean;
@@ -84,6 +86,8 @@ function toProduct(id: string, d: DocumentData): Product {
     colors: Array.isArray(d.colors) ? d.colors : null,
     copLink: d.copLink ?? null,
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
+    stockMode: d.stockMode ?? "global",
+    variantStock: d.variantStock ?? null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
     feeSettings: d.feeSettings ? {
       absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
@@ -131,6 +135,8 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     colors: Array.isArray(d.colors) ? d.colors : [],
     copLink: d.copLink ?? "",
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
+    stockMode: d.stockMode ?? "global",
+    variantStock: d.variantStock ?? null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
     feeSettings: d.feeSettings ? {
       absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
