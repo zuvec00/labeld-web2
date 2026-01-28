@@ -13,6 +13,7 @@ import {
 	Globe,
 	Truck,
 	Store,
+	GripVertical,
 } from "lucide-react";
 import { formatWithCommasDouble } from "@/lib/format";
 
@@ -20,6 +21,7 @@ interface ShippingSettings {
 	mode: "flat_all" | "flat_by_state";
 	flatAllFeeMinor?: number;
 	stateFeesMinor?: Record<string, number>;
+	stateOrder?: string[]; // New field for ordering
 	pickupEnabled?: boolean;
 	pickupAddress?: string;
 }
@@ -34,6 +36,7 @@ export default function ShippingSettings() {
 	const [mode, setMode] = useState<"flat_all" | "flat_by_state">("flat_all");
 	const [flatFee, setFlatFee] = useState<string>(""); // Store as string for input handling
 	const [stateFees, setStateFees] = useState<Record<string, number>>({});
+	const [stateOrder, setStateOrder] = useState<string[]>([]); // New local state
 	const [pickupEnabled, setPickupEnabled] = useState(false);
 	const [pickupAddress, setPickupAddress] = useState("");
 
@@ -41,9 +44,9 @@ export default function ShippingSettings() {
 	const [initialSettings, setInitialSettings] =
 		useState<ShippingSettings | null>(null);
 
-	// New Rate Input State
 	const [newStateName, setNewStateName] = useState("");
 	const [newStateFee, setNewStateFee] = useState("");
+	const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
 	useEffect(() => {
 		loadSettings();
@@ -59,7 +62,7 @@ export default function ShippingSettings() {
 				"users",
 				auth.currentUser.uid,
 				"shippingRules",
-				"settings"
+				"settings",
 			);
 			const settingsSnap = await getDoc(settingsRef);
 
@@ -70,9 +73,28 @@ export default function ShippingSettings() {
 				// Hydrate local state
 				setMode(data.mode || "flat_all");
 				setFlatFee(
-					data.flatAllFeeMinor ? (data.flatAllFeeMinor / 100).toString() : "0"
+					data.flatAllFeeMinor ? (data.flatAllFeeMinor / 100).toString() : "0",
 				);
 				setStateFees(data.stateFeesMinor || {});
+
+				// Initialize order: use saved order or fallback to keys
+				if (data.stateOrder && data.stateOrder.length > 0) {
+					// Filter out any ordered keys that don't exist in fees anymore (integrity check)
+					const existingKeys = new Set(Object.keys(data.stateFeesMinor || {}));
+					setStateOrder(data.stateOrder.filter((k) => existingKeys.has(k)));
+
+					// If there are keys in fees not in order, append them (migration case)
+					const orderedSet = new Set(data.stateOrder);
+					const missingKeys = Object.keys(data.stateFeesMinor || {}).filter(
+						(k) => !orderedSet.has(k),
+					);
+					if (missingKeys.length) {
+						setStateOrder((prev) => [...prev, ...missingKeys]);
+					}
+				} else {
+					setStateOrder(Object.keys(data.stateFeesMinor || {}));
+				}
+
 				setPickupEnabled(!!data.pickupEnabled);
 				setPickupAddress(data.pickupAddress || "");
 			} else {
@@ -99,7 +121,7 @@ export default function ShippingSettings() {
 				"users",
 				auth.currentUser.uid,
 				"shippingRules",
-				"settings"
+				"settings",
 			);
 
 			const flatFeeMinor = Math.round(parseFloat(flatFee || "0") * 100);
@@ -108,6 +130,7 @@ export default function ShippingSettings() {
 				mode,
 				flatAllFeeMinor: flatFeeMinor,
 				stateFeesMinor: stateFees,
+				stateOrder, // Save the order
 				pickupEnabled,
 				pickupAddress,
 			};
@@ -129,12 +152,20 @@ export default function ShippingSettings() {
 
 	const handleAddRate = () => {
 		if (!newStateName.trim() || !newStateFee) return;
+		const name = newStateName.trim();
 		const feeMinor = Math.round(parseFloat(newStateFee) * 100);
+
+		// Prevent duplicates
+		if (stateFees[name] !== undefined) {
+			alert("This location already exists.");
+			return;
+		}
 
 		setStateFees((prev) => ({
 			...prev,
-			[newStateName.trim()]: feeMinor,
+			[name]: feeMinor,
 		}));
+		setStateOrder((prev) => [...prev, name]); // Add to end
 
 		setNewStateName("");
 		setNewStateFee("");
@@ -146,6 +177,42 @@ export default function ShippingSettings() {
 			delete next[state];
 			return next;
 		});
+		setStateOrder((prev) => prev.filter((s) => s !== state));
+	};
+
+	// Drag Handlers
+	const handleDragStart = (
+		e: React.DragEvent<HTMLDivElement>,
+		index: number,
+	) => {
+		setDraggedIndex(index);
+		e.dataTransfer.effectAllowed = "move";
+		// Optional: set drag image if needed, but browser default is usually fine
+	};
+
+	const handleDragOver = (
+		e: React.DragEvent<HTMLDivElement>,
+		index: number,
+	) => {
+		e.preventDefault(); // allow dropping
+		if (draggedIndex === null || draggedIndex === index) return;
+
+		// Optional live reorder could go here
+	};
+
+	const handleDrop = (
+		e: React.DragEvent<HTMLDivElement>,
+		dropIndex: number,
+	) => {
+		e.preventDefault();
+		if (draggedIndex === null) return;
+
+		const newOrder = [...stateOrder];
+		const [movedItem] = newOrder.splice(draggedIndex, 1);
+		newOrder.splice(dropIndex, 0, movedItem);
+
+		setStateOrder(newOrder);
+		setDraggedIndex(null);
 	};
 
 	// Dirty Check
@@ -168,6 +235,18 @@ export default function ShippingSettings() {
 		if (keys1.length !== keys2.length) return true;
 		for (const key of keys1) {
 			if (stateFees[key] !== initialFees[key]) return true;
+		}
+
+		// Check order (if it existed initially)
+		const initialOrder = initialSettings.stateOrder || [];
+		if (stateOrder.length !== initialOrder.length) {
+			// If lengths differ but fees are same, dirty (order changed vs keys added)
+			// But simple length check often creates false positive if we just added keys.
+			// Let's rely on string comparison of the arrays.
+			return JSON.stringify(stateOrder) !== JSON.stringify(initialOrder);
+		}
+		for (let i = 0; i < stateOrder.length; i++) {
+			if (stateOrder[i] !== initialOrder[i]) return true;
 		}
 
 		return false;
@@ -288,35 +367,57 @@ export default function ShippingSettings() {
 							Shipping Rates by Location
 						</h3>
 
-						{/* Existing Rates List */}
-						<div className="space-y-1">
-							{Object.entries(stateFees).length === 0 ? (
+						{/* Existing Rates List (Ordered) */}
+						<div className="space-y-2">
+							{stateOrder.length === 0 ? (
 								<div className="text-center py-8 border border-dashed border-stroke/50 rounded-xl">
 									<p className="text-text-muted">No specific rates set yet.</p>
 								</div>
 							) : (
-								Object.entries(stateFees).map(([state, feeMinor]) => (
-									<div
-										key={state}
-										className="group flex items-center justify-between p-4 rounded-xl hover:bg-surface border border-transparent hover:border-stroke/30 transition-all"
-									>
-										<div className="flex items-center gap-3">
-											<div className="w-2 h-2 rounded-full bg-green-500/50" />
-											<span className="text-white font-medium">{state}</span>
+								stateOrder.map((state, index) => {
+									const feeMinor = stateFees[state] || 0;
+									const isDragging = draggedIndex === index;
+									return (
+										<div
+											key={state}
+											draggable
+											onDragStart={(e) => handleDragStart(e, index)}
+											onDragOver={(e) => handleDragOver(e, index)}
+											onDrop={(e) => handleDrop(e, index)}
+											className={`
+                        group flex items-center justify-between p-4 rounded-xl border transition-all cursor-move
+                        ${
+													isDragging
+														? "opacity-30 bg-surface-neutral border-dashed border-stroke"
+														: "bg-surface/50 border-transparent hover:bg-surface hover:border-stroke/30"
+												}
+                        active:cursor-grabbing
+                      `}
+										>
+											<div className="flex items-center gap-3">
+												<div className="text-text-muted/30 group-hover:text-text-muted transition-colors">
+													<GripVertical className="w-5 h-5" />
+												</div>
+												<div className="w-2 h-2 rounded-full bg-green-500/50" />
+												<span className="text-white font-medium">{state}</span>
+											</div>
+											<div className="flex items-center gap-6">
+												<span className="font-mono text-text-muted">
+													₦{formatWithCommasDouble(feeMinor / 100)}
+												</span>
+												<button
+													onClick={(e) => {
+														e.stopPropagation(); // Prevent drag
+														handleRemoveRate(state);
+													}}
+													className="text-text-muted/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/5 rounded-lg"
+												>
+													<Trash2 className="w-4 h-4" />
+												</button>
+											</div>
 										</div>
-										<div className="flex items-center gap-6">
-											<span className="font-mono text-text-muted">
-												₦{formatWithCommasDouble(feeMinor / 100)}
-											</span>
-											<button
-												onClick={() => handleRemoveRate(state)}
-												className="text-text-muted/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/5 rounded-lg"
-											>
-												<Trash2 className="w-4 h-4" />
-											</button>
-										</div>
-									</div>
-								))
+									);
+								})
 							)}
 						</div>
 
