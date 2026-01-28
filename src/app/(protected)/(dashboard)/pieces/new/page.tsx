@@ -580,15 +580,31 @@ export default function NewPiecePage() {
 								<Hint text="Best for made-to-order or ongoing pieces" />
 							)}
 							{!unlimitedStock && (
-								<div className="mt-2">
-									<Label text="Stock Quantity" required />
-									<Input
-										type="number"
-										value={stockQuantity}
-										onChange={setStockQuantity}
-										placeholder="Enter available quantity"
+								<div className="mt-2 space-y-4">
+									<Toggle
+										checked={
+											stockQuantity !== "" && Number(stockQuantity) === 0
+										}
+										onChange={(v) => {
+											if (v) setStockQuantity("0");
+											else setStockQuantity("");
+										}}
+										label="Mark as Sold Out"
 									/>
-									<Hint text="Set how many units are available for purchase" />
+									{stockQuantity !== "" && Number(stockQuantity) === 0 ? (
+										<Hint text="Product checks out as sold out. Customers cannot purchase it." />
+									) : (
+										<div>
+											<Label text="Stock Quantity" required />
+											<Input
+												type="number"
+												value={stockQuantity}
+												onChange={setStockQuantity}
+												placeholder="Enter available quantity"
+											/>
+											<Hint text="Set how many units are available for purchase" />
+										</div>
+									)}
 								</div>
 							)}
 						</div>
