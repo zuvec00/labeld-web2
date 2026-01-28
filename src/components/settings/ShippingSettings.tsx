@@ -471,7 +471,7 @@ export default function ShippingSettings() {
 														e.stopPropagation(); // Prevent drag
 														handleRemoveRate(state);
 													}}
-													className="text-text-muted/50 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all p-2 hover:bg-white/5 rounded-lg"
+													className="text-text-muted/50 hover:text-red-400 lg:opacity-0 lg:group-hover:opacity-100 transition-all p-2 hover:bg-white/5 rounded-lg"
 												>
 													<Trash2 className="w-4 h-4" />
 												</button>
