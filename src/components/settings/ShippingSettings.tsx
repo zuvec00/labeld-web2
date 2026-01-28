@@ -415,10 +415,10 @@ export default function ShippingSettings() {
 										>
 											<div className="flex items-center gap-3">
 												<div className="flex items-center gap-1 text-text-muted/30 group-hover:text-text-muted transition-colors">
-													<GripVertical className="w-5 h-5 cursor-grab active:cursor-grabbing hidden md:block" />
+													<GripVertical className="w-5 h-5 cursor-grab active:cursor-grabbing hidden lg:block" />
 
 													{/* Mobile/Tablet Accessibility Reorder Buttons */}
-													<div className="flex flex-col md:hidden">
+													<div className="flex flex-col lg:hidden">
 														<button
 															onClick={(e) => {
 																e.stopPropagation();
