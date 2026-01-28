@@ -215,6 +215,25 @@ export default function ShippingSettings() {
 		setDraggedIndex(null);
 	};
 
+	// Manual Move Handlers (Mobile Fallback)
+	const moveRateUp = (index: number) => {
+		if (index < 1) return;
+		setStateOrder((prev) => {
+			const next = [...prev];
+			[next[index - 1], next[index]] = [next[index], next[index - 1]];
+			return next;
+		});
+	};
+
+	const moveRateDown = (index: number) => {
+		if (index >= stateOrder.length - 1) return;
+		setStateOrder((prev) => {
+			const next = [...prev];
+			[next[index], next[index + 1]] = [next[index + 1], next[index]];
+			return next;
+		});
+	};
+
 	// Dirty Check
 	const isDirty = (() => {
 		if (!initialSettings) return false;
@@ -395,8 +414,50 @@ export default function ShippingSettings() {
                       `}
 										>
 											<div className="flex items-center gap-3">
-												<div className="text-text-muted/30 group-hover:text-text-muted transition-colors">
-													<GripVertical className="w-5 h-5" />
+												<div className="flex items-center gap-1 text-text-muted/30 group-hover:text-text-muted transition-colors">
+													<GripVertical className="w-5 h-5 cursor-grab active:cursor-grabbing hidden sm:block" />
+
+													{/* Mobile/Accessibility Reorder Buttons */}
+													<div className="flex flex-col sm:hidden">
+														<button
+															onClick={(e) => {
+																e.stopPropagation();
+																moveRateUp(index);
+															}}
+															disabled={index === 0}
+															className="p-1 hover:bg-white/10 rounded disabled:opacity-30"
+															title="Move Up"
+														>
+															<svg
+																className="w-3 h-3 text-text-muted"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																strokeWidth="2"
+															>
+																<polyline points="18 15 12 9 6 15" />
+															</svg>
+														</button>
+														<button
+															onClick={(e) => {
+																e.stopPropagation();
+																moveRateDown(index);
+															}}
+															disabled={index === stateOrder.length - 1}
+															className="p-1 hover:bg-white/10 rounded disabled:opacity-30"
+															title="Move Down"
+														>
+															<svg
+																className="w-3 h-3 text-text-muted"
+																viewBox="0 0 24 24"
+																fill="none"
+																stroke="currentColor"
+																strokeWidth="2"
+															>
+																<polyline points="6 9 12 15 18 9" />
+															</svg>
+														</button>
+													</div>
 												</div>
 												<div className="w-2 h-2 rounded-full bg-green-500/50" />
 												<span className="text-white font-medium">{state}</span>
