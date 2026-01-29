@@ -127,6 +127,7 @@ export default function ShippingSettings() {
 			const flatFeeMinor = Math.round(parseFloat(flatFee || "0") * 100);
 
 			const newSettings: ShippingSettings = {
+				...initialSettings, // Preserve any other existing fields
 				mode,
 				flatAllFeeMinor: flatFeeMinor,
 				stateFeesMinor: stateFees,
@@ -135,7 +136,9 @@ export default function ShippingSettings() {
 				pickupAddress,
 			};
 
-			await setDoc(settingsRef, newSettings, { merge: true });
+			// Use setDoc WITHOUT merge: true to ensure removed keys in stateFeesMinor are actually deleted.
+			// setDoc with merge: true performs a deep merge on maps, so deleted keys would persist.
+			await setDoc(settingsRef, newSettings);
 
 			setInitialSettings(newSettings);
 			setSaveSuccess(true);

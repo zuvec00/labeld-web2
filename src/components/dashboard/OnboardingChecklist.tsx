@@ -1,13 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import {
-	CheckCircle2,
 	Circle,
-	ChevronRight,
-	ChevronDown,
-	ChevronUp,
 	Store,
 	CreditCard,
 	Truck,
@@ -19,25 +14,25 @@ import { useRouter } from "next/navigation";
 export default function OnboardingChecklist() {
 	const { steps, percentage, isComplete, loading } = useBrandOnboardingStatus();
 	const router = useRouter();
-	const [expanded, setExpanded] = useState(false);
 
 	if (loading) {
 		return (
-			<div className="rounded-2xl border border-stroke bg-surface overflow-hidden transition-all animate-pulse">
-				<div className="p-6">
-					<div className="flex items-start justify-between gap-4">
-						<div className="flex-1 space-y-2">
-							<div className="h-5 w-48 bg-stroke rounded-md"></div>
-							<div className="h-4 w-64 bg-stroke/60 rounded-md"></div>
-						</div>
-						<div className="h-8 w-8 bg-stroke rounded-md"></div>
-					</div>
-					<div className="mt-6 h-1.5 w-full bg-stroke rounded-full"></div>
-					<div className="mt-8">
-						<div className="h-12 w-40 bg-stroke rounded-xl"></div>
-					</div>
-				</div>
-			</div>
+			<div></div>
+			// <div className="rounded-2xl border border-stroke bg-bg overflow-hidden transition-all animate-pulse">
+			// 	<div className="p-5">
+			// 		<div className="flex items-start justify-between gap-4">
+			// 			<div className="flex-1 space-y-2">
+			// 				<div className="h-5 w-48 bg-stroke rounded-md"></div>
+			// 				<div className="h-4 w-64 bg-stroke/60 rounded-md"></div>
+			// 			</div>
+			// 			<div className="h-8 w-8 bg-stroke rounded-md"></div>
+			// 		</div>
+			// 		<div className="mt-5 h-1.5 w-full bg-stroke rounded-full"></div>
+			// 		<div className="mt-6">
+			// 			<div className="h-10 w-32 bg-stroke rounded-xl"></div>
+			// 		</div>
+			// 	</div>
+			// </div>
 		);
 	}
 	if (isComplete) return null; // Hide when done
@@ -50,121 +45,98 @@ export default function OnboardingChecklist() {
 		product: Shirt,
 	};
 
-	// Find next step (first incomplete step)
-	const nextStep = steps.find((s) => !s.isComplete);
+	// Time estimates map
+	const timeEstimates = {
+		bank: "2 min",
+		profile: "2 min",
+		shipping: "5 min",
+		product: "3 min",
+	};
+
+	// Filter for incomplete steps only
+	const incompleteSteps = steps.filter((step) => !step.isComplete);
+	const completedCount = steps.length - incompleteSteps.length;
+	const totalSteps = steps.length;
 
 	return (
-		<div className="rounded-2xl border border-stroke bg-surface overflow-hidden transition-all">
-			{/* Compact Header View */}
-			<div className="p-6">
-				<div className="flex items-start justify-between gap-4">
-					<div className="flex-1">
-						<h2 className="font-heading font-semibold text-md sm:text-lg">
-							Complete your onboarding
+		<div className="rounded-2xl border-none bg-bg overflow-hidden transition-all">
+			<div className="px-2 pt-5 pb-6">
+				{/* Header Section */}
+				<div className="flex flex-col gap-3">
+					<div>
+						<h2 className="font-heading font-medium text-base">
+							Finished setting up your account
 						</h2>
-						<p className="text-text-muted text-xs sm:text-sm mt-1">
-							Complete the next steps to launch your website
+						<div className="flex items-center gap-3 mt-2">
+							<span className="text-sm text-text">
+								{percentage}%
+							</span>
+							<div className="h-2 flex-1 bg-stroke rounded-full overflow-hidden max-w-[200px]">
+								<div
+									className="h-full bg-cta transition-all duration-500 ease-out"
+									style={{ width: `${percentage}%` }}
+								/>
+							</div>
+						</div>
+						<p className="text-text-muted text-xs mt-1.5 font-medium italic">
+							<span className="text-cta">
+								{completedCount} of {totalSteps}
+							</span>{" "}
+							tasks completed
 						</p>
 					</div>
-					<button
-						onClick={() => setExpanded(!expanded)}
-						className="p-2 -mr-2 text-text-muted hover:text-text transition-colors"
-					>
-						{expanded ? (
-							<ChevronUp className="w-5 h-5" />
-						) : (
-							<ChevronDown className="w-5 h-5" />
-						)}
-					</button>
 				</div>
 
-				{/* Progress Bar */}
-				<div className="mt-4 h-1.5 w-full bg-stroke rounded-full overflow-hidden">
-					<div
-						className="h-full bg-cta transition-all duration-500 ease-out"
-						style={{ width: `${percentage}%` }}
-					/>
-				</div>
+				{/* Carousel Section */}
+				<div className="mt-6 relative group">
+					<div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-5 px-5 scrollbar-hide">
+						{incompleteSteps.map((step) => {
+							const Icon = icons[step.id as keyof typeof icons] || Circle;
+							const timeEstimate =
+								timeEstimates[step.id as keyof typeof timeEstimates];
 
-				{/* Primary Next Action */}
-				{!expanded && nextStep && (
-					<div className="mt-6">
-						<button
-							onClick={() => router.push(nextStep.href)}
-							className="w-full sm:w-auto flex items-center sm:items-center justify-center gap-2 px-6 py-3 bg-cta text-white font-medium rounded-xl text-sm sm:text-md hover:opacity-90 transition-all shadow-sm shadow-cta/20"
-						>
-							Next Step: {nextStep.cta}
-							<ArrowRight className="w-4 h-4" />
-						</button>
-					</div>
-				)}
-			</div>
-
-			{/* Expanded Steps List */}
-			{expanded && (
-				<div className="border-t border-stroke divide-y divide-stroke animate-in slide-in-from-top-2 duration-200">
-					{steps.map((step) => {
-						const Icon = icons[step.id as keyof typeof icons] || Circle;
-
-						return (
-							<div
-								key={step.id}
-								onClick={() => !step.isComplete && router.push(step.href)}
-								className={`group p-4 sm:p-6 flex items-start gap-4 transition-colors ${
-									step.isComplete
-										? "bg-surface opacity-60"
-										: "bg-surface hover:bg-bg cursor-pointer"
-								}`}
-							>
-								{/* Status Icon */}
-								<div className="shrink-0 mt-0.5">
-									{step.isComplete ? (
-										<div className="h-6 w-6 rounded-full bg-accent/10 flex items-center justify-center text-accent">
-											<CheckCircle2 className="w-4 h-4" />
+							return (
+								<div
+									key={step.id}
+									className="snap-center shrink-0 w-[240px] sm:w-[260px] bg-bg rounded-xl border border-stroke p-4 flex flex-col justify-between hover:border-cta/50 transition-colors"
+								>
+									<div className="space-y-3">
+										<div className="flex items-start justify-between">
+											<div className="h-9 w-9 rounded-lg bg-surface border border-stroke flex items-center justify-center text-text-muted">
+												<Icon className="w-4 h-4" />
+											</div>
+											{timeEstimate && (
+												<span className="text-[10px] font-medium text-text-muted bg-surface border border-stroke px-2 py-1 rounded-full">
+													{timeEstimate}
+												</span>
+											)}
 										</div>
-									) : (
-										<div className="h-6 w-6 rounded-lg bg-surface border border-stroke flex items-center justify-center text-text-muted">
-											<Icon className="w-3.5 h-3.5" />
-										</div>
-									)}
-								</div>
 
-								{/* Content */}
-								<div className="flex-1 min-w-0">
-									<div className="flex items-center justify-between gap-4">
-										<h3
-											className={`font-medium text-[15px] ${
-												step.isComplete
-													? "text-text-muted line-through decoration-stroke"
-													: "text-text"
-											}`}
+										<div>
+											<h3 className="font-medium text-text text-sm leading-tight">
+												{step.title}
+											</h3>
+											<p className="text-xs text-text-muted mt-1.5 leading-relaxed line-clamp-2">
+												{step.description}
+											</p>
+										</div>
+									</div>
+
+									<div className="mt-4 flex justify-end">
+										<button
+											onClick={() => router.push(step.href)}
+											className="flex items-center gap-1.5 text-xs font-medium text-text hover:text-cta transition-colors"
 										>
-											{step.title}
-										</h3>
-										{step.isComplete && (
-											<span className="shrink-0 text-xs font-medium text-accent bg-accent/5 px-2 py-0.5 rounded-full border border-accent/10">
-												Completed
-											</span>
-										)}
+											{step.actionType === "modal" ? "Open" : "Start"}
+											<ArrowRight className="w-3.5 h-3.5" />
+										</button>
 									</div>
-									{!step.isComplete && (
-										<p className="text-sm text-text-muted mt-1 leading-relaxed">
-											{step.description}
-										</p>
-									)}
 								</div>
-
-								{/* Action Arrow (only if incomplete) */}
-								{!step.isComplete && (
-									<div className="shrink-0 self-center text-text-muted group-hover:text-text transition-colors">
-										<ChevronRight className="w-5 h-5" />
-									</div>
-								)}
-							</div>
-						);
-					})}
+							);
+						})}
+					</div>
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }
