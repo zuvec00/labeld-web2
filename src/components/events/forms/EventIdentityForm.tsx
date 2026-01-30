@@ -36,8 +36,8 @@ export default function EventIdentityForm() {
 					Username / Handle <span className="text-cta">*</span>
 				</label>
 				<input
-					value={data.organizerUsername}
-					onChange={(e) => setData({ organizerUsername: e.target.value })}
+					value={data.username}
+					onChange={(e) => setData({ username: e.target.value })}
 					placeholder="@altlagos"
 					className="w-full rounded-xl border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
 				/>

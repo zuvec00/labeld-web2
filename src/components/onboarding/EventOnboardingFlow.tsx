@@ -155,7 +155,7 @@ export default function EventOnboardingFlow() {
 				await setDoc(eventOrganizerRef, {
 					uid: currentUser.uid,
 					organizerName: eventData.organizerName,
-					username: eventData.organizerUsername,
+					username: eventData.username,
 					bio: eventData.bio || null,
 					eventCategory: eventData.eventCategory || "others",
 					logoUrl,
@@ -168,9 +168,25 @@ export default function EventOnboardingFlow() {
 					tiktok: eventData.tiktok || null,
 					twitter: eventData.twitter || null,
 					website: eventData.website || null,
+					subscriptionTier: "free", // Default to free plan
+					slug: eventData.username.toLowerCase(), // Set initial slug
 					createdAt: serverTimestamp(),
 					updatedAt: serverTimestamp(),
 				});
+
+				// Register public slug for the event organizer (experience)
+				try {
+					const { reserveSlug } = await import("@/lib/firebase/slugs");
+					const initialSlug = eventData.username;
+					await reserveSlug(
+						initialSlug,
+						"experience", // "experience" as per user request (was "event")
+						currentUser.uid,
+						currentUser.uid,
+					);
+				} catch (e) {
+					console.error("Failed to reserve public slug for event organizer", e);
+				}
 			}
 
 			setLoadingMessage("You're in. Let's drop some events. 🎉");

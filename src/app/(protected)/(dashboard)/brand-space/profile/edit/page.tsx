@@ -290,7 +290,7 @@ export default function EditBrandProfilePage() {
 		return { COUNTRY_LIST: list.sort(), COUNTRY_TO_STATES: map };
 	}, []);
 
-	const states = country ? COUNTRY_TO_STATES[country] ?? [] : [];
+	const states = country ? (COUNTRY_TO_STATES[country] ?? []) : [];
 
 	// load brand
 	useEffect(() => {
@@ -406,15 +406,15 @@ export default function EditBrandProfilePage() {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					nextLogoUrl = await uploadFileGetURL(
 						logoFile,
-						`brandImages/${uid}/${Date.now()}-${logoFile.name}`
+						`brandImages/${uid}/${Date.now()}-${logoFile.name}`,
 					);
 					console.log(
 						"✅ Brand logo uploaded to Firebase Storage:",
-						nextLogoUrl
+						nextLogoUrl,
 					);
 				}
 			}
@@ -432,15 +432,15 @@ export default function EditBrandProfilePage() {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					nextCoverUrl = await uploadFileGetURL(
 						coverFile,
-						`brandCovers/${uid}/${Date.now()}-${coverFile.name}`
+						`brandCovers/${uid}/${Date.now()}-${coverFile.name}`,
 					);
 					console.log(
 						"✅ Brand cover uploaded to Firebase Storage:",
-						nextCoverUrl
+						nextCoverUrl,
 					);
 				}
 			}
@@ -518,7 +518,7 @@ export default function EditBrandProfilePage() {
 								<button
 									onClick={() => {
 										navigator.clipboard.writeText(
-											`https://${brandSlug}.labeld.app`
+											`https://${brandSlug}.labeld.app`,
 										);
 										toast({ description: "Link copied" });
 									}}
@@ -581,7 +581,18 @@ export default function EditBrandProfilePage() {
 											// Debounced availability check
 											setCheckingSlug(true);
 											const timeout = setTimeout(async () => {
-												const taken = await isBrandSlugTaken(val, brand?.uid);
+												// Use our new public registry check
+												const { isPublicSlugTaken } =
+													await import("@/lib/firebase/slugs");
+												// We also check if it's OUR current slug, in which case it's available to us
+												if (val === initialSlug) {
+													setCheckingSlug(false);
+													setSlugAvailable(true);
+													setSlugError(null);
+													return;
+												}
+
+												const taken = await isPublicSlugTaken(val);
 												setCheckingSlug(false);
 												if (taken) {
 													setSlugError("Already taken");
@@ -645,15 +656,27 @@ export default function EditBrandProfilePage() {
 										setSavingSlug(true);
 										try {
 											// Final safety check
-											const taken = await isBrandSlugTaken(
-												brandSlug,
-												brand.uid
-											);
-											if (taken) {
-												setSlugError("Already taken");
-												setSavingSlug(false);
-												return;
+											const { isPublicSlugTaken, updateSlug } =
+												await import("@/lib/firebase/slugs");
+
+											if (brandSlug !== initialSlug) {
+												const taken = await isPublicSlugTaken(brandSlug);
+												if (taken) {
+													setSlugError("Already taken");
+													setSavingSlug(false);
+													return;
+												}
 											}
+
+											// Update Firestore Brand Doc AND Public Slug Registry
+											// ideally we do this in parallel or sequential, but slug registry is critical
+											await updateSlug(
+												initialSlug,
+												brandSlug,
+												"brand",
+												brand.uid,
+												brand.uid,
+											);
 
 											await updateBrandProfile(brand.uid, {
 												brandSlug: brandSlug,
@@ -662,6 +685,7 @@ export default function EditBrandProfilePage() {
 											setIsEditingSlug(false);
 											toast({ title: "Public store URL updated" });
 										} catch (e) {
+											console.error("Slug update failed", e);
 											toast({
 												title: "Failed to update URL",
 												variant: "destructive",
@@ -736,7 +760,7 @@ export default function EditBrandProfilePage() {
 								setUsername(e.target.value);
 								if (!usernameValid(e.target.value)) {
 									setUsernameError(
-										"3–15 chars. Letters, numbers, underscores, periods. No spaces or consecutive special characters."
+										"3–15 chars. Letters, numbers, underscores, periods. No spaces or consecutive special characters.",
 									);
 								} else {
 									setUsernameError(null);

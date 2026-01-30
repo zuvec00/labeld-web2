@@ -1,19 +1,21 @@
 import { create } from "zustand";
+import { EventOrganizerModel } from "@/lib/models/eventOrganizer";
 
-interface EventOrganizerData {
-	// Core Info (Required)
+// Helper type for onboarding (includes Files which aren't in the DB model)
+export interface EventOrganizerOnboardingData {
+	// Core Info
 	organizerName: string;
-	organizerUsername: string;
+	username: string; // Aligned with Model
 	profileFile: File | null;
 	coverFile: File | null;
 	bio: string;
 	eventCategory: string;
 	
-	// Location & Reach (Optional)
+	// Location & Reach
 	baseCity: string;
 	activeSince: string;
 	
-	// Contact & Links (Optional)
+	// Contact & Links
 	email: string;
 	phone: string;
 	instagram: string;
@@ -23,25 +25,20 @@ interface EventOrganizerData {
 }
 
 interface EventOrganizerStore {
-	data: EventOrganizerData;
-	setData: (data: Partial<EventOrganizerData>) => void;
+	data: EventOrganizerOnboardingData;
+	setData: (data: Partial<EventOrganizerOnboardingData>) => void;
 	reset: () => void;
 }
 
-const initialState: EventOrganizerData = {
-	// Core Info
+const initialState: EventOrganizerOnboardingData = {
 	organizerName: "",
-	organizerUsername: "",
+	username: "",
 	profileFile: null,
 	coverFile: null,
 	bio: "",
 	eventCategory: "",
-	
-	// Location & Reach
 	baseCity: "",
 	activeSince: "",
-	
-	// Contact & Links
 	email: "",
 	phone: "",
 	instagram: "",

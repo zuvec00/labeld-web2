@@ -149,6 +149,24 @@ export default function OnboardingFlow() {
 					youtube: brandData.youtube || null,
 					tiktok: brandData.tiktok || null,
 				});
+
+				// Register public slug
+				try {
+					const { reserveSlug } = await import("@/lib/firebase/slugs");
+					// Default to username if no specific slug field (currently onboarding uses username as implied slug or we can default it)
+					// The user prompt said: "for each brand with slug (or username), create..."
+					// Brand onboarding primarily sets username. We'll use username as the initial slug.
+					const initialSlug = brandData.brandUsername;
+					await reserveSlug(
+						initialSlug,
+						"brand",
+						currentUser.uid,
+						currentUser.uid,
+					);
+				} catch (e) {
+					console.error("Failed to reserve public slug during onboarding", e);
+					// Proceeding anyway since brand is created, we can backfill or retry later
+				}
 			}
 
 			setLoadingMessage("Finalizing your setup...");

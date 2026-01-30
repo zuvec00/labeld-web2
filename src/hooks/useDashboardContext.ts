@@ -16,6 +16,8 @@ interface RoleDetectionResult {
   phoneNumber?: string | null;
   organizerName?: string;
   organizerLogoUrl?: string;
+  eventSubscriptionTier?: "free" | "pro";
+  eventSlug?: string;
   brandPhoneNumber?: string | null;
   brandSubscriptionTier?: "free" | "pro";
   brandSubscriptionStatus?: "active" | "expired" | "past_due" | "cancelled";
@@ -134,11 +136,23 @@ export function useDashboardContext(): UseDashboardContextReturn {
            const organizerName = hasEventOrganizerProfile ? snap.data().organizerName : undefined;
            const organizerLogoUrl = hasEventOrganizerProfile ? snap.data().logoUrl : undefined;
            
+           // Extract subscription data (default to undefined -> handled as free in UI)
+           const eventSubscriptionTier = hasEventOrganizerProfile 
+               ? (snap.data().subscriptionTier as "free" | "pro" | undefined) 
+               : undefined;
+               
+           // Extract slug (prefer 'slug' field, fallback to 'username')
+           const eventSlug = hasEventOrganizerProfile 
+               ? (snap.data().slug || snap.data().username) 
+               : undefined;
+
            updateDetectionState((prev) => ({
                ...prev,
                hasEventOrganizerProfile,
                organizerName,
-               organizerLogoUrl
+               organizerLogoUrl,
+               eventSubscriptionTier,
+               eventSlug
            }));
        });
 

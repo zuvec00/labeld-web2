@@ -102,9 +102,9 @@ export default function Sidebar({
                Let's just remove the internal hamburger button logic. 
             */}
 
-			<div className="flex-1 overflow-y-auto py-2">
+			<div className="flex-1 overflow-y-auto py-2 pb-6">
 				{NAV_SECTIONS.map((section, i) => (
-					<div key={i} className="px-3 py-2">
+					<div key={i} className="px-3 py-3">
 						{section.title && (
 							<div className="px-3 text-xs uppercase tracking-wide text-text-muted/70 mb-2 font-semibold">
 								{section.title}
@@ -114,14 +114,20 @@ export default function Sidebar({
 							{section.items.map((item) => {
 								// Check if active
 								const isSiteCustomization = pathname?.startsWith(
-									"/brand-space/site-customization"
+									"/brand-space/site-customization",
 								);
+								const isEventSibling =
+									pathname?.startsWith("/events/profile") ||
+									pathname?.startsWith("/events/site-customization");
+
 								const active =
 									pathname === item.href ||
 									(item.href !== "/" &&
 										pathname?.startsWith(item.href + "/") &&
 										// explicit exception for brand-space parent when on site-customization
-										!(item.href === "/brand-space" && isSiteCustomization));
+										!(item.href === "/brand-space" && isSiteCustomization) &&
+										// explicit exception for events parent when on profile or site-customization
+										!(item.href === "/events" && isEventSibling));
 
 								return (
 									<li key={item.href}>
@@ -156,17 +162,17 @@ export default function Sidebar({
 						</ul>
 					</div>
 				))}
+			</div>
 
-				{/* Logout */}
-				<div className="mt-auto px-3 py-4">
-					<button
-						className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors text-sm"
-						onClick={signOutApp}
-					>
-						{/* We could add a logout icon here if we had one in lucide */}
-						<span>Log out</span>
-					</button>
-				</div>
+			{/* Fixed Footer: Logout */}
+			<div className="p-4 border-t border-stroke bg-surface flex-shrink-0">
+				<button
+					className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors text-sm"
+					onClick={signOutApp}
+				>
+					{/* We could add a logout icon here if we had one in lucide */}
+					<span>Log out</span>
+				</button>
 			</div>
 		</nav>
 	);

@@ -35,7 +35,7 @@ type Step = 1 | 2 | 3 | "auth";
 const calculateProgress = (
 	data: EventOnboardingData,
 	eventData: any,
-	skipProfileStep = false
+	skipProfileStep = false,
 ): {
 	required: number;
 	optional: number;
@@ -47,7 +47,7 @@ const calculateProgress = (
 	let totalOptionalFields = 0; // Optional fields
 
 	if (!data.skipEventSetup) {
-		totalRequiredFields += 4; // Step 2: organizerName, organizerUsername, eventCategory, profileFile (required)
+		totalRequiredFields += 4; // Step 2: organizerName, username, eventCategory, profileFile (required)
 		totalOptionalFields += 8; // Step 3: coverFile, bio, baseCity, activeSince, email, phone, instagram, tiktok, twitter, website
 	}
 
@@ -64,7 +64,7 @@ const calculateProgress = (
 	// Step 2: Event Organizer (4 REQUIRED fields, only if not skipped)
 	if (!data.skipEventSetup) {
 		if (eventData.organizerName.trim()) completedRequiredFields++;
-		if (eventData.organizerUsername.trim()) completedRequiredFields++;
+		if (eventData.username.trim()) completedRequiredFields++;
 		if (eventData.eventCategory) completedRequiredFields++;
 		if (eventData.profileFile) completedRequiredFields++;
 
@@ -164,7 +164,7 @@ export default function EventOrganizerOnboardingModal({
 			};
 			localStorage.setItem(
 				"eventOnboardingProfile",
-				JSON.stringify(dataToSave)
+				JSON.stringify(dataToSave),
 			);
 		}
 	}, [profileData]);
@@ -175,9 +175,9 @@ export default function EventOrganizerOnboardingModal({
 			calculateProgress(
 				{ profile: profileData, skipEventSetup },
 				eventData.data,
-				!!onComplete // Skip profile step if opened from events page
+				!!onComplete, // Skip profile step if opened from events page
 			),
-		[profileData, skipEventSetup, eventData.data, onComplete]
+		[profileData, skipEventSetup, eventData.data, onComplete],
 	);
 
 	// Validation for each step
@@ -192,9 +192,9 @@ export default function EventOrganizerOnboardingModal({
 
 	const canProceedFromStep2 = useMemo(() => {
 		if (skipEventSetup) return true;
-		const { organizerName, organizerUsername, eventCategory, profileFile } =
+		const { organizerName, username, eventCategory, profileFile } =
 			eventData.data;
-		const { ok } = validateUsername(organizerUsername);
+		const { ok } = validateUsername(username);
 		return (
 			ok &&
 			organizerName.trim().length > 0 &&
@@ -269,7 +269,7 @@ export default function EventOrganizerOnboardingModal({
 					try {
 						profileImageUrl = await uploadProfileImageCloudinary(
 							profileData.profileFile,
-							user.uid
+							user.uid,
 						);
 					} catch (cloudinaryError) {
 						console.warn("Profile image upload failed:", cloudinaryError);
@@ -297,7 +297,7 @@ export default function EventOrganizerOnboardingModal({
 					setLoadingMessage("Uploading organizer logo...");
 					logoUrl = await uploadProfileImageCloudinary(
 						eventData.data.profileFile!,
-						user.uid
+						user.uid,
 					);
 				} catch (cloudinaryError) {
 					console.warn("Event organizer logo upload failed:", cloudinaryError);
@@ -310,12 +310,12 @@ export default function EventOrganizerOnboardingModal({
 					try {
 						coverImageUrl = await uploadProfileImageCloudinary(
 							eventData.data.coverFile,
-							user.uid
+							user.uid,
 						);
 					} catch (cloudinaryError) {
 						console.warn(
 							"Event organizer cover upload failed:",
-							cloudinaryError
+							cloudinaryError,
 						);
 					}
 				}
@@ -326,7 +326,7 @@ export default function EventOrganizerOnboardingModal({
 				await setDoc(eventOrganizerRef, {
 					uid: user.uid,
 					organizerName: eventData.data.organizerName,
-					username: eventData.data.organizerUsername,
+					username: eventData.data.username,
 					bio: eventData.data.bio || null,
 					eventCategory: eventData.data.eventCategory || "others",
 					logoUrl,
@@ -449,7 +449,7 @@ export default function EventOrganizerOnboardingModal({
 								totalPossibleFields > 0
 									? ((totalRequiredFields + totalEventRequiredFields) /
 											totalPossibleFields) *
-									  100
+										100
 									: 0;
 							const optionalWidth =
 								totalPossibleFields > 0

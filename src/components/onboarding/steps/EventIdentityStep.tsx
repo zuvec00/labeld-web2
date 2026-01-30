@@ -15,18 +15,18 @@ export default function EventIdentityStep({
 	onBack,
 }: EventIdentityStepProps) {
 	const { data, setData } = useEventOrganizerOnboard();
-	const { organizerName, organizerUsername, eventCategory } = data;
+	const { organizerName, username, eventCategory } = data;
 
 	const [usernameError, setUsernameError] = useState<string | null>(null);
 
 	useEffect(() => {
-		if (organizerUsername) {
-			const { ok } = validateUsername(organizerUsername);
+		if (username) {
+			const { ok } = validateUsername(username);
 			if (!ok) {
 				let msg = "Invalid username";
-				if (organizerUsername.length < 3) msg = "Too short (min 3 chars)";
-				else if (organizerUsername.length > 15) msg = "Too long (max 15 chars)";
-				else if (/\s/.test(organizerUsername)) msg = "No spaces allowed";
+				if (username.length < 3) msg = "Too short (min 3 chars)";
+				else if (username.length > 15) msg = "Too long (max 15 chars)";
+				else if (/\s/.test(username)) msg = "No spaces allowed";
 				else msg = "Use letters, numbers, . or _ only";
 				setUsernameError(msg);
 			} else {
@@ -35,11 +35,11 @@ export default function EventIdentityStep({
 		} else {
 			setUsernameError(null);
 		}
-	}, [organizerUsername]);
+	}, [username]);
 
 	const canProceed =
 		organizerName.trim().length > 0 &&
-		organizerUsername.trim().length > 0 &&
+		(username || "").trim().length > 0 &&
 		(eventCategory || "").length > 0 &&
 		!usernameError;
 
@@ -78,10 +78,10 @@ export default function EventIdentityStep({
 							</span>
 							<input
 								type="text"
-								value={organizerUsername}
+								value={username}
 								onChange={(e) =>
 									setData({
-										organizerUsername: e.target.value.toLowerCase().trim(),
+										username: e.target.value.toLowerCase().trim(),
 									})
 								}
 								placeholder="boilerroom"
@@ -92,7 +92,7 @@ export default function EventIdentityStep({
 								} text-2xl font-medium py-2 pl-8 outline-none placeholder:text-subtle transition-colors`}
 							/>
 							<div className="absolute right-0 top-1/2 -translate-y-1/2">
-								{organizerUsername && !usernameError && (
+								{username && !usernameError && (
 									<div className="text-green-500 animate-in zoom-in duration-200">
 										<Check className="w-5 h-5" />
 									</div>

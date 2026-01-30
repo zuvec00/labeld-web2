@@ -17,6 +17,10 @@ import {
 	Palette,
 	Store,
 	PieChart,
+	User, // Added for EventProfile
+	Layout, // Added for EventSite
+	DollarSign, // Added for Payouts
+	List, // Added for Transactions
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -60,6 +64,14 @@ export const getNavIcon = (iconName: string) => {
 			return <Globe {...iconProps} />; // Reuse Globe for now, or maybe ShoppingBag
 		case "EventsAnalytics":
 			return <Ticket {...iconProps} />;
+		case "EventProfile":
+			return <User {...iconProps} />;
+		case "EventSite":
+			return <Layout {...iconProps} />;
+		case "Payouts":
+			return <DollarSign {...iconProps} />;
+		case "Transactions":
+			return <List {...iconProps} />;
 		default:
 			return null;
 	}
