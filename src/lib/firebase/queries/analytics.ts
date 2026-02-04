@@ -1,15 +1,144 @@
-import { 
-  collection, 
-  query, 
-  where, 
-  getDocs, 
-  Timestamp, 
-  OrderByDirection, 
-  orderBy,
-  limit 
-} from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
+import { OrganizerDailyMetrics, EventAnalyticsSummary } from "@/types/event-analytics";
 import { AnalyticsEvent, AnalyticsSummary } from "@/types/analytics";
+import { collection, documentId, getDocs, limit, orderBy, query, Timestamp, where } from "@firebase/firestore";
+
+/**
+ * ==========================================
+ * NEW: Event Site Analytics (Aggregated)
+ * ==========================================
+ */
+
+/**
+ * Fetches daily analytics summaries for a given date range.
+ */
+export async function getEventAnalytics(
+  organizerId: string, 
+  startDate: Date, 
+  endDate: Date
+): Promise<OrganizerDailyMetrics[]> {
+  if (!organizerId) return [];
+
+  const ref = collection(db, "eventOrganizers", organizerId, "analytics_daily");
+  
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+
+  // Since the document ID is the YYYY-MM-DD date string, we can query by documentId()
+  const q = query(
+    ref,
+    where(documentId(), ">=", startStr),
+    where(documentId(), "<=", endStr),
+    orderBy(documentId(), "asc")
+  );
+
+  const snapshot = await getDocs(q);
+  // Inject the ID as the date if it's missing in the data
+  return snapshot.docs.map(doc => ({
+    date: doc.id,
+    ...doc.data()
+  })) as OrganizerDailyMetrics[];
+}
+
+/**
+ * Aggregates an array of daily metrics into a single summary for the period.
+ */
+/**
+ * Aggregates an array of daily metrics into a single summary for the period.
+ */
+export function summarizeEventMetrics(dailies: OrganizerDailyMetrics[]): EventAnalyticsSummary {
+  const summary: EventAnalyticsSummary = {
+    totalRevenue: 0,
+    revenueTrend: 0,
+    totalTicketsSold: 0,
+    ticketsTrend: 0,
+    totalPageViews: 0,
+    viewsTrend: 0,
+    avgConversionRate: 0,
+    dailyTrend: dailies,
+    topEvents: [], // Filtered later by performance metrics
+    trafficSourceBreakdown: []
+  };
+
+  if (dailies.length === 0) return summary;
+
+  const trafficMap: Record<string, number> = {};
+
+  dailies.forEach(day => {
+    const d = day as any; // Cast to allow robust property access
+
+    // 1. Revenue
+    summary.totalRevenue += Number(day.revenue?.gross || 0);
+    
+    // 2. Tickets Sold
+    // Check nested funnel first, then flat key potential, then root ticketsSold
+    const tickets = Number(day.funnel?.ticketsSold || d["funnel.ticketsSold"] || day.funnel?.ticketsSold || 0);
+    summary.totalTicketsSold += tickets;
+    
+    // 3. Page Views
+    if (typeof day.pageViews === 'number') {
+       summary.totalPageViews += day.pageViews;
+    } else if (typeof day.pageViews === 'object') {
+       summary.totalPageViews += Object.values(day.pageViews).reduce((a, b) => a + (Number(b) || 0), 0);
+    } else if (d['pageViews']) {
+       summary.totalPageViews += Number(d['pageViews']);
+    }
+
+    // 4. Traffic Sources
+    if (day.trafficSources) {
+      Object.entries(day.trafficSources).forEach(([source, count]) => {
+        trafficMap[source] = (trafficMap[source] || 0) + count;
+      });
+    }
+  });
+
+  // Calculate Traffic Breakdown
+  summary.trafficSourceBreakdown = Object.entries(trafficMap)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value);
+
+  // Conversion Rate & Funnel Totals
+  const totalEventViews = dailies.reduce((sum, day) => {
+    const d = day as any;
+    return sum + Number(day.funnel?.eventDetailViews || d["funnel.eventDetailViews"] || 0);
+  }, 0);
+  
+  const totalOrders = dailies.reduce((sum, day) => {
+    const d = day as any;
+    return sum + Number(day.funnel?.ordersPlaced || d["funnel.ordersPlaced"] || 0);
+  }, 0);
+  
+  if (totalEventViews > 0) {
+    summary.avgConversionRate = (totalOrders / totalEventViews) * 100;
+  }
+
+  return summary;
+}
+
+/**
+ * Fetches the performance metrics for all events belonging to an organizer.
+ */
+export async function getEventPerformanceMetrics(organizerId: string) {
+  if (!organizerId) return [];
+  
+  const ref = collection(db, "eventOrganizers", organizerId, "event_performance");
+  // const q = query(ref, orderBy("revenue.gross", "desc")); // Default sort by revenue
+  const q = query(ref);
+  
+  const snapshot = await getDocs(q);
+
+  return snapshot.docs.map(doc => ({
+    eventId: doc.id,
+    ...doc.data()
+  }));
+}
+
+/**
+ * ==========================================
+ * LEGACY / CORE: Brand Analytics (Raw Events)
+ * Used by main Dashboard & Reports
+ * ==========================================
+ */
 
 export async function getBrandAnalytics(
   brandId: string, 
@@ -19,16 +148,6 @@ export async function getBrandAnalytics(
     const analyticsRef = collection(db, "analyticsEvents");
     
     // We want events where this brand is involved either as source or target
-    // Note: Firestore OR queries can be tricky. For now, let's focus on 
-    // where the brand is the TARGET (interactions with their stuff) 
-    // or SOURCE (traffic from their content).
-    // A composite query might require an index. 
-    // Let's start by querying where target.brandId == brandId, as that covers 
-    // "someone clicked MY product" or "viewed MY store".
-    
-    // Check if we can do this without complex indexes first.
-    // If not, we might need to split into two queries.
-    
     const q = query(
       analyticsRef,
       where("target.brandId", "==", brandId),
@@ -81,7 +200,6 @@ export async function getBrandAnalytics(
 
   } catch (error) {
     console.error("Error fetching analytics:", error);
-    // Return empty if collection doesn't exist or query fails
     return { 
       events: [], 
       summary: {

@@ -9,6 +9,8 @@ import { getMultipleEventTicketStats, TicketStats } from "@/lib/firebase/queries
 import { EventTimelineRange, getDateRangeFromTimeline } from "@/components/dashboard/EventTimelineControls";
 import { EventModel } from "@/lib/models/event";
 import { TopTicketType } from "@/hooks/useDashboard";
+import { getEventAnalytics, summarizeEventMetrics, getEventPerformanceMetrics } from "@/lib/firebase/queries/analytics";
+import { EventAnalyticsSummary } from "@/types/event-analytics";
 
 export interface EventDashboardKPIs {
   totalTicketsSold: number;
@@ -29,6 +31,9 @@ export interface EventDashboardData {
   salesOverTime: Array<{ date: string; count: number }>;
   topTicketTypes: TopTicketType[];
   trend: "up" | "down" | "flat";
+  // New Analytics Fields
+  analyticsSummary?: EventAnalyticsSummary | null;
+  eventsPerformance?: any[];
 }
 
 interface UseEventDashboardReturn {
@@ -178,6 +183,33 @@ export function useEventDashboard(): UseEventDashboardReturn {
         }
       }
 
+      // --- NEW: Fetch Aggregated Analytics (Funnel & Performance) ---
+      let analyticsSummary = null;
+      let eventsPerformance: any[] = [];
+      
+      try {
+        // 1. Daily Metrics (for Funnel)
+        const dailyMetrics = await getEventAnalytics(user.uid, start, end);
+        analyticsSummary = summarizeEventMetrics(dailyMetrics);
+        
+        // 2. Event Performance (for Table)
+        if (eventIds.length > 0) {
+           const rawPerformance = await getEventPerformanceMetrics(user.uid);
+           
+           // Enrich with Event Data (Title, Status)
+           eventsPerformance = rawPerformance.map((perf: any) => {
+             const eventDetails = events.find(e => e.id === perf.eventId);
+             return {
+               ...perf,
+               title: eventDetails?.title || "Untitled Event",
+               status: eventDetails?.status || "unknown"
+             };
+           });
+        }
+      } catch (analyticsErr) {
+        console.warn("Failed to fetch aggregated analytics:", analyticsErr);
+      }
+      
       // Calculate orders per day
       const daysInRange = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
       const ordersPerDay = totalOrders / Math.max(daysInRange, 1);
@@ -236,6 +268,8 @@ export function useEventDashboard(): UseEventDashboardReturn {
         salesOverTime,
         topTicketTypes,
         trend,
+        analyticsSummary, // Attached new data
+        eventsPerformance, // Attached new data
       });
 
     } catch (err) {

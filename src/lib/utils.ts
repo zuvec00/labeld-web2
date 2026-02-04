@@ -23,6 +23,8 @@ export function slugify(s: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+export const sanitizeSlug = slugify;
+
 export function formatCurrency(amount: number, currency: string = "NGN", options: { compact?: boolean } = {}): string {
   return new Intl.NumberFormat("en-NG", {
     style: "currency",

@@ -12,6 +12,7 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 		| "disabled"
 		| "danger"
 		| "calmAccent2";
+	size?: "sm" | "md" | "lg";
 	outlineColor?: string;
 	className?: string;
 	isLoading?: boolean;
@@ -24,6 +25,7 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 export function Button({
 	text,
 	variant = "primary",
+	size = "md",
 	outlineColor = "cta",
 	className,
 	isLoading = false,
@@ -53,6 +55,17 @@ export function Button({
 		}
 	}, [variant, outlineColor]);
 
+	const sizeClasses = useMemo(() => {
+		switch (size) {
+			case "sm":
+				return "px-3 py-1.5 text-sm";
+			case "lg":
+				return "px-6 py-4 text-lg";
+			default:
+				return "px-4 py-3";
+		}
+	}, [size]);
+
 	// When loading, force-disabled to prevent double submits
 	const isDisabled = disabled || isLoading;
 
@@ -62,10 +75,11 @@ export function Button({
 			disabled={isDisabled}
 			aria-busy={isLoading || undefined}
 			className={[
-				"group rounded-[12px] px-4 py-3 font-semibold transition",
+				"group rounded-[12px] font-semibold transition",
 				isDisabled ? "opacity-70 cursor-not-allowed" : "hover:opacity-90",
 				"inline-flex items-center justify-center gap-2",
 				style,
+				sizeClasses,
 				className || "",
 			].join(" ")}
 		>

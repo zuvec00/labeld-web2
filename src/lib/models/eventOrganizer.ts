@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import { EventSiteConfig } from "./eventSite";
 
 export interface EventOrganizerModel {
 	uid: string;
@@ -34,16 +35,7 @@ export interface EventOrganizerModel {
 	pricingPlanId?: string;
 	
 	// Storefront Config (Nested object for the customization page)
-	storefrontConfig?: {
-		layout?: "grid" | "list";
-		themeId?: string;
-		primaryColor?: string;
-		showSocialProof?: boolean;
-		heroParams?: {
-			height?: "full" | "half";
-			overlayOpacity?: number;
-		};
-	};
+	storefrontConfig?: EventSiteConfig;
 
 	// Metadata
 	createdAt: Timestamp;

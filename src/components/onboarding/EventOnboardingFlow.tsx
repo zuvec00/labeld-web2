@@ -12,6 +12,7 @@ import {
 } from "@/lib/storage/cloudinary";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { slugify } from "@/lib/utils";
 
 import IntentStep from "./steps/IntentStep";
 import EventIdentityStep from "./steps/EventIdentityStep";
@@ -169,7 +170,7 @@ export default function EventOnboardingFlow() {
 					twitter: eventData.twitter || null,
 					website: eventData.website || null,
 					subscriptionTier: "free", // Default to free plan
-					slug: eventData.username.toLowerCase(), // Set initial slug
+					slug: slugify(eventData.username), // Ensure slug is clean
 					createdAt: serverTimestamp(),
 					updatedAt: serverTimestamp(),
 				});
@@ -177,7 +178,7 @@ export default function EventOnboardingFlow() {
 				// Register public slug for the event organizer (experience)
 				try {
 					const { reserveSlug } = await import("@/lib/firebase/slugs");
-					const initialSlug = eventData.username;
+					const initialSlug = slugify(eventData.username);
 					await reserveSlug(
 						initialSlug,
 						"experience", // "experience" as per user request (was "event")

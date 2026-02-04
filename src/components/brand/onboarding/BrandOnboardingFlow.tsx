@@ -20,6 +20,7 @@ import { addBrandCF } from "@/lib/firebase/callables/brand";
 import { uploadProfileImageCloudinary } from "@/lib/storage/cloudinary";
 import { uploadBrandImageCloudinary } from "@/lib/storage/cloudinary";
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
+import { slugify } from "@/lib/utils";
 
 // Types
 interface BrandOnboardingData {
@@ -32,7 +33,7 @@ type Step = 1 | 2 | 3 | "auth";
 // Progress calculation
 const calculateProgress = (
 	data: BrandOnboardingData,
-	brandData: any
+	brandData: any,
 ): {
 	required: number;
 	optional: number;
@@ -73,7 +74,7 @@ const calculateProgress = (
 	}
 
 	const requiredPercent = Math.round(
-		(completedRequiredFields / totalRequiredFields) * 100
+		(completedRequiredFields / totalRequiredFields) * 100,
 	);
 	const optionalPercent =
 		totalOptionalFields > 0
@@ -173,7 +174,7 @@ export default function BrandOnboardingFlow({
 			};
 			localStorage.setItem(
 				"brandOnboardingProfile",
-				JSON.stringify(dataToSave)
+				JSON.stringify(dataToSave),
 			);
 		}
 	}, [profileData]);
@@ -183,9 +184,8 @@ export default function BrandOnboardingFlow({
 		const fetchUserData = async () => {
 			if (auth.currentUser) {
 				try {
-					const { doc, getDoc, getFirestore } = await import(
-						"firebase/firestore"
-					);
+					const { doc, getDoc, getFirestore } =
+						await import("firebase/firestore");
 					const db = getFirestore();
 					const userDoc = await getDoc(doc(db, "users", auth.currentUser.uid));
 
@@ -222,7 +222,7 @@ export default function BrandOnboardingFlow({
 	const progress = useMemo(
 		() =>
 			calculateProgress({ profile: profileData, skipBrandSetup }, brandData),
-		[profileData, skipBrandSetup, brandData]
+		[profileData, skipBrandSetup, brandData],
 	);
 
 	const canProceedFromStep1 = useMemo(() => {
@@ -320,7 +320,7 @@ export default function BrandOnboardingFlow({
 				try {
 					profileImageUrl = await uploadProfileImageCloudinary(
 						profileData.profileFile,
-						user.uid
+						user.uid,
 					);
 				} catch (cloudinaryError) {
 					console.warn("Profile image upload failed:", cloudinaryError);
@@ -343,9 +343,8 @@ export default function BrandOnboardingFlow({
 			// NEW: Save phone number to user doc explicitly
 			if (brandData.phoneNumber) {
 				try {
-					const { getFirestore, doc, updateDoc } = await import(
-						"firebase/firestore"
-					);
+					const { getFirestore, doc, updateDoc } =
+						await import("firebase/firestore");
 					const db = getFirestore();
 					await updateDoc(doc(db, "users", user.uid), {
 						phoneNumber: brandData.phoneNumber,
@@ -367,7 +366,7 @@ export default function BrandOnboardingFlow({
 					setLoadingMessage("Uploading brand logo...");
 					logoUrl = await uploadBrandImageCloudinary(
 						brandData.logoFile!,
-						user.uid
+						user.uid,
 					);
 				} catch (cloudinaryError) {
 					console.warn("Brand logo upload failed:", cloudinaryError);
@@ -382,7 +381,7 @@ export default function BrandOnboardingFlow({
 					try {
 						coverImageUrl = await uploadBrandImageCloudinary(
 							brandData.coverFile,
-							user.uid
+							user.uid,
 						);
 					} catch (cloudinaryError) {
 						console.warn("Brand cover upload failed:", cloudinaryError);
@@ -393,7 +392,7 @@ export default function BrandOnboardingFlow({
 				setLoadingMessage("Finalizing brand profile...");
 				await addBrandCF({
 					brandName: brandData.brandName,
-					username: brandData.brandUsername,
+					username: slugify(brandData.brandUsername),
 					// phoneNumber: brandData.phoneNumber, // New field
 					bio: brandData.bio || null,
 					category: brandData.brandCategory || "streetwear",
@@ -640,8 +639,8 @@ export default function BrandOnboardingFlow({
 							{loading
 								? loadingMessage || "Creating..."
 								: auth.currentUser
-								? "Create Brand"
-								: "Create Account"}
+									? "Create Brand"
+									: "Create Account"}
 							<ArrowRight className="w-4 h-4" />
 						</button>
 					) : (

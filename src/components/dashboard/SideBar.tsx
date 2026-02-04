@@ -117,7 +117,7 @@ export default function Sidebar({
 									"/brand-space/site-customization",
 								);
 								const isEventSibling =
-									pathname?.startsWith("/events/profile") ||
+									pathname?.startsWith("/organizer-space") ||
 									pathname?.startsWith("/events/site-customization");
 
 								const active =

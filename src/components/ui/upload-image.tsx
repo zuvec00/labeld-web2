@@ -21,6 +21,7 @@ type Props = {
 	borderRadius?: number; // px
 	paddingY?: number; // px
 	paddingX?: number; // px
+	className?: string;
 };
 
 export default function UploadImage({
@@ -34,6 +35,7 @@ export default function UploadImage({
 	borderRadius = 12,
 	paddingY = 14,
 	paddingX = 16,
+	className,
 }: Props) {
 	const inputRef = useRef<HTMLInputElement>(null);
 	const [dragOver, setDragOver] = useState(false);
@@ -76,6 +78,7 @@ export default function UploadImage({
 					"cursor-pointer border-2 border-dashed",
 					"bg-surface rounded-2xl",
 					dragOver ? "border-accent bg-surface/60" : "",
+					className,
 				].join(" ")}
 				style={{
 					// replicate Flutter: dotted border tinted with CTA 20%, bg with CTA 5%
@@ -119,7 +122,7 @@ export default function UploadImage({
 								style={{
 									backgroundColor: hexWithOpacity(
 										"var(--color-text-muted)",
-										0.35
+										0.35,
 									),
 								}}
 							/>
@@ -206,7 +209,7 @@ function hexWithOpacity(color: string, alpha: number) {
 	if (color.startsWith("var(")) {
 		// use a neutral with opacity; the underlying surface already matches your palette
 		return `color-mix(in oklab, ${color} ${Math.round(
-			alpha * 100
+			alpha * 100,
 		)}%, transparent)`;
 	}
 	// normalize hex => rgba

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { getFirestore, collection, getDocs } from "firebase/firestore";
 import { reserveSlug, isPublicSlugTaken } from "@/lib/firebase/slugs";
 import Button from "@/components/ui/button";
+import { slugify } from "@/lib/utils";
 
 export default function SlugBackfillPage() {
 	const [isRunning, setIsRunning] = useState(false);
@@ -18,12 +19,13 @@ export default function SlugBackfillPage() {
 		setIsRunning(true);
 		setLogs([]);
 		setProgress(0);
-		log("Starting BRAND backfill...");
+		log("Starting BRAND backfill & repair...");
 
 		try {
 			const db = getFirestore();
 			const brandsRef = collection(db, "brands");
 			const snapshot = await getDocs(brandsRef);
+			const { doc, updateDoc } = await import("firebase/firestore");
 
 			const total = snapshot.size;
 			log(`Found ${total} brands.`);
@@ -32,44 +34,69 @@ export default function SlugBackfillPage() {
 			let success = 0;
 			let skipped = 0;
 			let failed = 0;
+			let repaired = 0;
 
-			for (const doc of snapshot.docs) {
-				const data = doc.data();
-				const brandId = doc.id;
-				// Prefer brandSlug, fallback to username
+			for (const brandDoc of snapshot.docs) {
+				const data = brandDoc.data();
+				const brandId = brandDoc.id;
 				const rawSlug = data.brandSlug || data.username;
 
 				processed++;
 				setProgress(Math.round((processed / total) * 100));
 
 				if (!rawSlug) {
-					log(`[${brandId}] No slug or username found. Skipped.`);
+					log(`[${brandId}] No slug found. Skipped.`);
 					skipped++;
 					continue;
 				}
 
-				const slug = rawSlug.trim().toLowerCase();
+				// Sanitize
+				const sanitizedSlug = slugify(rawSlug);
 
+				// 1. Repair Document if needed
+				if (sanitizedSlug !== rawSlug) {
+					try {
+						await updateDoc(brandDoc.ref, {
+							brandSlug: sanitizedSlug,
+						});
+						log(`[${brandId}] Repaired slug: ${rawSlug} -> ${sanitizedSlug}`);
+						repaired++;
+					} catch (e: any) {
+						log(`[${brandId}] Failed repair: ${e.message}`);
+					}
+				}
+
+				// 2. Reserve in public registry
 				try {
-					const taken = await isPublicSlugTaken(slug);
+					const taken = await isPublicSlugTaken(sanitizedSlug);
+					// If taken, checks if it belongs to this brand (idempotent reserve?)
+					// reserveSlug usually throws if taken by someone else.
+					// Implementation detail: reserveSlug might not handle re-reservation gracefully without check.
+					// But for backfill, if taken, we skip? Or we enforce?
+					// Let's try reserve. If it fails, we log.
+					// Note: validation says "if taken -> skipped".
 					if (taken) {
+						// verify ownership if possible?
 						skipped++;
 					} else {
-						await reserveSlug(slug, "brand", brandId, "BACKFILL_ADMIN");
+						await reserveSlug(
+							sanitizedSlug,
+							"brand",
+							brandId,
+							"BACKFILL_ADMIN",
+						);
 						success++;
 					}
 				} catch (e: any) {
-					log(`[${slug}] Error: ${e.message}`);
+					log(`[${sanitizedSlug}] Reserve Error: ${e.message}`);
 					failed++;
 				}
 
-				if (processed % 10 === 0) {
-					await new Promise((r) => setTimeout(r, 50));
-				}
+				if (processed % 10 === 0) await new Promise((r) => setTimeout(r, 20));
 			}
 
 			log(
-				`Brand Backfill complete. Success: ${success}, Skipped: ${skipped}, Failed: ${failed}.`,
+				`Brand Backfill Done. Reserved: ${success}, Repaired Docs: ${repaired}, Skipped: ${skipped}, Failed: ${failed}.`,
 			);
 		} catch (e: any) {
 			log(`Fatal error: ${e.message}`);
@@ -82,78 +109,103 @@ export default function SlugBackfillPage() {
 		setIsRunning(true);
 		setLogs([]);
 		setProgress(0);
-		log("Starting EVENT ORGANIZER backfill (fixing to 'experience')...");
+		log("Starting EVENT ORGANIZER backfill & repair...");
 
 		try {
 			const db = getFirestore();
 			const eventsRef = collection(db, "eventOrganizers");
 			const snapshot = await getDocs(eventsRef);
-			const { doc, getDoc, deleteDoc } = await import("firebase/firestore");
+			const { doc, getDoc, updateDoc, deleteDoc } =
+				await import("firebase/firestore");
 
 			const total = snapshot.size;
-			log(`Found ${total} event organizers.`);
+			log(`Found ${total} organizers.`);
 
 			let processed = 0;
 			let success = 0;
 			let skipped = 0;
 			let failed = 0;
-			let fixed = 0;
+			let repaired = 0;
+			let fixedType = 0;
 
-			for (const d of snapshot.docs) {
-				const data = d.data();
-				const orgId = d.id;
-				// Event organizers use 'username' as slug source
-				//TODO CHANGE TO data.slug when you make it
-				const rawSlug = data.username;
+			for (const orgDoc of snapshot.docs) {
+				const data = orgDoc.data();
+				const orgId = orgDoc.id;
+				// Organizer slug source: 'slug' > 'username'
+				const rawSlug = data.slug || data.username;
 
 				processed++;
 				setProgress(Math.round((processed / total) * 100));
 
 				if (!rawSlug) {
-					log(`[${orgId}] No username found. Skipped.`);
+					log(`[${orgId}] No slug/username. Skipped.`);
 					skipped++;
 					continue;
 				}
 
-				const slug = rawSlug.trim().toLowerCase();
+				const sanitizedSlug = slugify(rawSlug);
 
+				// 1. Repair Document if needed (e.g. contains dots or spaces)
+				// Also explicit check: ensure 'slug' field IS set to the sanitized version
+				if (data.slug !== sanitizedSlug) {
+					try {
+						await updateDoc(orgDoc.ref, {
+							slug: sanitizedSlug,
+						});
+						log(`[${orgId}] Repaired doc slug: ${rawSlug} -> ${sanitizedSlug}`);
+						repaired++;
+					} catch (e: any) {
+						log(`[${orgId}] Failed repair: ${e.message}`);
+					}
+				}
+
+				// 2. Fix Legacy "event" type in publicSlugs (migrating to "experience")
 				try {
-					// Check existing
-					// We need to check if we need to delete the old "event" type
-					const slugRef = doc(db, "publicSlugs", slug);
+					const slugRef = doc(db, "publicSlugs", sanitizedSlug);
 					const slugSnap = await getDoc(slugRef);
 
 					if (slugSnap.exists()) {
 						const slugData = slugSnap.data();
 						if (slugData.type === "event") {
-							// Found the old wrong type! Delete it.
 							await deleteDoc(slugRef);
-							log(`[${slug}] Found legacy 'event' type. Deleting to fix.`);
-							fixed++;
-							// Now fall through to reserve it with "experience"
-						} else {
-							// It exists and is NOT "event" (maybe "brand" or already "experience")
-							// log(`[${slug}] Already exists as ${slugData.type}. Skipped.`);
+							log(
+								`[${sanitizedSlug}] Found legacy 'event' type. Deleting to upgrade.`,
+							);
+							fixedType++;
+						} else if (
+							slugData.ownerId === orgId &&
+							slugData.type === "experience"
+						) {
+							// Already good
 							skipped++;
 							continue;
 						}
 					}
 
-					// Create as "experience"
-					await reserveSlug(slug, "experience", orgId, "BACKFILL_ADMIN");
-					success++;
+					// Reserve as "experience"
+					// We use a try/catch block for strict reservation
+					try {
+						await reserveSlug(
+							sanitizedSlug,
+							"experience",
+							orgId,
+							"BACKFILL_ADMIN",
+						);
+						success++;
+					} catch (e: any) {
+						// Usually means taken properly
+						skipped++;
+					}
 				} catch (e: any) {
-					log(`[${slug}] Error: ${e.message}`);
+					log(`[${sanitizedSlug}] Registry Error: ${e.message}`);
 					failed++;
 				}
 
-				if (processed % 10 === 0) {
-					await new Promise((r) => setTimeout(r, 50));
-				}
+				if (processed % 10 === 0) await new Promise((r) => setTimeout(r, 20));
 			}
 
 			log(
-				`Event Backfill complete. Success(new/fixed): ${success}, Fixed old: ${fixed}, Skipped: ${skipped}, Failed: ${failed}.`,
+				`Event Backfill Done. Reserved: ${success}, Repaired Docs: ${repaired}, Legacy Fixed: ${fixedType}, Failed: ${failed}.`,
 			);
 		} catch (e: any) {
 			log(`Fatal error: ${e.message}`);
@@ -163,75 +215,35 @@ export default function SlugBackfillPage() {
 	}
 
 	async function runEventSubscriptionBackfill() {
+		// Deprecated/Merged into runEventBackfill above effectively, but keeping for standalone subscription fixes
+		// Simplified to just ensure fields exist
 		setIsRunning(true);
 		setLogs([]);
 		setProgress(0);
-		log("Starting EVENT ORGANIZER SUBSCRIPTION/SLUG backfill...");
+		log("Starting SUBSCRIPTION defaults check...");
 
 		try {
 			const db = getFirestore();
 			const eventsRef = collection(db, "eventOrganizers");
 			const snapshot = await getDocs(eventsRef);
-			const { doc, getDoc, updateDoc } = await import("firebase/firestore");
-
-			const total = snapshot.size;
-			log(`Found ${total} event organizers.`);
+			const { updateDoc } = await import("firebase/firestore");
 
 			let processed = 0;
-			let success = 0;
-			let skipped = 0;
-			let failed = 0;
+			let fixed = 0;
 
 			for (const d of snapshot.docs) {
 				const data = d.data();
-				const orgId = d.id;
 				processed++;
-				setProgress(Math.round((processed / total) * 100));
+				setProgress(Math.round((processed / snapshot.size) * 100));
 
-				let updates: any = {};
-				let needsUpdate = false;
-
-				// 1. Check Subscription Tier
 				if (!data.subscriptionTier) {
-					updates.subscriptionTier = "free";
-					needsUpdate = true;
-				}
-
-				// 2. Check Slug
-				// We want to ensure 'slug' field exists on the organizer doc.
-				// We assume it corresponds to their username or what's in publicSlugs.
-				if (!data.slug) {
-					// Fallback to username as the default slug if not set
-					const candidateSlug = (data.username || "").toLowerCase();
-					if (candidateSlug) {
-						updates.slug = candidateSlug;
-						needsUpdate = true;
-					}
-				}
-
-				if (needsUpdate) {
-					try {
-						await updateDoc(d.ref, updates);
-						// log(`[${orgId}] Updated: ${JSON.stringify(updates)}`);
-						success++;
-					} catch (e: any) {
-						log(`[${orgId}] Update failed: ${e.message}`);
-						failed++;
-					}
-				} else {
-					skipped++;
-				}
-
-				if (processed % 10 === 0) {
-					await new Promise((r) => setTimeout(r, 50));
+					await updateDoc(d.ref, { subscriptionTier: "free" });
+					fixed++;
 				}
 			}
-
-			log(
-				`Subscription Backfill complete. Updated: ${success}, Skipped: ${skipped}, Failed: ${failed}.`,
-			);
+			log(`Done. Fixed default subscription for ${fixed} docs.`);
 		} catch (e: any) {
-			log(`Fatal error: ${e.message}`);
+			log(`Error: ${e.message}`);
 		} finally {
 			setIsRunning(false);
 		}

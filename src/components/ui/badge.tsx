@@ -6,6 +6,7 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
 		| "secondary"
 		| "outline"
 		| "success"
+		| "successEvents"
 		| "danger"
 		| "warning";
 	children: React.ReactNode;
@@ -31,6 +32,9 @@ export function Badge({
 			break;
 		case "success":
 			variantStyles = "bg-green-500/10 text-green-600 border-green-500/20";
+			break;
+		case "successEvents":
+			variantStyles = "bg-events/10 text-events border-events/20";
 			break;
 		case "danger":
 			variantStyles = "bg-red-500/10 text-red-600 border-red-500/20";
