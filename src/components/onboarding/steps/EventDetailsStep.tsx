@@ -10,13 +10,14 @@ interface EventDetailsStepProps {
 
 const EVENT_CATEGORIES = [
 	"Nightlife",
-	"Concerts",
+	"Dining Experiences",
+	"Experiences",
+	"Concerts & Live Music",
+	"Parties",
 	"Festivals",
 	"Pop-ups",
-	"Workshops",
 	"Community",
-	"Markets",
-	"Exhibitions",
+	"Other",
 ];
 
 export default function EventDetailsStep({

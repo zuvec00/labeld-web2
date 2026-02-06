@@ -21,3 +21,11 @@ export const startProSubscription = httpsCallable<
   StartProSubscriptionRequest,
   StartProSubscriptionResponse
 >(functions, "startProSubscription");
+
+/**
+ * Calls the `startOrganizerProSubscription` Cloud Function.
+ */
+export const startOrganizerProSubscription = httpsCallable<
+  StartProSubscriptionRequest,
+  StartProSubscriptionResponse
+>(functions, "startOrganizerProSubscription");

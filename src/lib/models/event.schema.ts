@@ -25,13 +25,13 @@ export const eventDetailsSchema = z.object({
   recurringEndMode: z.enum(["date", "occurrences"]).optional(),
   recurringEndDate: z.coerce.date().optional(),
   recurringEndOccurrences: z.number().int().positive().optional(),
-}).refine(d => !d.isRecurring ? (d.endAt ? d.endAt > d.startAt : false) : true, { 
+}).refine(d => d.endAt ? d.endAt > d.startAt : false, { 
     path: ["endAt"], 
     message: "End time must be after start time" 
   })
-  .refine(d => d.isRecurring ? true : (d.endAt ? d.endAt > d.startAt : false), {
+  .refine(d => d.endAt !== undefined, {
     path: ["endAt"],
-    message: "End time is required for non-recurring events and must be after start time."
+    message: "End time is required."
   })
   .refine(d => d.capacityMode === "unlimited" ? d.capacityTotal === null : (d.capacityTotal ?? 0) >= 1, {
     path: ["capacityTotal"], message: "Provide a capacity of at least 1 (or choose Unlimited)."

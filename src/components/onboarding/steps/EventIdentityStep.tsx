@@ -10,6 +10,18 @@ interface EventIdentityStepProps {
 	onBack: () => void;
 }
 
+const EVENT_CATEGORIES = [
+	"Nightlife",
+	"Dining Experiences",
+	"Experiences",
+	"Concerts & Live Music",
+	"Parties",
+	"Festivals",
+	"Pop-ups",
+	"Community",
+	"Other",
+];
+
 export default function EventIdentityStep({
 	onNext,
 	onBack,
@@ -124,15 +136,11 @@ export default function EventIdentityStep({
 						<option value="" disabled>
 							What kind of events do you host?
 						</option>
-						<option value="Club Night">Club Night</option>
-						<option value="Concert">Concert</option>
-						<option value="Festival">Festival</option>
-						<option value="Pop-up / Retail">Pop-up / Retail</option>
-						<option value="Rave">Rave</option>
-						<option value="Exhibition">Exhibition</option>
-						<option value="Workshop">Workshop</option>
-						<option value="Networking">Networking</option>
-						<option value="Other">Other</option>
+						{EVENT_CATEGORIES.map((cat) => (
+							<option key={cat} value={cat}>
+								{cat}
+							</option>
+						))}
 					</select>
 				</div>
 			</div>

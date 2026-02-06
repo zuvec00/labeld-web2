@@ -3,6 +3,7 @@
 import { useState } from "react";
 import {
 	startProSubscription,
+	startOrganizerProSubscription,
 	BillingCycle,
 } from "@/lib/firebase/callables/subscriptions";
 import Button from "@/components/ui/button";
@@ -15,6 +16,7 @@ interface UpgradeConfirmModalProps {
 	billingCycle: BillingCycle;
 	priceDisplay: string; // "₦50,000"
 	periodDisplay: string; // "/ year"
+	mode?: "brand" | "organizer";
 }
 
 export default function UpgradeConfirmModal({
@@ -23,6 +25,7 @@ export default function UpgradeConfirmModal({
 	billingCycle,
 	priceDisplay,
 	periodDisplay,
+	mode = "brand",
 }: UpgradeConfirmModalProps) {
 	const [status, setStatus] = useState<
 		"idle" | "loading" | "success" | "error"
@@ -39,15 +42,43 @@ export default function UpgradeConfirmModal({
 			console.log("Billing Cycle: ", billingCycle);
 			// Call the cloud function
 			// isLive true for production
-			await startProSubscription({ billingCycle, isLive: true });
+			if (mode === "organizer") {
+				await startOrganizerProSubscription({ billingCycle, isLive: false });
+			} else {
+				await startProSubscription({ billingCycle, isLive: true });
+			}
 
 			setStatus("success");
 			// Optional: Wait a bit before redirecting?
 			setTimeout(() => {
-				router.push("/dashboard"); // Go to dashboard to see new status
+				router.push(mode === "organizer" ? "/organizer-space" : "/dashboard"); // Go to dashboard to see new status
 			}, 2000);
 		} catch (err: any) {
 			console.error("Upgrade failed:", err);
+			// Explicitly log properties that might not show in the main object log
+			console.log("Error Code:", err.code);
+			console.log("Error Details:", err.details);
+			console.log("Error Message:", err.message);
+
+			// Handle Paystack Redirect (Missing Auth)
+			// Check based on code OR if details has isRedirect (just in case code mapping varies)
+			if (
+				(err.code === "aborted" || err.code === "functions/aborted") &&
+				err.details?.isRedirect
+			) {
+				console.log(
+					"Redirecting to Paystack auth...",
+					err.details.authorizationUrl,
+				);
+
+				if (err.details.authorizationUrl) {
+					// Alert for debugging visibility as requested
+					alert(`Redirecting to Paystack: ${err.details.authorizationUrl}`);
+					window.location.href = err.details.authorizationUrl;
+					return;
+				}
+			}
+
 			setStatus("error");
 			setErrorMsg(err.message || "Failed to start subscription.");
 		}
@@ -99,7 +130,9 @@ export default function UpgradeConfirmModal({
 							<div className="bg-surface-neutral/50 rounded-xl p-4 border border-stroke space-y-3">
 								<div className="flex justify-between items-center text-sm text-text-muted">
 									<span>Plan</span>
-									<span className="font-medium text-text">Labeld Pro</span>
+									<span className="font-medium text-text">
+										{mode === "organizer" ? "Event Pro" : "Labeld Pro"}
+									</span>
 								</div>
 								<div className="flex justify-between items-center text-sm text-text-muted">
 									<span>Billing Cycle</span>

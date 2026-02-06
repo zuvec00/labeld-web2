@@ -8,7 +8,7 @@ export interface EventModel {
   description: string;
   coverImageURL: string;
   startAt: Date;        // store as Firestore Timestamp on write
-  endAt?: Date;         // Optional for recurring events
+  endAt?: Date;         // Required. For recurring events, this is the end time of the FIRST occurrence.
   timezone: string;     // e.g. "Africa/Lagos"
   status: "draft" | "published" | "cancelled" | "ended";
   venue: { name: string; address: string; city?: string; state: string; country: string };

@@ -321,7 +321,9 @@ export default function EventOnboardingFlow() {
 						</div>
 					</div>
 				)}
-				{step === "ready" && <ReadyStep onComplete={handleFinalLaunch} />}
+				{step === "ready" && (
+					<ReadyStep onComplete={handleFinalLaunch} label="Enter Event Space" />
+				)}
 			</main>
 		</div>
 	);

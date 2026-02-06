@@ -147,6 +147,10 @@ h1 span, h2 span, h3 span, h4 span, h5 span, h6 span { font-family: inherit; }
   .animate-progress-indeterminate {
     animation: progress-indeterminate 1.5s cubic-bezier(0.65, 0.815, 0.735, 0.395) infinite;
   }
+
+  .theme-organizer {
+    --color-accent: #9B5CFF;
+  }
 }
 
 @keyframes scan-beam {

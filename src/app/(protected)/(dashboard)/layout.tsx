@@ -39,7 +39,7 @@ export default function DashboardLayout({
 
 			<div className="flex h-screen overflow-hidden">
 				{/* Desktop Sidebar - fixed width, full height */}
-				<aside className="hidden lg:block w-[260px] flex-shrink-0 h-full bg-surface z-40">
+				<aside className="hidden lg:block w-[270px] flex-shrink-0 h-full bg-surface z-40">
 					<Sidebar />
 				</aside>
 

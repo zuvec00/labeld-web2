@@ -481,7 +481,7 @@ export default function EventSiteCustomizationPage() {
 										text="Upgrade to Pro"
 										variant="primary"
 										className="bg-events"
-										onClick={() => router.push("/pricing")}
+										onClick={() => router.push("/pricing?mode=organizer")}
 									/>
 								</div>
 							)}

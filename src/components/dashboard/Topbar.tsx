@@ -106,7 +106,17 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 	let accountTypeLabel = "User Profile";
 	let logoUrl: string | null = null;
 
-	if (activeRole === "brand" && hasBrand) {
+	if (hasBrand && hasOrganizer) {
+		accountTypeLabel = "Brand & Event Account";
+		// Prefer brand logo if active is brand, else organizer, else brand
+		if (activeRole === "brand") {
+			displayName = roleDetection?.brandName || "Brand";
+			logoUrl = roleDetection?.brandLogoUrl || null;
+		} else {
+			displayName = roleDetection?.organizerName || "Organizer";
+			logoUrl = roleDetection?.organizerLogoUrl || null;
+		}
+	} else if (activeRole === "brand" && hasBrand) {
 		displayName = roleDetection?.brandName || "Brand";
 		accountTypeLabel = "Brand Account";
 		logoUrl = roleDetection?.brandLogoUrl || null;
@@ -125,7 +135,21 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 		accountTypeLabel = "Brand Account";
 		logoUrl = roleDetection?.brandLogoUrl || null;
 	}
-	// else: falls through to default "My Account" / "User Profile"
+
+	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const { signOutApp } = useAuth(); // Create method for logout if not extracted already
+
+	// Close dropdown when clicking outside
+	useEffect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			const target = event.target as HTMLElement;
+			if (!target.closest(".profile-dropdown-container")) {
+				setIsDropdownOpen(false);
+			}
+		};
+		document.addEventListener("mousedown", handleClickOutside);
+		return () => document.removeEventListener("mousedown", handleClickOutside);
+	}, []);
 
 	return (
 		<>
@@ -171,62 +195,127 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 					<div className="h-8 w-[1px] bg-stroke hidden sm:block"></div>
 
 					{/* Profile Section */}
-					<div className="flex items-center gap-3">
-						<div className="flex flex-col items-end hidden sm:flex">
-							<div className="flex items-center gap-2">
-								<span className="text-sm font-medium text-text">
-									{displayName}
+					<div className="relative profile-dropdown-container">
+						<button
+							onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+							className="flex items-center gap-3 hover:bg-surface rounded-full pr-2 transition-colors outline-none"
+						>
+							<div className="flex flex-col items-end hidden sm:flex">
+								<div className="flex items-center gap-2">
+									<span className="text-sm font-medium text-text">
+										{displayName}
+									</span>
+									{/* Plan Badge (Brand Only) */}
+									{hasBrand &&
+									roleDetection?.brandSubscriptionTier === "pro" ? (
+										<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
+											PRO
+										</span>
+									) : hasBrand ? (
+										<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-stroke text-text-muted text-xs font-medium border border-stroke">
+											FREE
+										</span>
+									) : null}
+								</div>
+								<span className="text-xs text-text-muted">
+									{accountTypeLabel}
 								</span>
-								{/* Plan Badge (Brand Only) */}
-								{hasBrand && roleDetection?.brandSubscriptionTier === "pro" ? (
-									<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-accent/10 text-accent text-xs font-medium border border-accent/20">
-										PRO
-									</span>
-								) : hasBrand ? (
-									<span className="inline-flex items-center px-2 py-0.5 rounded-full bg-stroke text-text-muted text-xs font-medium border border-stroke">
-										FREE
-									</span>
-								) : null}
 							</div>
-							<span className="text-xs text-text-muted">
-								{accountTypeLabel}
-							</span>
-						</div>
 
-						<div className="h-9 w-9 rounded-full overflow-hidden border border-stroke ring-2 ring-transparent hover:ring-accent/20 transition-all cursor-pointer">
-							{loading ? (
-								<div className="h-full w-full bg-stroke animate-pulse" />
-							) : logoUrl ? (
-								<Image
-									src={logoUrl}
-									alt={displayName}
-									width={36}
-									height={36}
-									className="object-cover h-full w-full"
-									onClick={() => router.push("/brand-space/profile/edit")}
-									onError={() => {}}
-								/>
-							) : profileImageUrl ? (
-								<Image
-									src={profileImageUrl}
-									alt="Profile"
-									width={36}
-									height={36}
-									className="object-cover h-full w-full"
-									onClick={() => router.push("/brand-space/profile/edit")}
-									onError={() => setProfileImageUrl(null)}
-								/>
-							) : (
-								<Image
-									src="/images/profile-hero.JPG"
-									alt="Profile"
-									width={36}
-									height={36}
-									onClick={() => router.push("/brand-space/profile/edit")}
-									className="object-cover h-full w-full"
-								/>
-							)}
-						</div>
+							<div className="h-9 w-9 rounded-full overflow-hidden border border-stroke ring-2 ring-transparent hover:ring-accent/20 transition-all cursor-pointer">
+								{loading ? (
+									<div className="h-full w-full bg-stroke animate-pulse" />
+								) : logoUrl ? (
+									<Image
+										src={logoUrl}
+										alt={displayName}
+										width={36}
+										height={36}
+										className="object-cover h-full w-full"
+									/>
+								) : profileImageUrl ? (
+									<Image
+										src={profileImageUrl}
+										alt="Profile"
+										width={36}
+										height={36}
+										className="object-cover h-full w-full"
+									/>
+								) : (
+									<Image
+										src="/images/profile-hero.JPG"
+										alt="Profile"
+										width={36}
+										height={36}
+										className="object-cover h-full w-full"
+									/>
+								)}
+							</div>
+						</button>
+
+						{/* Dropdown Menu */}
+						{isDropdownOpen && (
+							<div className="absolute right-0 top-full mt-2 w-56 rounded-xl border border-stroke bg-surface shadow-xl shadow-black/5 animate-in fade-in slide-in-from-top-2 z-50 overflow-hidden">
+								<div className="p-1">
+									{hasBrand && (
+										<button
+											onClick={() => {
+												setIsDropdownOpen(false);
+												router.push("/brand-space/profile/edit");
+											}}
+											className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
+										>
+											<div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
+												B
+											</div>
+											<div className="flex flex-col items-start">
+												<span className="font-medium">Brand Profile</span>
+												<span className="text-[10px] text-text-muted">
+													Edit details
+												</span>
+											</div>
+										</button>
+									)}
+
+									{hasOrganizer && (
+										<button
+											onClick={() => {
+												setIsDropdownOpen(false);
+												router.push("/organizer-space/edit");
+											}}
+											className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
+										>
+											<div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
+												E
+											</div>
+											<div className="flex flex-col items-start">
+												<span className="font-medium">Organizer Profile</span>
+												<span className="text-[10px] text-text-muted">
+													Edit details
+												</span>
+											</div>
+										</button>
+									)}
+								</div>
+
+								<div className="h-[1px] bg-stroke mx-1"></div>
+
+								<div className="p-1">
+									<button
+										onClick={() => {
+											setIsDropdownOpen(false);
+											signOutApp();
+										}}
+										className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-red-500 hover:bg-red-500/5 transition-colors"
+									>
+										<div className="h-8 w-8 flex items-center justify-center">
+											<ExternalLink className="w-4 h-4 rotate-180" />
+										</div>
+										<span className="font-medium">Log out</span>
+									</button>
+								</div>
+							</div>
+						)}
 					</div>
 				</div>
 			</div>

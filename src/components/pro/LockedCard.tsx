@@ -8,6 +8,9 @@ interface LockedCardProps {
 	description?: string;
 	height?: string;
 	showUpgrade?: boolean;
+	className?: string;
+	upgradeUrl?: string;
+	buttonClassName?: string;
 }
 
 export default function LockedCard({
@@ -15,10 +18,13 @@ export default function LockedCard({
 	description,
 	height = "h-64",
 	showUpgrade = true,
+	className = "",
+	upgradeUrl = "/pricing",
+	buttonClassName = "bg-cta hover:bg-cta/90 text-white",
 }: LockedCardProps) {
 	return (
 		<div
-			className={`relative rounded-xl border border-stroke bg-surface overflow-hidden ${height} flex items-center justify-center backdrop-blur-sm`}
+			className={`relative rounded-xl border border-stroke bg-surface overflow-hidden ${height} flex items-center justify-center backdrop-blur-sm ${className}`}
 		>
 			{/* Blurred Background Pattern */}
 			<div className="absolute inset-0 bg-gradient-to-br from-cta/5 via-accent/5 to-transparent opacity-50" />
@@ -41,8 +47,8 @@ export default function LockedCard({
 
 				{showUpgrade && (
 					<Link
-						href="/pricing"
-						className="inline-flex items-center gap-2 px-4 py-2 bg-cta text-white text-sm font-medium rounded-lg hover:bg-cta/90 transition-all shadow-sm hover:shadow-md"
+						href={upgradeUrl}
+						className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all shadow-sm hover:shadow-md ${buttonClassName}`}
 					>
 						<Sparkles className="w-4 h-4" />
 						Upgrade to Pro

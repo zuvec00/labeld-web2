@@ -123,7 +123,7 @@ export default function EditEventDetailsPage() {
 		];
 
 		const filteredData = (payload.data ?? []).filter((c) =>
-			allowedCountries.includes(c.name)
+			allowedCountries.includes(c.name),
 		);
 
 		const list = filteredData.map((c) => c.name);
@@ -168,7 +168,7 @@ export default function EditEventDetailsPage() {
 	const [coverPreview, setCoverPreview] = useState<string>("");
 
 	const states = v.venue.country
-		? COUNTRY_TO_STATES[v.venue.country] ?? []
+		? (COUNTRY_TO_STATES[v.venue.country] ?? [])
 		: [];
 
 	// Fetch event data on mount
@@ -355,8 +355,8 @@ export default function EditEventDetailsPage() {
 				v.capacityMode === "limited" && capacityInput
 					? parseInt(capacityInput)
 					: v.capacityMode === "unlimited"
-					? null
-					: 1;
+						? null
+						: 1;
 
 			// Additional checks for capacity input
 			if (
@@ -387,8 +387,8 @@ export default function EditEventDetailsPage() {
 				endAt: v.isRecurring
 					? undefined
 					: v.endAt
-					? convertLocalToTimezone(v.endAt as string)
-					: undefined,
+						? convertLocalToTimezone(v.endAt as string)
+						: undefined,
 				recurringEndDate:
 					v.isRecurring && v.recurringEndMode === "date" && v.recurringEndDate
 						? new Date(v.recurringEndDate + "T00:00:00")
@@ -427,7 +427,7 @@ export default function EditEventDetailsPage() {
 				// If user manually edited the slug, don't auto-suggest alternatives
 				if (isSlugManuallyEdited) {
 					throw new Error(
-						`The URL "events.labeld.app/${v.slug}" is already taken. Please choose a different custom URL.`
+						`The URL "events.labeld.app/${v.slug}" is already taken. Please choose a different custom URL.`,
 					);
 				}
 
@@ -441,7 +441,7 @@ export default function EditEventDetailsPage() {
 
 				if (slugTaken) {
 					throw new Error(
-						"This event URL is already taken. Please try a different title or use a custom URL."
+						"This event URL is already taken. Please try a different title or use a custom URL.",
 					);
 				}
 
@@ -454,8 +454,8 @@ export default function EditEventDetailsPage() {
 				v.capacityMode === "limited" && capacityInput
 					? parseInt(capacityInput)
 					: v.capacityMode === "unlimited"
-					? null
-					: 1;
+						? null
+						: 1;
 
 			// Convert local datetime strings to Date objects in the selected timezone
 			const convertLocalToTimezone = (localDateTime: string) => {
@@ -483,21 +483,21 @@ export default function EditEventDetailsPage() {
 					});
 					console.log(
 						"✅ Event cover uploaded to Cloudinary:",
-						finalCoverImageURL
+						finalCoverImageURL,
 					);
 				} catch (cloudinaryError) {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					finalCoverImageURL = await uploadFileGetURL(
 						coverFile,
-						`events/covers/${crypto.randomUUID()}-${coverFile.name}`
+						`events/covers/${crypto.randomUUID()}-${coverFile.name}`,
 					);
 					console.log(
 						"✅ Event cover uploaded to Firebase Storage:",
-						finalCoverImageURL
+						finalCoverImageURL,
 					);
 				}
 			}
@@ -511,8 +511,8 @@ export default function EditEventDetailsPage() {
 				endAt: v.isRecurring
 					? undefined
 					: v.endAt
-					? convertLocalToTimezone(v.endAt as string)
-					: undefined,
+						? convertLocalToTimezone(v.endAt as string)
+						: undefined,
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
 				isRecurring: v.isRecurring || false,
@@ -534,7 +534,7 @@ export default function EditEventDetailsPage() {
 				(!capacityInput || parseInt(capacityInput) < 1)
 			) {
 				throw new Error(
-					"Capacity must be at least 1 when limited mode is selected."
+					"Capacity must be at least 1 when limited mode is selected.",
 				);
 			}
 
@@ -724,21 +724,25 @@ export default function EditEventDetailsPage() {
 									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
 								/>
 							</div>
-							{!v.isRecurring && (
-								<div>
-									<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
-										End <span className="text-cta">*</span>
-									</label>
-									<input
-										type="datetime-local"
-										value={v.endAt as unknown as string}
-										onChange={(e) =>
-											setV((prev) => ({ ...prev, endAt: e.target.value }))
-										}
-										className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
-									/>
-								</div>
-							)}
+							<div>
+								<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
+									End{" "}
+									{v.isRecurring && (
+										<span className="text-xs text-text-muted/70 font-normal">
+											(First Occurrence)
+										</span>
+									)}{" "}
+									<span className="text-cta">*</span>
+								</label>
+								<input
+									type="datetime-local"
+									value={v.endAt as unknown as string}
+									onChange={(e) =>
+										setV((prev) => ({ ...prev, endAt: e.target.value }))
+									}
+									className="w-full rounded-lg sm:rounded-xl border border-stroke px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base text-text outline-none focus:border-accent"
+								/>
+							</div>
 						</div>
 						<div>
 							<label className="block text-xs sm:text-sm text-text-muted mb-1.5 sm:mb-2">
@@ -782,8 +786,6 @@ export default function EditEventDetailsPage() {
 											recurringEndOccurrences: e.target.checked
 												? prev.recurringEndOccurrences
 												: undefined,
-											// Clear endAt when recurring is enabled
-											endAt: e.target.checked ? "" : prev.endAt,
 										}))
 									}
 									className="w-4 h-4 rounded border-stroke text-accent focus:ring-accent focus:ring-2"

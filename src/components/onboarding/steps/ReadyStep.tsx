@@ -6,9 +6,13 @@ import { useRouter } from "next/navigation";
 
 interface ReadyStepProps {
 	onComplete: () => Promise<void>;
+	label?: string;
 }
 
-export default function ReadyStep({ onComplete }: ReadyStepProps) {
+export default function ReadyStep({
+	onComplete,
+	label = "Enter Brand Space",
+}: ReadyStepProps) {
 	const [isLoading, setIsLoading] = useState(false);
 	const router = useRouter();
 
@@ -46,7 +50,7 @@ export default function ReadyStep({ onComplete }: ReadyStepProps) {
 						"Launching..."
 					) : (
 						<>
-							Enter Brand Space
+							{label}
 							<ArrowRight className="w-5 h-5" />
 						</>
 					)}

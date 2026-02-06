@@ -11,7 +11,9 @@ export type SubscriptionStatus = "active" | "expired" | "cancelled" | "past_due"
  * Source of truth for brand subscriptions.
  */
 export interface SubscriptionDoc {
-  brandId: string;
+  brandId?: string;
+  organizerId?: string; // NEW: For event organizer subscriptions
+
   plan: SubscriptionPlan;
   billingCycle: BillingCycle;
   amount: number; // Amount in minor units (e.g. kobo) recommended
@@ -24,8 +26,11 @@ export interface SubscriptionDoc {
   };
 
   status: SubscriptionStatus;
+  isPromo?: boolean;
+  source?: "promo_launch" | "paystack";
   startedAt: Timestamp;
   endsAt: Timestamp;
+  graceEndsAt: Timestamp;
   nextBillingAt: Timestamp | null;
   cancelledAt: Timestamp | null;
 }

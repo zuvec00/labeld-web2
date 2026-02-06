@@ -140,9 +140,8 @@ export default function EventsAnalyticsPage() {
 	const { data: eventData, refresh } = useEventDashboard();
 	const [isMigrating, setIsMigrating] = React.useState(false);
 
-	// const { roleDetection } = useDashboardContext();
-	// const isPro = roleDetection?.brandSubscriptionTier === "pro";
-	const isPro = true; // Temporary: Event Analytics are currently open to all organizers
+	const { roleDetection } = useDashboardContext();
+	const isPro = roleDetection?.eventSubscriptionTier === "pro";
 
 	const kpis = eventData?.kpis;
 	const totalSold = kpis?.totalTicketsSold || 0;
@@ -224,17 +223,6 @@ export default function EventsAnalyticsPage() {
 					</p>
 				</div>
 				<div className="flex items-center gap-3">
-					{/* <button
-						onClick={handleMigrate}
-						disabled={isMigrating}
-						className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-text bg-surface border border-stroke rounded-md hover:bg-bg-subtle transition-colors disabled:opacity-50"
-					>
-						<RefreshCcw
-							className={`w-3 h-3 ${isMigrating ? "animate-spin" : ""}`}
-						/>
-						{isMigrating ? "Fixing..." : "Fix Data"}
-					</button> */}
-
 					{/* Placeholder Date Picker */}
 					<div className="text-sm font-medium text-text-muted bg-surface text-text border border-stroke px-3 py-1.5 rounded-md w-full md:w-auto text-center md:text-left">
 						Last 30 Days
@@ -244,27 +232,36 @@ export default function EventsAnalyticsPage() {
 
 			{/* SECTION 1: High-Level KPIs */}
 			<div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+				{/* 1. Gross Revenue (Always Visible) */}
 				<HeroMetric
 					label="Gross Revenue"
 					value={`₦${(eventData?.kpis.totalRevenue ? eventData.kpis.totalRevenue / 100 : 0).toLocaleString()}`}
 					trend="flat"
 					trendValue="0%"
 					trendLabel="vs last period"
-					isPro={isPro}
+					isPro={true} // Trends might be fake or hidden, but user said "apart from" implying full visibility
 				/>
+
+				{/* 2. Tickets Sold (Always Visible) */}
 				<HeroMetric
 					label="Tickets Sold"
 					value={`${totalSold.toLocaleString()}`}
 					trend={eventData?.trend}
 					trendValue={eventData?.trend === "up" ? "Growing" : "Stable"}
 					trendLabel="Daily Sales Trend"
-					isPro={isPro}
+					isPro={true} // Always visible
 				/>
+
+				{/* 3. Avg Order Value (Locked) */}
+
 				<SupportingMetric
 					label="Avg. Order Value"
 					value={`₦${eventData?.kpis.totalOrders ? Math.round(eventData.kpis.totalRevenue / 100 / eventData.kpis.totalOrders).toLocaleString() : 0}`}
 					subtext="Per checkout"
 				/>
+
+				{/* 4. Check-ins (Locked) */}
+
 				<SupportingMetric
 					label="Check-ins"
 					value={`${kpis?.totalCheckedIn || 0}`}
@@ -340,6 +337,8 @@ export default function EventsAnalyticsPage() {
 								description="Upgrade to view sales trends"
 								height="h-full"
 								showUpgrade={true}
+								upgradeUrl="/pricing?mode=organizer"
+								buttonClassName="bg-events text-bg font-bold hover:bg-events/90"
 							/>
 						</div>
 					)}
@@ -354,44 +353,57 @@ export default function EventsAnalyticsPage() {
 						Conversion from View to Purchase
 					</p>
 
-					{funnelStats.views > 0 ? (
-						<div className="flex-1 w-full relative">
-							<ResponsiveContainer width="100%" height="100%">
-								<BarChart
-									data={funnelData}
-									layout="vertical"
-									margin={{ left: 0, right: 20 }}
-								>
-									<XAxis type="number" hide />
-									<YAxis
-										dataKey="stage"
-										type="category"
-										width={90}
-										tick={{ fontSize: 10 }}
-									/>
-									<Tooltip cursor={{ fill: "transparent" }} />
-									<Bar
-										dataKey="value"
-										fill="#9B5CFF"
-										radius={[0, 4, 4, 0]}
-										barSize={24}
-									/>
-								</BarChart>
-							</ResponsiveContainer>
-						</div>
+					{isPro ? (
+						funnelStats.views > 0 ? (
+							<div className="flex-1 w-full relative">
+								<ResponsiveContainer width="100%" height="100%">
+									<BarChart
+										data={funnelData}
+										layout="vertical"
+										margin={{ left: 0, right: 20 }}
+									>
+										<XAxis type="number" hide />
+										<YAxis
+											dataKey="stage"
+											type="category"
+											width={90}
+											tick={{ fontSize: 10 }}
+										/>
+										<Tooltip cursor={{ fill: "transparent" }} />
+										<Bar
+											dataKey="value"
+											fill="#9B5CFF"
+											radius={[0, 4, 4, 0]}
+											barSize={24}
+										/>
+									</BarChart>
+								</ResponsiveContainer>
+							</div>
+						) : (
+							<div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 py-8 border-2 border-dashed border-stroke/50 rounded-lg bg-bg-subtle/30">
+								<div className="p-3 bg-surface rounded-full shadow-sm">
+									<BarChart3 className="w-5 h-5 text-events" />
+								</div>
+								<div className="max-w-[180px]">
+									<h4 className="font-medium text-sm text-text">
+										Data Collecting...
+									</h4>
+									<p className="text-xs text-text-muted mt-1">
+										Waiting for event traffic data.
+									</p>
+								</div>
+							</div>
+						)
 					) : (
-						<div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 py-8 border-2 border-dashed border-stroke/50 rounded-lg bg-bg-subtle/30">
-							<div className="p-3 bg-surface rounded-full shadow-sm">
-								<BarChart3 className="w-5 h-5 text-events" />
-							</div>
-							<div className="max-w-[180px]">
-								<h4 className="font-medium text-sm text-text">
-									Data Collecting...
-								</h4>
-								<p className="text-xs text-text-muted mt-1">
-									Waiting for event traffic data.
-								</p>
-							</div>
+						<div className="h-full flex items-center justify-center">
+							<LockedCard
+								title="Conversion Funnel"
+								description="Track drop-offs"
+								height="h-full"
+								showUpgrade={true}
+								upgradeUrl="/pricing?mode=organizer"
+								buttonClassName="bg-events text-bg font-bold hover:bg-events/90"
+							/>
 						</div>
 					)}
 				</div>
@@ -401,8 +413,23 @@ export default function EventsAnalyticsPage() {
 			<div className="space-y-4">
 				<h3 className="font-medium text-lg font-heading">Events Performance</h3>
 
-				<div className="rounded-xl border border-stroke bg-surface overflow-hidden">
-					<div className="overflow-x-auto">
+				<div className="rounded-xl border border-stroke bg-surface overflow-hidden relative">
+					{!isPro && (
+						<div className="absolute inset-0 z-10 backdrop-blur-[2px] bg-bg/50 flex flex-col items-center justify-center p-8">
+							<LockedCard
+								title="Event Breakdown"
+								description="See exactly which events are driving revenue."
+								height="h-auto"
+								className="max-w-md w-full shadow-2xl border-events/20"
+								showUpgrade={true}
+								upgradeUrl="/pricing?mode=organizer"
+								buttonClassName="bg-events text-bg font-bold hover:bg-events/90"
+							/>
+						</div>
+					)}
+					<div
+						className={`overflow-x-auto ${!isPro ? "blur-sm opacity-50 pointer-events-none select-none" : ""}`}
+					>
 						<div className="min-w-[800px]">
 							<div className="grid grid-cols-12 gap-4 px-6 py-3 border-b border-stroke bg-bg/50 text-xs font-medium text-text-muted uppercase tracking-wider">
 								<div className="col-span-4 md:col-span-4">Event</div>
@@ -462,7 +489,7 @@ export default function EventsAnalyticsPage() {
 			</div>
 
 			{/* SECTION 6: Campaign ROI (Placeholder) */}
-			<div className="flex items-center justify-center p-8 rounded-xl border border-stroke border-dashed bg-bg-subtle/20">
+			{/* <div className="flex items-center justify-center p-8 rounded-xl border border-stroke border-dashed bg-bg-subtle/20">
 				<div className="text-center">
 					<Ticket className="w-6 h-6 text-text-muted mx-auto mb-2 opacity-50" />
 					<h4 className="text-sm font-medium text-text">Events Campaign ROI</h4>
@@ -470,7 +497,7 @@ export default function EventsAnalyticsPage() {
 						Coming Soon
 					</div>
 				</div>
-			</div>
+			</div> */}
 		</div>
 	);
 }

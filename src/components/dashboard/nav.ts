@@ -31,7 +31,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     items: [
       { label: "Organizer Space", href: "/organizer-space", feature: "events", icon: getNavIcon("EventProfile") },
       { label: "Events", href: "/events", feature: "events", icon: getNavIcon("Events") },
-      { label: "Event Site", href: "/events/site-customization", feature: "events", icon: getNavIcon("EventSite"), badge: "PRO" },
+      { label: "Event Customization", href: "/events/site-customization", feature: "events", icon: getNavIcon("EventSite"), badge: "PRO" },
     ],
   },
   {
@@ -49,7 +49,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
       { label: "Overview", href: "/analytics/overview", icon: getNavIcon("Overview") },
       { label: "Storefront", href: "/storefront-analytics", icon: getNavIcon("StorefrontAnalytics"), badge: "PRO" },
       { label: "Marketplace", href: "/marketplace-analytics", icon: getNavIcon("MarketplaceAnalytics") },
-      { label: "Events", href: "/events-analytics", icon: getNavIcon("EventsAnalytics") },
+      { label: "Event Site", href: "/events-analytics", icon: getNavIcon("EventsAnalytics"), badge: "PRO" },
     ],
   },
   {

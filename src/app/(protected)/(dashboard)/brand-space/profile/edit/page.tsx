@@ -64,23 +64,41 @@ function ErrorText({ text }: { text?: string | null }) {
 }
 
 /* ----------------------------- validators ---------------------------- */
-const BRAND_TYPES = [
-	"Afrofusion",
-	"Alt / Grunge",
-	"Athleisure",
-	"Casual Basics",
-	"Custom / Made-to-Order",
-	"Genderless / Androgynous",
-	"Luxury / Designer-Inspired",
-	"Minimal Street",
-	"Retro / Y2K",
-	"Skatewear",
-	"Streetwear",
-	"Sustainable / Eco-Conscious",
-	"Techwear / Futuristic",
-	"Thrift / Vintage",
-	"Other",
-];
+const BRAND_TYPES = {
+	core: [
+		"Streetwear",
+		"Minimal Street",
+		"Luxury / Designer-Inspired",
+		"Techwear / Futuristic",
+		"Retro / Y2K",
+		"Skatewear",
+		"Alt / Grunge",
+		"Athleisure",
+		"Genderless / Androgynous",
+		"Sustainable / Eco-Conscious",
+		"Custom / Made-to-Order",
+		"Thrift / Vintage",
+		"Afrofusion",
+	],
+	extended: [
+		"Beauty / Skincare",
+		"Makeup",
+		"Haircare",
+		"Fragrance",
+		"Accessories",
+		"Footwear",
+		"Jewelry",
+		"Bags & Leather Goods",
+		"Wellness",
+		"Home & Living",
+		"Lifestyle Goods",
+		"Art & Design",
+		"Creative Studio",
+		"Dropshipping",
+		"Print-on-Demand",
+		"Other",
+	],
+};
 function usernameValid(u: string) {
 	const re = /^[a-zA-Z0-9](?!.*[_.]{2})[a-zA-Z0-9._]{1,13}[a-zA-Z0-9]$/;
 	return re.test(u) && u.length >= 3 && u.length <= 15 && !u.includes(" ");
@@ -101,7 +119,7 @@ function SingleImagePicker({
 	circle?: boolean;
 }) {
 	const radius = circle ? "rounded-full" : "rounded-xl";
-	const size = circle ? "w-40 h-40" : "w-full max-h-64";
+	const size = circle ? "w-40 h-40" : "w-full h-56";
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -791,10 +809,19 @@ export default function EditBrandProfilePage() {
 							<option value="" disabled>
 								Pick what fits your brand the most
 							</option>
-							{BRAND_TYPES.map((t) => (
-								<option key={t} value={t}>
-									{t}
-								</option>
+							{Object.entries(BRAND_TYPES).map(([group, types]) => (
+								<optgroup
+									key={group}
+									label={
+										group === "core" ? "Core Fashion" : "Extended Categories"
+									}
+								>
+									{types.map((t) => (
+										<option key={t} value={t}>
+											{t}
+										</option>
+									))}
+								</optgroup>
 							))}
 						</select>
 					</div>

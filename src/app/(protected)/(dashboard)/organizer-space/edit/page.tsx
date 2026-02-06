@@ -73,13 +73,12 @@ function ErrorText({ text }: { text?: string | null }) {
 /* ----------------------------- validators ---------------------------- */
 const EVENT_CATEGORIES = [
 	"Nightlife",
-	"Concert",
-	"Festival",
-	"Art & Culture",
-	"Food & Drink",
-	"Corporate",
-	"Wellness",
-	"Workshop",
+	"Dining Experiences",
+	"Experiences",
+	"Concerts & Live Music",
+	"Parties",
+	"Festivals",
+	"Pop-ups",
 	"Community",
 	"Other",
 ];
@@ -104,7 +103,7 @@ function SingleImagePicker({
 	circle?: boolean;
 }) {
 	const radius = circle ? "rounded-full" : "rounded-xl";
-	const size = circle ? "w-40 h-40" : "w-full max-h-64";
+	const size = circle ? "w-40 h-40" : "w-full h-56";
 
 	return (
 		<div className="flex flex-col gap-3">
@@ -727,15 +726,6 @@ export default function EditOrganizerProfilePage() {
 								value={tiktok}
 								onChange={(e) => setTiktok(e.target.value)}
 								placeholder="username"
-							/>
-						</div>
-						<div>
-							<Label text="Website" />
-							<input
-								className={baseField()}
-								value={website}
-								onChange={(e) => setWebsite(e.target.value)}
-								placeholder="https://..."
 							/>
 						</div>
 					</div>

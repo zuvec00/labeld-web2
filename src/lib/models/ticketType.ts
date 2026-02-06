@@ -13,6 +13,7 @@ export type TicketTypeDoc = {
   limits?: { perUserMax?: number | null };
   isActive: boolean;
   sortOrder: number;
+  perks?: string[];          // List of perks included with the ticket
   // Optional UI conveniences
   kind?: "single" | "group";
   groupSize?: number;

@@ -108,8 +108,8 @@ export default function EditTicketPage() {
 						// Filter out undefined values to prevent Firestore errors
 						const cleanData = Object.fromEntries(
 							Object.entries(updatedData).filter(
-								([_, value]) => value !== undefined
-							)
+								([_, value]) => value !== undefined,
+							),
 						);
 
 						await updateTicketType(eventIdString, ticketIdString, cleanData);
@@ -143,42 +143,43 @@ function EditTicketForm({
 	const [tab, setTab] = useState<Tab>(getInitialTab());
 	const [name, setName] = useState(ticket.name);
 	const [qtyMode, setQtyMode] = useState<"limited" | "unlimited">(
-		ticket.quantityTotal === null ? "unlimited" : "limited"
+		ticket.quantityTotal === null ? "unlimited" : "limited",
 	);
 	const [quantity, setQuantity] = useState<string>(
-		ticket.quantityTotal?.toString() || ""
+		ticket.quantityTotal?.toString() || "",
 	);
 	const [quantityRemaining, setQuantityRemaining] = useState<string>(
-		ticket.quantityRemaining?.toString() || ""
+		ticket.quantityRemaining?.toString() || "",
 	);
 	const [price, setPrice] = useState<string>(
-		ticket.price ? (ticket.price / 100).toString() : "4000"
+		ticket.price ? (ticket.price / 100).toString() : "4000",
 	); // Convert from kobo to Naira
 	const [perUserMax, setPerUserMax] = useState<number>(
-		ticket.limits?.perUserMax || 5
+		ticket.limits?.perUserMax || 5,
 	);
 	const [desc, setDesc] = useState(ticket.description || "");
+	const [perks, setPerks] = useState<string[]>(ticket.perks || []);
 	const [transferFee, setTransferFee] = useState(
-		ticket.transferFeesToGuest ?? true
+		ticket.transferFeesToGuest ?? true,
 	);
 	const [salesStart, setSalesStart] = useState<string>(
 		ticket.salesWindow?.startAt
 			? new Date(ticket.salesWindow.startAt).toISOString().slice(0, 16)
-			: ""
+			: "",
 	);
 	const [salesEnd, setSalesEnd] = useState<string>(
 		ticket.salesWindow?.endAt
 			? new Date(ticket.salesWindow.endAt).toISOString().slice(0, 16)
-			: ""
+			: "",
 	);
 	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
-		ticket.admitType || "general"
+		ticket.admitType || "general",
 	);
 
 	// Group ticket specific fields
 	const [groupSize, setGroupSize] = useState<number>(ticket.groupSize || 2);
 	const [groupPrice, setGroupPrice] = useState<string>(
-		ticket.price ? (ticket.price / 100).toString() : "6000"
+		ticket.price ? (ticket.price / 100).toString() : "6000",
 	);
 
 	const isGroupTicket = ticket.kind === "group";
@@ -236,10 +237,23 @@ function EditTicketForm({
 		router.replace(`/events/${eventIdString}/tickets`);
 	};
 
+	const handleAddPerk = () => setPerks([...perks, ""]);
+	const handlePerkChange = (index: number, value: string) => {
+		const newPerks = [...perks];
+		newPerks[index] = value;
+		setPerks(newPerks);
+	};
+	const handleRemovePerk = (index: number) => {
+		const newPerks = [...perks];
+		newPerks.splice(index, 1);
+		setPerks(newPerks);
+	};
+
 	const handleSave = () => {
 		const baseData = {
 			name,
 			description: desc || undefined,
+			perks: perks.filter((p) => p.trim() !== ""),
 			quantityTotal: qtyMode === "limited" ? parseInt(quantity) : null,
 			quantityRemaining:
 				qtyMode === "limited" ? parseInt(quantityRemaining) : null,
@@ -349,6 +363,42 @@ function EditTicketForm({
 								isGroupTicket ? "group " : ""
 							}ticket includes...`}
 						/>
+					</div>
+
+					{/* Perks Section */}
+					<div>
+						<div className="flex items-center justify-between mb-2">
+							<label className="block text-sm text-text-muted">Perks</label>
+							<button
+								onClick={handleAddPerk}
+								className="text-xs text-cta hover:underline font-medium"
+							>
+								+ Add Perk
+							</button>
+						</div>
+						<div className="space-y-2">
+							{perks.map((perk, i) => (
+								<div key={i} className="flex gap-2">
+									<input
+										className="flex-1 rounded-xl border border-stroke px-4 py-2 text-sm text-text outline-none focus:border-accent"
+										value={perk}
+										onChange={(e) => handlePerkChange(i, e.target.value)}
+										placeholder="e.g. Free Drink"
+									/>
+									<button
+										onClick={() => handleRemovePerk(i)}
+										className="text-text-muted hover:text-destructive px-2"
+									>
+										✕
+									</button>
+								</div>
+							))}
+							{perks.length === 0 && (
+								<p className="text-xs text-text-muted italic">
+									No perks added.
+								</p>
+							)}
+						</div>
 					</div>
 				</div>
 

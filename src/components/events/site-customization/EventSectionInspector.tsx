@@ -287,6 +287,52 @@ export default function EventSectionInspector({
 				return (
 					<div className="space-y-6">
 						<ControlWrapper
+							label="Navigation Logo"
+							isCustom={isCustom("logoUrl")}
+							onReset={() => handleReset("logoUrl")}
+						>
+							<UploadImage
+								text="Upload Logo"
+								value={null}
+								onChange={(file) => {
+									if (!file) {
+										handleReset("logoUrl");
+										return;
+									}
+									if (user?.uid) {
+										setUploading(true);
+										uploadBrandImageWeb(file, user.uid)
+											.then((url) => {
+												handleChange("logoUrl", url);
+												handleSave("logoUrl", url);
+												toast({ title: "Logo Uploaded" });
+											})
+											.catch((err) => {
+												console.error(err);
+												toast({
+													title: "Upload Failed",
+													variant: "destructive",
+												});
+											})
+											.finally(() => setUploading(false));
+									}
+								}}
+								onlineImage={
+									heroOverrides.logoUrl ??
+									heroSection.logoUrl ??
+									heroDefaults.logoUrl
+								}
+								singleImage={true}
+								backgroundColor="var(--color-bg)"
+								textColor="var(--color-text-muted)"
+								className="h-20 w-auto aspect-[3/1]"
+							/>
+							<p className="text-[10px] text-text-muted mt-1">
+								Replaces text headline in nav. Recommended: Transparent PNG.
+							</p>
+						</ControlWrapper>
+
+						<ControlWrapper
 							label="Background Image"
 							isCustom={isCustom("imageUrl")}
 							onReset={() => handleReset("imageUrl")}
@@ -819,21 +865,100 @@ export default function EventSectionInspector({
 				);
 
 			case "venueInfo":
+				const venueOverrides = localOverrides as any;
+
+				// Ensure defaults for structured fields
+				const hoursList: Array<{
+					days: string;
+					hours: string;
+					is24Hours?: boolean;
+				}> = Array.isArray(venueOverrides.operatingHours)
+					? venueOverrides.operatingHours
+					: typeof venueOverrides.operatingHours === "string"
+						? // Try to parse legacy string if it looks like JSON, otherwise default
+							[]
+						: [];
+
+				const handleAddHours = () => {
+					const newHours = [
+						...hoursList,
+						{ days: "Mon - Fri", hours: "09:00 - 17:00" },
+					];
+					handleChange("operatingHours", newHours);
+					handleSave("operatingHours", newHours);
+				};
+
+				const handleUpdateHours = (
+					index: number,
+					field: string,
+					value: any,
+				) => {
+					const newHours = [...hoursList];
+					newHours[index] = { ...newHours[index], [field]: value };
+					handleChange("operatingHours", newHours);
+					handleSave("operatingHours", newHours);
+				};
+
+				const handleRemoveHours = (index: number) => {
+					const newHours = [...hoursList];
+					newHours.splice(index, 1);
+					handleChange("operatingHours", newHours);
+					handleSave("operatingHours", newHours);
+				};
+
 				return (
 					<div className="space-y-6">
-						<ControlWrapper
-							label="Address"
-							isCustom={isCustom("address")}
-							onReset={() => handleReset("address")}
-						>
-							<Input
-								placeholder="e.g. 123 Main St"
-								value={venueOverrides.address ?? ""}
-								onChange={(e) => handleChange("address", e.target.value)}
-								onBlur={handleBlur}
-								className="bg-surface"
-							/>
-						</ControlWrapper>
+						{/* Address Block */}
+						<div className="space-y-3">
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-medium text-text-muted uppercase tracking-wider">
+									Location
+								</label>
+								<div className="flex items-center gap-2">
+									{isCustom("addressStreet") || isCustom("addressCity") ? (
+										<span className="text-[10px] font-bold text-events px-1.5 py-0.5 bg-events/10 rounded">
+											Custom
+										</span>
+									) : (
+										<span className="text-[10px] font-medium text-text-muted/50 px-1.5 py-0.5 bg-surface-2 rounded">
+											Default
+										</span>
+									)}
+								</div>
+							</div>
+
+							<div className="grid gap-3">
+								<Input
+									placeholder="Street Address (e.g. 123 Main St)"
+									value={venueOverrides.addressStreet ?? ""}
+									onChange={(e) =>
+										handleChange("addressStreet", e.target.value)
+									}
+									onBlur={handleBlur}
+									className="bg-surface"
+								/>
+								<div className="grid grid-cols-2 gap-3">
+									<Input
+										placeholder="City / Area"
+										value={venueOverrides.addressCity ?? ""}
+										onChange={(e) =>
+											handleChange("addressCity", e.target.value)
+										}
+										onBlur={handleBlur}
+										className="bg-surface"
+									/>
+									<Input
+										placeholder="State"
+										value={venueOverrides.addressState ?? ""}
+										onChange={(e) =>
+											handleChange("addressState", e.target.value)
+										}
+										onBlur={handleBlur}
+										className="bg-surface"
+									/>
+								</div>
+							</div>
+						</div>
 
 						<ControlWrapper
 							label="Google Maps Link"
@@ -849,19 +974,94 @@ export default function EventSectionInspector({
 							/>
 						</ControlWrapper>
 
-						<ControlWrapper
-							label="Operating Hours"
-							isCustom={isCustom("operatingHours")}
-							onReset={() => handleReset("operatingHours")}
-						>
-							<Textarea
-								placeholder="Mon-Fri: 9am - 10pm..."
-								value={venueOverrides.operatingHours ?? ""}
-								onChange={(e) => handleChange("operatingHours", e.target.value)}
-								onBlur={handleBlur}
-								className="bg-surface h-24 font-mono text-xs"
-							/>
-						</ControlWrapper>
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<label className="text-xs font-medium text-text-muted uppercase tracking-wider">
+									Operating Hours
+								</label>
+								<Button
+									variant="outline"
+									size="sm"
+									className="h-6 text-[10px] px-2"
+									onClick={handleAddHours}
+									text="Add Time Block"
+								/>
+							</div>
+
+							<div className="space-y-3">
+								{hoursList.map((block, i) => (
+									<div
+										key={i}
+										className="bg-surface-2/30 p-2 rounded-lg border border-stroke space-y-2 relative group"
+									>
+										<button
+											onClick={() => handleRemoveHours(i)}
+											className="absolute top-2 right-2 text-text-muted hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+										>
+											<X className="w-3 h-3" />
+										</button>
+
+										<div className="grid grid-cols-1 gap-2">
+											<div>
+												<label className="text-[10px] text-text-muted">
+													Days Range
+												</label>
+												<Input
+													value={block.days}
+													onChange={(e) =>
+														handleUpdateHours(i, "days", e.target.value)
+													}
+													placeholder="e.g. Mon - Fri"
+													className="h-7 text-xs bg-surface"
+												/>
+											</div>
+
+											<div className="flex items-center gap-2">
+												<div className="flex-1">
+													<label className="text-[10px] text-text-muted">
+														Hours
+													</label>
+													<Input
+														value={block.hours}
+														onChange={(e) =>
+															handleUpdateHours(i, "hours", e.target.value)
+														}
+														placeholder="e.g. 09:00 - 17:00"
+														disabled={block.is24Hours}
+														className="h-7 text-xs bg-surface"
+													/>
+												</div>
+												<div className="pt-4">
+													<label className="flex items-center gap-1 cursor-pointer">
+														<input
+															type="checkbox"
+															checked={block.is24Hours || false}
+															onChange={(e) =>
+																handleUpdateHours(
+																	i,
+																	"is24Hours",
+																	e.target.checked,
+																)
+															}
+															className="rounded border-stroke text-events focus:ring-events"
+														/>
+														<span className="text-[10px] text-text-muted">
+															24h
+														</span>
+													</label>
+												</div>
+											</div>
+										</div>
+									</div>
+								))}
+
+								{hoursList.length === 0 && (
+									<div className="text-center py-4 border border-dashed border-stroke rounded bg-surface/50 text-xs text-text-muted">
+										No hours set.
+									</div>
+								)}
+							</div>
+						</div>
 
 						<div className="flex items-center justify-between p-3 rounded-lg border border-stroke bg-surface">
 							<div className="space-y-0.5">

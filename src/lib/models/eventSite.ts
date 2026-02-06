@@ -68,11 +68,14 @@ export interface GallerySection extends EventBaseSection {
 
 export interface VenueInfoSection extends EventBaseSection {
   type: "venueInfo";
-  address?: string;
+  address?: string; // Legacy simple string, maintain for now or migrate
+  addressStreet?: string;
+  addressCity?: string;
+  addressState?: string;
   mapLink?: string; // Google Maps embed URL or link
   dressCode?: string;
   ageLimit?: string;
-  operatingHours?: string; // Simple text or JSON string for schedule
+  operatingHours?: string | Array<{ days: string; hours: string; is24Hours?: boolean }>; // String for legacy, Array for new structure
   showMap?: boolean;
 }
 

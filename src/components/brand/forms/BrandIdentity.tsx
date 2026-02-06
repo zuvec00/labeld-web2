@@ -3,23 +3,41 @@
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
 import { useMemo } from "react";
 
-const BRAND_TYPES = [
-	"Afrofusion",
-	"Alt / Grunge",
-	"Athleisure",
-	"Casual Basics",
-	"Custom / Made-to-Order",
-	"Genderless / Androgynous",
-	"Luxury / Designer-Inspired",
-	"Minimal Street",
-	"Retro / Y2K",
-	"Skatewear",
-	"Streetwear",
-	"Sustainable / Eco-Conscious",
-	"Techwear / Futuristic",
-	"Thrift / Vintage",
-	"Other",
-];
+const BRAND_TYPES = {
+	core: [
+		"Streetwear",
+		"Minimal Street",
+		"Luxury / Designer-Inspired",
+		"Techwear / Futuristic",
+		"Retro / Y2K",
+		"Skatewear",
+		"Alt / Grunge",
+		"Athleisure",
+		"Genderless / Androgynous",
+		"Sustainable / Eco-Conscious",
+		"Custom / Made-to-Order",
+		"Thrift / Vintage",
+		"Afrofusion",
+	],
+	extended: [
+		"Beauty / Skincare",
+		"Makeup",
+		"Haircare",
+		"Fragrance",
+		"Accessories",
+		"Footwear",
+		"Jewelry",
+		"Bags & Leather Goods",
+		"Wellness",
+		"Home & Living",
+		"Lifestyle Goods",
+		"Art & Design",
+		"Creative Studio",
+		"Dropshipping",
+		"Print-on-Demand",
+		"Other",
+	],
+};
 
 export default function BrandIdentityForm() {
 	const { brandName, brandUsername, brandCategory, phoneNumber, set } =
@@ -96,10 +114,17 @@ export default function BrandIdentityForm() {
 					<option value="" disabled>
 						Pick what fits your brand the most
 					</option>
-					{BRAND_TYPES.map((t) => (
-						<option key={t} value={t}>
-							{t}
-						</option>
+					{Object.entries(BRAND_TYPES).map(([group, types]) => (
+						<optgroup
+							key={group}
+							label={group === "core" ? "Core Fashion" : "Extended Categories"}
+						>
+							{types.map((t) => (
+								<option key={t} value={t}>
+									{t}
+								</option>
+							))}
+						</optgroup>
 					))}
 				</select>
 			</div>

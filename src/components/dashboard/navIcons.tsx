@@ -20,7 +20,10 @@ import {
 	User, // Added for EventProfile
 	Layout, // Added for EventSite
 	DollarSign, // Added for Payouts
-	List, // Added for Transactions
+	List,
+	Orbit,
+	Earth,
+	LayoutTemplate, // Added for Transactions
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -61,13 +64,13 @@ export const getNavIcon = (iconName: string) => {
 		case "StorefrontAnalytics":
 			return <Store {...iconProps} />;
 		case "MarketplaceAnalytics":
-			return <Globe {...iconProps} />; // Reuse Globe for now, or maybe ShoppingBag
+			return <Earth {...iconProps} />; // Reuse Globe for now, or maybe ShoppingBag
 		case "EventsAnalytics":
-			return <Ticket {...iconProps} />;
-		case "EventProfile":
-			return <User {...iconProps} />;
-		case "EventSite":
 			return <Layout {...iconProps} />;
+		case "EventProfile":
+			return <Orbit {...iconProps} />;
+		case "EventSite":
+			return <LayoutTemplate {...iconProps} />;
 		case "Payouts":
 			return <DollarSign {...iconProps} />;
 		case "Transactions":

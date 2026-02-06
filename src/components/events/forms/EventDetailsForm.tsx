@@ -1,6 +1,7 @@
 "use client";
 
 import { useEventOrganizerOnboard } from "@/lib/stores/eventOrganizerStore";
+import { Globe } from "lucide-react";
 
 const CITIES = [
 	"Lagos",
@@ -21,7 +22,7 @@ const CITIES = [
 
 const YEARS = Array.from(
 	{ length: 20 },
-	(_, i) => new Date().getFullYear() - i
+	(_, i) => new Date().getFullYear() - i,
 );
 
 export default function EventDetailsForm() {
@@ -147,18 +148,21 @@ export default function EventDetailsForm() {
 						/>
 					</div>
 
-					<div>
-						<label className="block text-sm text-text-muted mb-1">
-							Website{" "}
-							<span className="text-xs text-text-muted">(optional)</span>
-						</label>
-						<input
-							type="url"
-							value={data.website}
-							onChange={(e) => setData({ website: e.target.value })}
-							placeholder="https://yourevent.com"
-							className="w-full rounded-xl border border-stroke px-4 py-3 text-text placeholder:text-text-muted focus:border-accent outline-none"
-						/>
+					<div className="rounded-xl bg-surface-neutral/50 p-4 border border-stroke/50">
+						<div className="flex items-center gap-3">
+							<div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+								<Globe className="w-5 h-5 text-accent" />
+							</div>
+							<div>
+								<h4 className="font-medium text-sm text-text">
+									Your Event Website
+								</h4>
+								<p className="text-xs text-text-muted mt-0.5">
+									We've generated a stunning, sales-optimized website for your
+									events. You can customize it after onboarding.
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>

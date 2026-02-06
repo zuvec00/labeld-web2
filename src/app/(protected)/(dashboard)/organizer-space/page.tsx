@@ -41,32 +41,7 @@ import {
 	Clock,
 } from "lucide-react";
 
-// Mock Data for Dev Mode (Fallback)
-const MOCK_STATS_SEED = {
-	upcomingEvents: 3,
-	ticketsSold: 1240,
-	revenue: 4500000,
-	avgAttendance: 85,
-};
-
-const MOCK_EVENTS_SEED = [
-	{
-		id: "1",
-		title: "Summer Rave 2024",
-		startAt: new Date(Date.now() + 86400000 * 5),
-		status: "published",
-		coverImageURL:
-			"https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?auto=format&fit=crop&w=800&q=80",
-	},
-	{
-		id: "2",
-		title: "Underground Sessions",
-		startAt: new Date(Date.now() + 86400000 * 12),
-		status: "draft",
-		coverImageURL:
-			"https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=800&q=80",
-	},
-];
+// Removed MOCK_EVENTS_SEED
 
 export default function EventOrganizerProfilePage() {
 	const router = useRouter();
@@ -82,6 +57,8 @@ export default function EventOrganizerProfilePage() {
 		ticketsSold: number;
 		revenue: number;
 		avgAttendance: number;
+		lifetimeAttendees: number;
+		eventsHosted: number;
 	} | null>(null);
 	const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
@@ -168,31 +145,65 @@ export default function EventOrganizerProfilePage() {
 					return start > now;
 				}).length;
 
-				// For Revenue and Tickets, we need Orders/Tickets
-				// Optimization: Only fetch orders for events associated with this organizer
-				// Firestore limitation: 'in' query supports max 10/30 items. We'll chunk if needed, or just grab top 10 active events.
-				// For accurate 30d stats, we ideally need a direct query on orders by organizerId, but we only have eventId.
+				// Events Hosted (Total Published)
+				const eventsHostedCount = allEvents.filter(
+					(e) => e.status === "published",
+				).length;
 
-				const eventIds = allEvents.map((e) => e.id).slice(0, 10); // Limit to 10 for 'in' query for V1 robustness
+				// For Revenue and Tickets, we need Orders/Tickets
+				const eventIds = allEvents.map((e) => e.id);
+
+				// 30d Stats (Top 10 events for now)
+				const recentEventIds = eventIds.slice(0, 10);
 
 				let revenue30d = 0;
 				let ticketsSold30d = 0;
-				let totalAttendance = 0;
-				let totalEventsWithAttendance = 0;
+				let lifetimeAttendees = 0;
 
+				// Fetch Lifetime Attendees across ALL events (chunked)
 				if (eventIds.length > 0) {
+					// Chunk event IDs into 30 (Firestore limit)
+					const chunkSize = 30;
+					const chunks = [];
+					for (let i = 0; i < eventIds.length; i += chunkSize) {
+						chunks.push(eventIds.slice(i, i + chunkSize));
+					}
+
+					// Fetch Attendees
+					// Note: attendeeTickets are what we use for "Lifetime Attendees"
+					const attendeePromises = chunks.map((chunk) => {
+						const q = query(
+							collection(db, "attendeeTickets"),
+							where("eventId", "in", chunk),
+							// where("status", "in", ["active", "used"]), // Optional: if we care about status
+						);
+						return getDocs(q);
+					});
+
+					const attendeeSnaps = await Promise.all(attendeePromises);
+					attendeeSnaps.forEach((snap) => {
+						// Filter out cancelled/refunded if needed, or query it
+						// Assuming all docs in this collection count unless status is cancelled
+						// Let's filter in memory to be safe if we didn't add status filter to query
+						snap.docs.forEach((doc) => {
+							const data = doc.data();
+							if (data.status === "active" || data.status === "used") {
+								lifetimeAttendees++;
+							}
+						});
+					});
+				}
+
+				// 30d Revenue/Vol
+				if (recentEventIds.length > 0) {
 					// Date 30 days ago
 					const date30DaysAgo = new Date();
 					date30DaysAgo.setDate(date30DaysAgo.getDate() - 30);
-					const fsDate30DaysAgo = Timestamp.fromDate(date30DaysAgo);
 
-					// Query Orders for these events
-					// Note: Compound query 'eventId in [...] AND createdAt > date' requires index.
-					// We'll fetch by eventId and filter in memory for V1 to avoid index blocking.
 					const ordersRef = collection(db, "orders");
 					const ordersQuery = query(
 						ordersRef,
-						where("eventId", "in", eventIds),
+						where("eventId", "in", recentEventIds),
 						where("status", "==", "paid"),
 					);
 					const ordersSnap = await getDocs(ordersQuery);
@@ -208,9 +219,6 @@ export default function EventOrganizerProfilePage() {
 						if (createdAt > date30DaysAgo) {
 							revenue30d += data.amount?.totalMinor || 0;
 
-							// Tickets sold count from line items? Or just order count?
-							// Better to use attendee tickets if available, but orders is faster proxy for "sales" lines
-							// Let's count ticket line items
 							const ticketItems = (data.lineItems || []).filter(
 								(l: any) => l._type === "ticket",
 							);
@@ -221,20 +229,15 @@ export default function EventOrganizerProfilePage() {
 							ticketsSold30d += qty;
 						}
 					});
-
-					// Logic for Average Attendance:
-					// We need to know: (Used Tickets / Total Tickets Sold) per event?
-					// This is heavy to calculate on the fly.
-					// Placeholder: If we had a computed stat on the event document, we'd use that.
-					// For now, let's leave as 0 or mock if simplified.
-					// Or, assume '0%' until we implement check-in logic updates.
 				}
 
 				setStats({
 					upcomingEvents: upcomingCount,
 					ticketsSold: ticketsSold30d,
 					revenue: revenue30d,
-					avgAttendance: 0, // Placeholder until check-in data is integrated
+					avgAttendance: 0,
+					lifetimeAttendees,
+					eventsHosted: eventsHostedCount,
 				});
 			} catch (e) {
 				console.error("Failed to fetch dashboard data", e);
@@ -245,11 +248,6 @@ export default function EventOrganizerProfilePage() {
 
 		fetchDashboardData();
 	}, [contextLoading, roleDetection]);
-
-	const handleSeedData = () => {
-		setStats(MOCK_STATS_SEED);
-		setUpcomingEvents(MOCK_EVENTS_SEED);
-	};
 
 	if (contextLoading || loading) {
 		return (
@@ -387,14 +385,6 @@ export default function EventOrganizerProfilePage() {
 				{/* Header with Dev Seed */}
 				<div className="flex items-center justify-between mb-4">
 					<h2 className="text-lg font-semibold text-text">Overview</h2>
-					{isDev && (
-						<button
-							onClick={handleSeedData}
-							className="text-xs text-text-muted hover:text-accent font-mono border border-stroke rounded px-2 py-1"
-						>
-							[Dev] Seed Data
-						</button>
-					)}
 				</div>
 
 				<div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -516,7 +506,9 @@ export default function EventOrganizerProfilePage() {
 						<div>
 							<div className="text-2xl font-bold font-heading">
 								{/* Placeholder lifetime stats */}
-								{stats ? (stats.ticketsSold * 5).toLocaleString() : "—"}
+								{stats
+									? (stats.lifetimeAttendees?.toLocaleString() ?? "—")
+									: "—"}
 							</div>
 							<div className="text-xs text-text-muted uppercase tracking-wide mt-1">
 								Lifetime Attendees
@@ -525,7 +517,7 @@ export default function EventOrganizerProfilePage() {
 						<div>
 							<div className="text-2xl font-bold font-heading">
 								{/* Placeholder lifetime stats */}
-								{stats ? stats.upcomingEvents + 12 : "—"}
+								{stats ? (stats.eventsHosted?.toLocaleString() ?? "—") : "—"}
 							</div>
 							<div className="text-xs text-text-muted uppercase tracking-wide mt-1">
 								Events Hosted

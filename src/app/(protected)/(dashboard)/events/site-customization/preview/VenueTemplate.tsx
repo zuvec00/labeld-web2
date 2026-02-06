@@ -33,13 +33,24 @@ export function VenueTemplate({ config }: { config: any }) {
 
 	const venueInfoSettings = config?.sectionSettings?.["venue-location-1"] || {}; // Access for header if needed, but header usually just links
 
+	/* Logo extraction */
+	const logoUrl = heroSettings.logoUrl;
+
 	return (
 		<div className="w-full bg-[#0F0F0F] text-[#E0E0E0] font-sans min-h-screen selection:bg-orange-500/30 selection:text-orange-50 scroll-smooth">
 			{/* 0. HEADER (Sticky & Editorial) */}
 			<header className="sticky top-0 z-[60] bg-[#0F0F0F]/90 backdrop-blur-xl border-none border-white/5 h-20 px-6 md:px-12 flex items-center justify-between transition-all duration-300">
 				{/* Logo */}
 				<div className="font-heading font-black text-2xl tracking-tighter text-white uppercase cursor-pointer hover:text-neutral-200 transition-colors">
-					{heroHeadline}
+					{logoUrl ? (
+						<img
+							src={logoUrl}
+							alt={heroHeadline}
+							className="h-10 w-auto object-contain"
+						/>
+					) : (
+						heroHeadline
+					)}
 				</div>
 
 				{/* Desktop Nav */}
@@ -349,10 +360,14 @@ export function VenueTemplate({ config }: { config: any }) {
 								Location
 							</h3>
 							<p className="text-3xl font-heading font-medium text-white mb-2">
-								{venueInfoSettings.address || "16 Akin Adesola St"}
+								{venueInfoSettings.addressStreet ||
+									venueInfoSettings.address ||
+									"16 Akin Adesola St"}
 							</p>
 							<p className="text-xl text-neutral-400 font-light">
-								Victoria Island, Lagos
+								{venueInfoSettings.addressCity && venueInfoSettings.addressState
+									? `${venueInfoSettings.addressCity}, ${venueInfoSettings.addressState}`
+									: "Victoria Island, Lagos"}
 							</p>
 							<div className="mt-8">
 								<a
@@ -371,7 +386,27 @@ export function VenueTemplate({ config }: { config: any }) {
 								Hours
 							</h3>
 							<div className="space-y-3 text-neutral-300 font-mono text-sm tracking-wide whitespace-pre-line">
-								{venueInfoSettings.operatingHours || (
+								{Array.isArray(venueInfoSettings.operatingHours) &&
+								venueInfoSettings.operatingHours.length > 0 ? (
+									venueInfoSettings.operatingHours.map(
+										(slot: any, idx: number) => (
+											<div
+												key={idx}
+												className="flex justify-between max-w-xs border-b border-white/5 pb-2 last:border-0"
+											>
+												<span className="text-neutral-500">{slot.days}</span>
+												<span className="text-white font-bold">
+													{slot.is24Hours
+														? "Open 24 Hours"
+														: slot.hours || "Closed"}
+												</span>
+											</div>
+										),
+									)
+								) : typeof venueInfoSettings.operatingHours === "string" &&
+								  venueInfoSettings.operatingHours ? (
+									venueInfoSettings.operatingHours
+								) : (
 									<>
 										<div className="flex justify-between max-w-xs border-b border-white/5 pb-2">
 											<span className="text-neutral-500">Tue - Thu</span>

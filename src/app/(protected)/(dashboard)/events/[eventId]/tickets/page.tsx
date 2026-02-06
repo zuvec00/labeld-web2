@@ -147,7 +147,7 @@ export default function TicketsStepPage() {
 
 							// Filter out undefined values to prevent Firestore errors
 							const cleanTicketData = Object.fromEntries(
-								Object.entries(t).filter(([_, value]) => value !== undefined)
+								Object.entries(t).filter(([_, value]) => value !== undefined),
 							);
 
 							const ticketData: Omit<TicketTypeDoc, "id"> = {
@@ -181,7 +181,7 @@ export default function TicketsStepPage() {
 
 							// Filter out undefined values to prevent Firestore errors
 							const cleanTicketData = Object.fromEntries(
-								Object.entries(t).filter(([_, value]) => value !== undefined)
+								Object.entries(t).filter(([_, value]) => value !== undefined),
 							);
 
 							const ticketData: Omit<TicketTypeDoc, "id"> = {
@@ -224,7 +224,7 @@ function TicketRow({
 			? "Unlimited"
 			: `${(
 					t.quantityRemaining ?? 0
-			  ).toLocaleString()} / ${t.quantityTotal.toLocaleString()} left`;
+				).toLocaleString()} / ${t.quantityTotal.toLocaleString()} left`;
 
 	const price =
 		t.price != null
@@ -279,7 +279,7 @@ function CreateSingleDialog({
 			TicketTypeDoc,
 			"id" | "quantityRemaining" | "isActive" | "sortOrder"
 		>,
-		setSaving: (v: boolean) => void
+		setSaving: (v: boolean) => void,
 	) => void;
 }) {
 	const [tab, setTab] = useState<Tab>("free");
@@ -289,11 +289,12 @@ function CreateSingleDialog({
 	const [price, setPrice] = useState<string>("4000"); // NGN (display in naira)
 	const [perUserMax, setPerUserMax] = useState<number>(5);
 	const [desc, setDesc] = useState("");
+	const [perks, setPerks] = useState<string[]>([]);
 	const [transferFee, setTransferFee] = useState(true);
 	const [salesStart, setSalesStart] = useState<string>("");
 	const [salesEnd, setSalesEnd] = useState<string>("");
 	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
-		"general"
+		"general",
 	);
 	const [saving, setSaving] = useState(false);
 
@@ -316,6 +317,18 @@ function CreateSingleDialog({
 		if (showPrice && (!price || parseInt(price) < 50)) return false;
 		return true;
 	}, [name, qtyMode, quantity, showPrice, price]);
+
+	const handleAddPerk = () => setPerks([...perks, ""]);
+	const handlePerkChange = (index: number, value: string) => {
+		const newPerks = [...perks];
+		newPerks[index] = value;
+		setPerks(newPerks);
+	};
+	const handleRemovePerk = (index: number) => {
+		const newPerks = [...perks];
+		newPerks.splice(index, 1);
+		setPerks(newPerks);
+	};
 
 	return (
 		<DialogFrame title="Add a new single ticket" onClose={onClose}>
@@ -367,6 +380,42 @@ function CreateSingleDialog({
 							onChange={(e) => setDesc(e.target.value)}
 							placeholder="Describe what this ticket includes..."
 						/>
+					</div>
+
+					{/* Perks Section */}
+					<div>
+						<div className="flex items-center justify-between mb-2">
+							<label className="block text-sm text-text-muted">Perks</label>
+							<button
+								onClick={handleAddPerk}
+								className="text-xs text-cta hover:underline font-medium"
+							>
+								+ Add Perk
+							</button>
+						</div>
+						<div className="space-y-2">
+							{perks.map((perk, i) => (
+								<div key={i} className="flex gap-2">
+									<input
+										className="flex-1 rounded-xl border border-stroke px-4 py-2 text-sm text-text outline-none focus:border-accent"
+										value={perk}
+										onChange={(e) => handlePerkChange(i, e.target.value)}
+										placeholder="e.g. Free Drink"
+									/>
+									<button
+										onClick={() => handleRemovePerk(i)}
+										className="text-text-muted hover:text-destructive px-2"
+									>
+										✕
+									</button>
+								</div>
+							))}
+							{perks.length === 0 && (
+								<p className="text-xs text-text-muted italic">
+									No perks added.
+								</p>
+							)}
+						</div>
 					</div>
 				</div>
 
@@ -514,6 +563,7 @@ function CreateSingleDialog({
 									kind: "single",
 									name,
 									description: desc || undefined,
+									perks: perks.filter((p) => p.trim() !== ""),
 									quantityTotal:
 										qtyMode === "limited"
 											? Math.max(1, parseInt(quantity || "0", 10))
@@ -528,7 +578,7 @@ function CreateSingleDialog({
 									},
 									admitType,
 								},
-								setSaving
+								setSaving,
 							)
 						}
 					>
@@ -554,7 +604,7 @@ function CreateGroupDialog({
 			TicketTypeDoc,
 			"id" | "quantityRemaining" | "isActive" | "sortOrder"
 		>,
-		setSaving: (v: boolean) => void
+		setSaving: (v: boolean) => void,
 	) => void;
 }) {
 	const [tab, setTab] = useState<Tab>("free");
@@ -564,11 +614,12 @@ function CreateGroupDialog({
 	const [groupSize, setGroupSize] = useState<number>(2);
 	const [groupPrice, setGroupPrice] = useState<string>("6000");
 	const [desc, setDesc] = useState("");
+	const [perks, setPerks] = useState<string[]>([]);
 	const [transferFee, setTransferFee] = useState(true);
 	const [salesStart, setSalesStart] = useState<string>("");
 	const [salesEnd, setSalesEnd] = useState<string>("");
 	const [admitType, setAdmitType] = useState<"general" | "vip" | "backstage">(
-		"general"
+		"general",
 	);
 	const [saving, setSaving] = useState(false);
 
@@ -597,6 +648,18 @@ function CreateGroupDialog({
 		if (showPrice && (!groupPrice || parseInt(groupPrice) < 100)) return false;
 		return true;
 	}, [name, qtyMode, quantity, showPrice, groupPrice, groupSize]);
+
+	const handleAddPerk = () => setPerks([...perks, ""]);
+	const handlePerkChange = (index: number, value: string) => {
+		const newPerks = [...perks];
+		newPerks[index] = value;
+		setPerks(newPerks);
+	};
+	const handleRemovePerk = (index: number) => {
+		const newPerks = [...perks];
+		newPerks.splice(index, 1);
+		setPerks(newPerks);
+	};
 
 	return (
 		<DialogFrame title="Add a new group ticket" onClose={onClose}>
@@ -664,6 +727,42 @@ function CreateGroupDialog({
 							onChange={(e) => setDesc(e.target.value)}
 							placeholder="Describe what this group ticket includes..."
 						/>
+					</div>
+
+					{/* Perks Section */}
+					<div>
+						<div className="flex items-center justify-between mb-2">
+							<label className="block text-sm text-text-muted">Perks</label>
+							<button
+								onClick={handleAddPerk}
+								className="text-xs text-cta hover:underline font-medium"
+							>
+								+ Add Perk
+							</button>
+						</div>
+						<div className="space-y-2">
+							{perks.map((perk, i) => (
+								<div key={i} className="flex gap-2">
+									<input
+										className="flex-1 rounded-xl border border-stroke px-4 py-2 text-sm text-text outline-none focus:border-accent"
+										value={perk}
+										onChange={(e) => handlePerkChange(i, e.target.value)}
+										placeholder="e.g. Free Drink"
+									/>
+									<button
+										onClick={() => handleRemovePerk(i)}
+										className="text-text-muted hover:text-destructive px-2"
+									>
+										✕
+									</button>
+								</div>
+							))}
+							{perks.length === 0 && (
+								<p className="text-xs text-text-muted italic">
+									No perks added.
+								</p>
+							)}
+						</div>
 					</div>
 				</div>
 
@@ -810,6 +909,7 @@ function CreateGroupDialog({
 									kind: "group",
 									name,
 									description: desc || undefined,
+									perks: perks.filter((p) => p.trim() !== ""),
 									quantityTotal:
 										qtyMode === "limited"
 											? Math.max(1, parseInt(quantity || "0", 10))
@@ -824,7 +924,7 @@ function CreateGroupDialog({
 									},
 									admitType,
 								},
-								setSaving
+								setSaving,
 							)
 						}
 					>
