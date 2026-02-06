@@ -286,7 +286,7 @@ export default function PublicPricingPage() {
 				await startSubscription({
 					billingCycle: billing,
 					claimPromo: pricingMode === "brand" ? true : false,
-					isLive: true, // Set to false for testing as requested
+					isLive: false, // Set to false for testing as requested
 				});
 
 				alert(

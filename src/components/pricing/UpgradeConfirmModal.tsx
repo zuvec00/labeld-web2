@@ -43,7 +43,7 @@ export default function UpgradeConfirmModal({
 			// Call the cloud function
 			// isLive true for production
 			if (mode === "organizer") {
-				await startOrganizerProSubscription({ billingCycle, isLive: true });
+				await startOrganizerProSubscription({ billingCycle, isLive: false });
 			} else {
 				await startProSubscription({ billingCycle, isLive: true });
 			}

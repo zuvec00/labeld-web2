@@ -1,12 +1,13 @@
 // src/app/(dashboard)/dashboard/page.tsx
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useBrandSpace, BrandSpaceFilters } from "@/hooks/useBrandSpace";
 import { useDashboard } from "@/hooks/useDashboard";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { useEventDashboard } from "@/hooks/useEventDashboard";
 import { useAnalytics } from "@/hooks/useAnalytics";
+import { useToast } from "@/app/hooks/use-toast";
 import BrandSpaceControls from "@/components/dashboard/BrandSpaceControls";
 import BrandHealthSection from "@/components/dashboard/BrandHealthSection";
 import MomentumSection from "@/components/dashboard/MomentumSection";
@@ -19,11 +20,16 @@ import EventTimelineControls from "@/components/dashboard/EventTimelineControls"
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 import AdvancedHealth from "@/components/pro/AdvancedHealth";
+import { X, Lightbulb } from "lucide-react";
+
+const CONTEXT_SWITCH_TIP_KEY = "labeld-context-switch-tip-dismissed";
 
 export default function DashboardPage() {
+	const { toast } = useToast();
 	const [filters, setFilters] = React.useState<BrandSpaceFilters>({
 		range: "7days",
 	});
+	const [showContextTip, setShowContextTip] = React.useState(false);
 
 	// Role-aware context
 	const {
@@ -65,6 +71,52 @@ export default function DashboardPage() {
 
 	// Pro status (for potential Pro-only insights)
 	const isPro = detectionData?.brandSubscriptionTier === "pro";
+
+	// Track previous role for toast notification
+	const prevRoleRef = React.useRef<string | null>(null);
+
+	// Show toast when role changes or on initial load
+	useEffect(() => {
+		if (contextLoading || !detectionData) return;
+
+		const roleName = activeRole === "brand" ? "Brand" : "Events";
+
+		// Only show toast if role actually changed or it's first meaningful load
+		if (prevRoleRef.current !== null && prevRoleRef.current !== activeRole) {
+			toast({
+				title: `Switched to ${roleName}`,
+				description: `You're now viewing your ${roleName.toLowerCase()} dashboard`,
+				duration: 3000,
+			});
+		} else if (prevRoleRef.current === null) {
+			// First load - show welcome toast
+			toast({
+				title: `Viewing ${roleName} Dashboard`,
+				description:
+					activeRole === "brand"
+						? "Your brand intelligence overview"
+						: "Your event organizer overview",
+				duration: 3000,
+			});
+		}
+
+		prevRoleRef.current = activeRole;
+	}, [activeRole, contextLoading, detectionData, toast]);
+
+	// Check if context switch tip should be shown
+	useEffect(() => {
+		if (canSwitchRoles) {
+			const dismissed = localStorage.getItem(CONTEXT_SWITCH_TIP_KEY);
+			if (!dismissed) {
+				setShowContextTip(true);
+			}
+		}
+	}, [canSwitchRoles]);
+
+	const dismissContextTip = () => {
+		setShowContextTip(false);
+		localStorage.setItem(CONTEXT_SWITCH_TIP_KEY, "true");
+	};
 
 	// Loading state
 	const loading =
@@ -147,11 +199,28 @@ export default function DashboardPage() {
 				</div>
 
 				{/* Context Switch - only show if user has both roles */}
-				<DashboardContextSwitch
-					activeRole={activeRole}
-					onRoleChange={setActiveRole}
-					canSwitch={canSwitchRoles}
-				/>
+				<div className="flex items-center gap-3">
+					<DashboardContextSwitch
+						activeRole={activeRole}
+						onRoleChange={setActiveRole}
+						canSwitch={canSwitchRoles}
+					/>
+					{/* Dismissible tip for context switching */}
+					{showContextTip && canSwitchRoles && (
+						<div className="flex items-center gap-2 px-3 py-1.5 bg-cta/10 border border-cta/20 rounded-lg text-xs">
+							<Lightbulb className="w-3.5 h-3.5 text-cta flex-shrink-0" />
+							<span className="text-text-muted">
+								Switch between Brand & Events anytime
+							</span>
+							<button
+								onClick={dismissContextTip}
+								className="p-0.5 hover:bg-cta/20 rounded transition-colors"
+							>
+								<X className="w-3 h-3 text-text-muted" />
+							</button>
+						</div>
+					)}
+				</div>
 				{/* Onboarding Checklist (Only for Brand) */}
 				{activeRole === "brand" && <OnboardingChecklist />}
 
