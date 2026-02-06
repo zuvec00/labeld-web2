@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 import { Eye } from "lucide-react";
 
 export default function Sidebar({
@@ -164,7 +165,7 @@ export default function Sidebar({
 				))}
 			</div>
 
-			{/* Fixed Footer: Logout */}
+			{/* Fixed Footer: Theme Toggle + Logout */}
 			<div className="p-4 border-t border-stroke bg-surface flex-shrink-0">
 				<button
 					className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors text-sm"

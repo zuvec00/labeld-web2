@@ -2,6 +2,7 @@ import type {} from "next";
 import { Manrope, Unbounded } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import RegisterSW from "@/components/pwa/RegisterSW";
 import { Analytics } from "@vercel/analytics/next";
 import InstallPrompt from "@/components/pwa/InstallPrompt";
@@ -101,7 +102,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en">
+		<html lang="en" suppressHydrationWarning>
 			<head>
 				{/* PWA Meta Tags */}
 				<meta name="apple-mobile-web-app-capable" content="yes" />
@@ -126,11 +127,26 @@ export default function RootLayout({
 					name="viewport"
 					content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
 				/>
+
+				{/* Theme script - runs before React to prevent flash */}
+				<script
+					dangerouslySetInnerHTML={{
+						__html: `
+							(function() {
+								const theme = localStorage.getItem('labeld-theme-preference') || 
+									(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+								document.documentElement.classList.add(theme);
+							})();
+						`,
+					}}
+				/>
 			</head>
 			<body className={`${unbounded.variable} ${manrope.variable} antialiased`}>
 				<RegisterSW />
 				{/* <InstallPrompt /> */}
-				<AuthProvider>{children}</AuthProvider>
+				<ThemeProvider>
+					<AuthProvider>{children}</AuthProvider>
+				</ThemeProvider>
 				{/* Analytics */}
 				<Analytics />
 				<PageTracker />

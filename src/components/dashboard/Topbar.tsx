@@ -12,6 +12,7 @@ import { ExternalLink, Menu, Eye } from "lucide-react";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
 import { useRouter } from "next/navigation";
+import ThemeToggle from "@/components/ui/ThemeToggle";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -179,6 +180,9 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-3 sm:gap-4">
+					{/* Theme Toggle - visible on all screen sizes */}
+					<ThemeToggle />
+
 					{/* View Store Button (Brand Only) */}
 					{activeRole === "brand" && (
 						<button
