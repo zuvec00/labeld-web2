@@ -32,19 +32,19 @@ export default function SiteCustomizationPage() {
 
 	// Active Editor State
 	const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
-		null
+		null,
 	);
 	const [liveTemplateId, setLiveTemplateId] = useState<string | null>(null);
 
 	const [activeSections, setActiveSections] = useState<StorefrontSection[]>([]);
 	const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
-		null
+		null,
 	);
 	const [sectionOverrides, setSectionOverrides] = useState<Record<string, any>>(
-		{}
+		{},
 	);
 	const [brandIdentity, setBrandIdentity] = useState<BrandIdentity | undefined>(
-		undefined
+		undefined,
 	);
 	const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(true);
 
@@ -102,7 +102,7 @@ export default function SiteCustomizationPage() {
 
 					// 2. Sync Sections (Merge config with defaults)
 					const template = templates.find(
-						(t: any) => t.id === config.templateId
+						(t: any) => t.id === config.templateId,
 					);
 					if (template) {
 						let mergedSections = [...template.defaultSections];
@@ -178,7 +178,7 @@ export default function SiteCustomizationPage() {
 
 	const handleToggleSection = async (sectionId: string, enabled: boolean) => {
 		const newSections = activeSections.map((s) =>
-			s.id === sectionId ? { ...s, enabled } : s
+			s.id === sectionId ? { ...s, enabled } : s,
 		) as StorefrontSection[];
 
 		setActiveSections(newSections);
@@ -198,7 +198,7 @@ export default function SiteCustomizationPage() {
 
 	const handleSaveOverride = async (
 		sectionId: string,
-		updates: Record<string, any>
+		updates: Record<string, any>,
 	) => {
 		// Optimistic local update
 		setSectionOverrides((prev) => ({
@@ -219,6 +219,9 @@ export default function SiteCustomizationPage() {
 		}
 	};
 
+	// Tabs State - must be declared before any early returns per React hooks rules
+	const [activeTab, setActiveTab] = useState<"design" | "identity">("design");
+
 	if (!isBrand) {
 		return (
 			<div className="min-h-[50vh] flex items-center justify-center text-text-muted">
@@ -226,9 +229,6 @@ export default function SiteCustomizationPage() {
 			</div>
 		);
 	}
-
-	// Tabs State
-	const [activeTab, setActiveTab] = useState<"design" | "identity">("design");
 
 	const activeTemplate = templates.find((t) => t.id === editingTemplateId);
 
@@ -441,10 +441,10 @@ export default function SiteCustomizationPage() {
 									{selectedSectionId ? (
 										(() => {
 											const section = activeSections.find(
-												(s) => s.id === selectedSectionId
+												(s) => s.id === selectedSectionId,
 											);
 											const defaults = activeTemplate?.defaultSections.find(
-												(s) => s.id === selectedSectionId
+												(s) => s.id === selectedSectionId,
 											);
 											if (!section || !defaults) return null;
 

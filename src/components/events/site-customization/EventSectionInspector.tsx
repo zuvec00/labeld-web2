@@ -11,6 +11,8 @@ import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
 import UploadImage from "@/components/ui/upload-image";
 import { useToast } from "@/app/hooks/use-toast";
+import { useUploadStore } from "@/lib/stores/upload";
+import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
 
 // Firebase imports for event fetching
 import { db } from "@/lib/firebase/firebaseConfig";
@@ -106,6 +108,7 @@ export default function EventSectionInspector({
 		overrides || {},
 	);
 	const [uploading, setUploading] = useState(false);
+	const { addUpload, updateUpload, removeUpload } = useUploadStore();
 
 	// Events State for Featured Selection
 	const [myEvents, setMyEvents] = useState<EventModel[]>([]);
@@ -178,20 +181,53 @@ export default function EventSectionInspector({
 		return val !== undefined && val !== null;
 	};
 
-	const handleImageUpload = async (file: File | null) => {
+	const handleImageUpload = async (
+		file: File | null,
+		fieldName: string = "imageUrl",
+	) => {
 		if (!file) {
-			handleReset("imageUrl");
+			handleReset(fieldName);
 			return;
 		}
 		if (!user?.uid) return;
 
+		const uploadId = addUpload({
+			type: "image",
+			fileName: file.name,
+			progress: 0,
+			status: "uploading",
+		});
+		const upload = useUploadStore
+			.getState()
+			.uploads.find((u) => u.id === uploadId);
+		const abortController = upload?.cancelController;
+
 		try {
 			setUploading(true);
-			const url = await uploadBrandImageWeb(file, user.uid);
-			handleChange("imageUrl", url);
-			handleSave("imageUrl", url);
+			const url = await uploadFileDirectCloudinary(
+				file,
+				{
+					folder: `events/${templateId}`,
+					tags: ["event", templateId],
+				},
+				(progress) => {
+					if (abortController?.signal.aborted) throw new Error("Cancelled");
+					updateUpload(uploadId, { progress: Math.round(progress) });
+				},
+			);
+
+			handleChange(fieldName, url);
+			handleSave(fieldName, url);
+
+			updateUpload(uploadId, { status: "completed", progress: 100 });
+			setTimeout(() => removeUpload(uploadId), 3000);
+
 			toast({ title: "Image Uploaded" });
 		} catch (error) {
+			updateUpload(uploadId, {
+				status: "error",
+				error: error instanceof Error ? error.message : "Upload failed",
+			});
 			console.error(error);
 			toast({ title: "Upload Failed", variant: "destructive" });
 		} finally {
@@ -294,27 +330,64 @@ export default function EventSectionInspector({
 							<UploadImage
 								text="Upload Logo"
 								value={null}
-								onChange={(file) => {
+								onChange={async (file) => {
 									if (!file) {
 										handleReset("logoUrl");
 										return;
 									}
 									if (user?.uid) {
+										const uploadId = addUpload({
+											type: "image",
+											fileName: file.name,
+											progress: 0,
+											status: "uploading",
+										});
+										const upload = useUploadStore
+											.getState()
+											.uploads.find((u) => u.id === uploadId);
+										const abortController = upload?.cancelController;
+
 										setUploading(true);
-										uploadBrandImageWeb(file, user.uid)
-											.then((url) => {
-												handleChange("logoUrl", url);
-												handleSave("logoUrl", url);
-												toast({ title: "Logo Uploaded" });
-											})
-											.catch((err) => {
-												console.error(err);
-												toast({
-													title: "Upload Failed",
-													variant: "destructive",
-												});
-											})
-											.finally(() => setUploading(false));
+										try {
+											const url = await uploadFileDirectCloudinary(
+												file,
+												{
+													folder: `events/${templateId}/logos`,
+													tags: ["event", "logo", templateId],
+												},
+												(progress) => {
+													if (abortController?.signal.aborted)
+														throw new Error("Cancelled");
+													updateUpload(uploadId, {
+														progress: Math.round(progress),
+													});
+												},
+											);
+
+											handleChange("logoUrl", url);
+											handleSave("logoUrl", url);
+
+											updateUpload(uploadId, {
+												status: "completed",
+												progress: 100,
+											});
+											setTimeout(() => removeUpload(uploadId), 3000);
+
+											toast({ title: "Logo Uploaded" });
+										} catch (err) {
+											updateUpload(uploadId, {
+												status: "error",
+												error:
+													err instanceof Error ? err.message : "Upload failed",
+											});
+											console.error(err);
+											toast({
+												title: "Upload Failed",
+												variant: "destructive",
+											});
+										} finally {
+											setUploading(false);
+										}
 									}
 								}}
 								onlineImage={
@@ -735,21 +808,49 @@ export default function EventSectionInspector({
 					const isPdf = file.type === "application/pdf";
 					const type = isPdf ? "pdf" : "image";
 
+					const uploadId = addUpload({
+						type: "image",
+						fileName: file.name,
+						progress: 0,
+						status: "uploading",
+					});
+					const upload = useUploadStore
+						.getState()
+						.uploads.find((u) => u.id === uploadId);
+					const abortController = upload?.cancelController;
+
 					try {
-						setUploading(true); // Re-using local uploading state, implies global Spinner on button maybe? Or I should use local loading per item?
-						// Just simplistic for now.
-						const url = await uploadBrandImageWeb(
+						setUploading(true);
+						const url = await uploadFileDirectCloudinary(
 							file,
-							`events/${templateId}/menus`,
+							{
+								folder: `events/${templateId}/menus`,
+								tags: ["event", "menu", templateId],
+								resourceType: isPdf ? "raw" : "image",
+							},
+							(progress) => {
+								if (abortController?.signal.aborted)
+									throw new Error("Cancelled");
+								updateUpload(uploadId, { progress: Math.round(progress) });
+							},
 						);
+
 						if (url) {
 							const newItems = [...menuItems];
 							newItems[index] = { ...newItems[index], url, fileType: type };
 							handleChange("items", newItems);
 							handleSave("items", newItems);
+
+							updateUpload(uploadId, { status: "completed", progress: 100 });
+							setTimeout(() => removeUpload(uploadId), 3000);
+
 							toast({ title: "Menu uploaded" });
 						}
 					} catch (e) {
+						updateUpload(uploadId, {
+							status: "error",
+							error: e instanceof Error ? e.message : "Upload failed",
+						});
 						console.error(e);
 						toast({ title: "Upload failed", variant: "destructive" });
 					} finally {
@@ -1090,22 +1191,52 @@ export default function EventSectionInspector({
 				) => {
 					if (!file) return;
 
+					// Create upload entry
+					const uploadId = addUpload({
+						type: "image",
+						fileName: file.name,
+						progress: 0,
+						status: "uploading",
+					});
+					const upload = useUploadStore
+						.getState()
+						.uploads.find((u) => u.id === uploadId);
+					const abortController = upload?.cancelController;
+
 					try {
-						// Single replacement upload
-						const url = await uploadBrandImageWeb(
+						// Using direct upload for progress
+						const url = await uploadFileDirectCloudinary(
 							file,
-							`events/${templateId}/gallery`,
+							{
+								folder: `events/${templateId}/gallery`,
+								tags: ["event", "gallery", templateId],
+							},
+							(progress) => {
+								if (abortController?.signal.aborted)
+									throw new Error("Cancelled");
+								updateUpload(uploadId, { progress: Math.round(progress) });
+							},
 						);
+
 						if (url) {
 							const newImages = [...currentImages];
 							newImages[index] = url; // Replace existing
 							handleChange("images", newImages);
 							handleSave("images", newImages);
+
+							updateUpload(uploadId, { status: "completed", progress: 100 });
+							setTimeout(() => removeUpload(uploadId), 3000);
+
 							toast({
 								title: "Image updated",
 							});
 						}
 					} catch (error) {
+						updateUpload(uploadId, {
+							status: "error",
+							error: error instanceof Error ? error.message : "Upload failed",
+						});
+
 						console.error("Gallery upload failed", error);
 						toast({
 							title: "Upload failed",
@@ -1130,16 +1261,47 @@ export default function EventSectionInspector({
 					const filesToUpload = Array.from(files).slice(0, remainingSlots);
 					const newUrls: string[] = [];
 
-					// Parallel upload
+					// Process uploads
 					await Promise.all(
 						filesToUpload.map(async (file) => {
+							const uploadId = addUpload({
+								type: "image",
+								fileName: file.name,
+								progress: 0,
+								status: "uploading",
+							});
+							const upload = useUploadStore
+								.getState()
+								.uploads.find((u) => u.id === uploadId);
+							const abortController = upload?.cancelController;
+
 							try {
-								const url = await uploadBrandImageWeb(
+								const url = await uploadFileDirectCloudinary(
 									file,
-									`events/${templateId}/gallery`,
+									{
+										folder: `events/${templateId}/gallery`,
+										tags: ["event", "gallery", templateId],
+									},
+									(progress) => {
+										if (abortController?.signal.aborted)
+											throw new Error("Cancelled");
+										updateUpload(uploadId, { progress: Math.round(progress) });
+									},
 								);
-								if (url) newUrls.push(url);
+
+								if (url) {
+									newUrls.push(url);
+									updateUpload(uploadId, {
+										status: "completed",
+										progress: 100,
+									});
+									setTimeout(() => removeUpload(uploadId), 3000);
+								}
 							} catch (e) {
+								updateUpload(uploadId, {
+									status: "error",
+									error: e instanceof Error ? e.message : "Upload failed",
+								});
 								console.error("Upload error", e);
 							}
 						}),

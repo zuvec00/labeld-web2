@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect, useMemo } from "react";
 import Button from "@/components/ui/button";
 import { StorefrontSection } from "@/lib/models/site-customization";
@@ -8,6 +10,8 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/app/hooks/use-toast";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
+import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
+import { useUploadStore } from "@/lib/stores/upload";
 import UploadImage from "@/components/ui/upload-image";
 import { MultiImagePicker } from "@/components/ui/upload-multiple-image"; // Ensure this matches export
 import { cn } from "@/lib/utils";
@@ -253,6 +257,7 @@ export default function SectionInspector({
 	const { toast } = useToast();
 	const [localOverrides, setLocalOverrides] = useState(overrides || {});
 	const [uploading, setUploading] = useState(false);
+	const { addUpload, updateUpload, removeUpload } = useUploadStore();
 
 	// Configurable Products State
 	const [products, setProducts] = useState<
@@ -474,13 +479,43 @@ export default function SectionInspector({
 		if (!file) return; // Clearing handled by other means or explicit null
 		if (!user?.uid) return;
 
+		const uploadId = addUpload({
+			type: "image",
+			fileName: file.name,
+			progress: 0,
+			status: "uploading",
+		});
+		const upload = useUploadStore
+			.getState()
+			.uploads.find((u) => u.id === uploadId);
+		const abortController = upload?.cancelController;
+
 		try {
 			setUploading(true);
-			const url = await uploadBrandImageWeb(file, user.uid);
+			const url = await uploadFileDirectCloudinary(
+				file,
+				{
+					folder: `brandImages/${user.uid}`,
+					tags: ["brand", "storefront", user.uid],
+				},
+				(progress) => {
+					if (abortController?.signal.aborted) throw new Error("Cancelled");
+					updateUpload(uploadId, { progress: Math.round(progress) });
+				},
+			);
+
 			handleChange("imageUrl", url);
 			handleSave("imageUrl", url); // Immediate save
+
+			updateUpload(uploadId, { status: "completed", progress: 100 });
+			setTimeout(() => removeUpload(uploadId), 3000);
+
 			toast({ title: "Image Uploaded" });
 		} catch (error) {
+			updateUpload(uploadId, {
+				status: "error",
+				error: error instanceof Error ? error.message : "Upload failed",
+			});
 			console.error(error);
 			toast({ title: "Upload Failed", variant: "destructive" });
 		} finally {
@@ -491,21 +526,61 @@ export default function SectionInspector({
 	// Handler for Multi Image
 	const handleMultiUpload = async (files: File[]) => {
 		if (!user?.uid) return;
-		// This is tricky because MultiImagePicker calls this with NEW files.
-		// We probably need to upload them one by one and append URLs.
-		// But MultiImagePicker in our codebase handles local files vs existing URLs.
-		// We need to adapt logic: Upload new files immediately, add to `images` array.
 
 		try {
 			setUploading(true);
-			const uploadPromises = files.map((f) => uploadBrandImageWeb(f, user.uid));
-			const newUrls = await Promise.all(uploadPromises);
+			const newUrls: string[] = [];
 
-			const currentUrls = localOverrides.images || [];
-			const updatedUrls = [...currentUrls, ...newUrls];
+			await Promise.all(
+				files.map(async (file) => {
+					const uploadId = addUpload({
+						type: "image",
+						fileName: file.name,
+						progress: 0,
+						status: "uploading",
+					});
+					const upload = useUploadStore
+						.getState()
+						.uploads.find((u) => u.id === uploadId);
+					const abortController = upload?.cancelController;
 
-			handleChange("images", updatedUrls);
-			handleSave("images", updatedUrls);
+					try {
+						const url = await uploadFileDirectCloudinary(
+							file,
+							{
+								folder: `brandImages/${user.uid}/social`,
+								tags: ["brand", "social-proof", user.uid],
+							},
+							(progress) => {
+								if (abortController?.signal.aborted)
+									throw new Error("Cancelled");
+								updateUpload(uploadId, { progress: Math.round(progress) });
+							},
+						);
+
+						if (url) {
+							newUrls.push(url);
+							updateUpload(uploadId, { status: "completed", progress: 100 });
+							setTimeout(() => removeUpload(uploadId), 3000);
+						}
+					} catch (e) {
+						updateUpload(uploadId, {
+							status: "error",
+							error: e instanceof Error ? e.message : "Upload failed",
+						});
+						console.error("Upload error", e);
+					}
+				}),
+			);
+
+			if (newUrls.length > 0) {
+				const currentUrls = localOverrides.images || [];
+				const updatedUrls = [...currentUrls, ...newUrls];
+
+				handleChange("images", updatedUrls);
+				handleSave("images", updatedUrls);
+				toast({ title: `Added ${newUrls.length} images` });
+			}
 		} catch (error) {
 			toast({ title: "Upload Failed", variant: "destructive" });
 		} finally {
