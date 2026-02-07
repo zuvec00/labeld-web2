@@ -139,7 +139,7 @@ function ActionCard({
 					className="object-cover group-hover:scale-105 transition-transform duration-300"
 				/>
 				{/* Overlay */}
-				<div className="absolute inset-0 bg-gradient-to-t from-bg/90 via-bg/50 to-transparent" />
+				<div className="absolute inset-0 [#0b0b0b]-gradient-to-t from-[#0b0b0b]/90 via-[#0b0b0b]/50 to-transparent" />
 			</div>
 
 			{/* Content */}
@@ -301,20 +301,20 @@ export default function OnboardingSplit() {
 				<section className="relative h-[50vh] min-h-[400px]">
 					<VideoWithFallback className="object-cover w-full h-full" />
 					{/* Mobile overlay for contrast */}
-					<div className="absolute inset-0 bg-gradient-to-t from-bg/90 via-bg/50 to-transparent" />
+					<div className="absolute inset-0 [#0b0b0b]-gradient-to-t from-[#0b0b0b]/90 via-[#0b0b0b]/50 to-transparent" />
 
 					{/* Mobile Hero Text */}
 					<div className="absolute inset-0 flex items-end">
 						<div className="w-full px-6 pb-8">
 							<h1 className="font-heading font-semibold text-3xl leading-tight tracking-tight">
-								<span className="block">
-									LABELD <span className="text-text">STUDIO</span>
+								<span className="block text-[#FAF7F1]">
+									LABELD <span className="text-[#FAF7F1]">STUDIO</span>
 								</span>
-								<span className="block">
+								<span className="block text-[#FAF7F1]">
 									Your <span className="text-accent">Creative</span> Hub
 								</span>
 							</h1>
-							<p className="mt-3 text-sm text-text-muted">
+							<p className="mt-3 text-sm text-[#FAF7F1]">
 								Manage your brand, create events, and drop culture that
 								connects.
 							</p>
@@ -373,20 +373,20 @@ export default function OnboardingSplit() {
 				<section className="relative m-8">
 					<VideoWithFallback className="object-cover rounded-[20px] w-full h-full absolute inset-0" />
 					{/* Desktop overlay for contrast */}
-					<div className="absolute inset-0 bg-gradient-to-t from-bg/85 via-bg/40 to-transparent rounded-[20px]" />
+					<div className="absolute inset-0 [#0b0b0b]-gradient-to-t from-[#0b0b0b]/85 via-[#0b0b0b]/40 to-transparent rounded-[20px]" />
 
 					{/* Desktop Hero Text */}
 					<div className="absolute inset-0 flex items-end">
 						<div className="w-full px-6 sm:px-10 pb-12 max-w-xl">
 							<h1 className="font-heading font-semibold text-4xl sm:text-5xl xl:text-[40px] leading-tight tracking-tight">
-								<span className="">
-									LABELD <span className="text-text">STUDIO</span>
+								<span className="text-[#FAF7F1]">
+									LABELD <span className="text-[#FAF7F1]">STUDIO</span>
 								</span>
-								<span className="block">
+								<span className="block text-[#FAF7F1]">
 									Your <span className="text-accent">Creative</span> Hub
 								</span>
 							</h1>
-							<p className="mt-4 text-base sm:text-lg text-text-muted max-w-md">
+							<p className="mt-4 text-base sm:text-lg text-[#FAF7F1] max-w-md">
 								Manage your brand, create events, and drop culture that
 								connects.
 							</p>
@@ -400,7 +400,7 @@ export default function OnboardingSplit() {
 						{/* Logo */}
 						<div className="mb-8 flex items-center gap-2">
 							<Image
-								src="/labeld_logo.png"
+								src="/images/logo-nobg.png"
 								alt="Labeld"
 								width={60}
 								height={60}
