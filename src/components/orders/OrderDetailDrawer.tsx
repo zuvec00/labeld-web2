@@ -129,7 +129,9 @@ export default function OrderDetailDrawer({
 							<div>
 								<span className="text-sm text-text-muted">Name:</span>
 								<span className="text-sm text-text ml-2">
-									{getFirstFulfillmentLine()?.shipping?.address?.name || "—"}
+									{getFirstFulfillmentLine()?.shipping?.address?.name ||
+										order.deliverTo?.fullName ||
+										"—"}
 								</span>
 							</div>
 							<div>

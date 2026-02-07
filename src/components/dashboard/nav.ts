@@ -31,6 +31,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
     items: [
       { label: "Organizer Space", href: "/organizer-space", feature: "events", icon: getNavIcon("EventProfile") },
       { label: "Events", href: "/events", feature: "events", icon: getNavIcon("Events") },
+      { label: "Bookings", href: "/bookings", feature: "events", icon: getNavIcon("Bookings") },
       { label: "Event Customization", href: "/events/site-customization", feature: "events", icon: getNavIcon("EventSite"), badge: "PRO" },
     ],
   },

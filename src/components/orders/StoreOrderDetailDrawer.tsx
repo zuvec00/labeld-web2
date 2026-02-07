@@ -271,6 +271,12 @@ export default function StoreOrderDetailDrawer({
 										{order.deliverTo?.phone || "Not provided"}
 									</p>
 								</div>
+								<div>
+									<p className="text-sm text-text-muted">Notes</p>
+									<p className="font-medium text-text">
+										{order.deliverTo?.notes || "Not provided"}
+									</p>
+								</div>
 							</div>
 						</div>
 

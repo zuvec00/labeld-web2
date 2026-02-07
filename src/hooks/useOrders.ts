@@ -103,7 +103,7 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
       const { orders: newOrders, lastDoc: newLastDoc } = await getOrdersInDateRange(
         dateRange.start,
         dateRange.end,
-        25,
+        10, // Reduced from 25 to 10 for better performance
         reset ? undefined : (cursor ?? lastDocRef.current)
       );
 
@@ -230,7 +230,7 @@ export function useOrders(activeTab: OrderTab): UseOrdersResult {
       }
 
       setLastDoc(newLastDoc);
-      setHasMore(newOrders.length === 25);
+      setHasMore(newOrders.length === 10); // Updated to match new page size
     } catch (err) {
       console.error("Error loading orders:", err);
       setError("Failed to load orders");

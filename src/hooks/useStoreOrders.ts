@@ -57,7 +57,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
         setLoading(true);
         setError(null);
         
-        const { orders: initialOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await getStoreOrders(user.uid);
+        const { orders: initialOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await getStoreOrders(user.uid, 10); // Reduced from 20 to 10
         
         console.log("🔍 Debug - Store orders loaded:", { 
           userId: user.uid, 
@@ -104,7 +104,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       
       const { orders: moreOrders, hasMore: hasMoreOrders, lastVisible } = await getStoreOrders(
         user.uid, 
-        20, 
+        10, // Reduced from 20 to 10
         lastDoc,
         currentFilters
       );
@@ -129,7 +129,7 @@ export function useStoreOrders(): UseStoreOrdersReturn {
       
       const { orders: refreshedOrders, hasMore: hasMoreOrders, vendorScope: scope, lastVisible } = await getStoreOrders(
         user.uid,
-        20,
+        10, // Reduced from 20 to 10
         null,
         currentFilters
       );

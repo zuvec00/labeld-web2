@@ -177,10 +177,49 @@ async function getTimelineEvents(orderId: string): Promise<TimelineEvent[]> {
   }
 }
 
+// Batch fetch subcollections for multiple orders (PERFORMANCE OPTIMIZATION)
+async function batchGetSubcollections(
+  orderIds: string[],
+  brandId: string
+): Promise<Record<string, {
+  vendorStatuses: Record<string, VendorLineStatus>;
+  fulfillmentData: {
+    fulfillmentStatuses: Record<string, FulfillmentStatus>;
+    fulfillmentAggregateStatus: FulfillmentAggregateStatus;
+    fulfillmentLines: Record<string, FulfillmentLine>;
+  };
+}>> {
+  try {
+    // Fetch all subcollections in parallel for all orders at once
+    const promises = orderIds.map(async (orderId) => {
+      const [vendorStatuses, fulfillmentData] = await Promise.all([
+        getVendorLineStatuses(orderId, brandId),
+        getFulfillmentData(orderId, brandId),
+      ]);
+      
+      return { 
+        orderId, 
+        vendorStatuses, 
+        fulfillmentData,
+      };
+    });
+    
+    const results = await Promise.all(promises);
+    
+    return results.reduce((acc, { orderId, vendorStatuses, fulfillmentData }) => {
+      acc[orderId] = { vendorStatuses, fulfillmentData };
+      return acc;
+    }, {} as Record<string, any>);
+  } catch (error) {
+    console.error("Error batch fetching subcollections:", error);
+    return {};
+  }
+}
+
 // Get store orders with vendor status
 export async function getStoreOrders(
   userId: string, 
-  limitCount: number = 20, 
+  limitCount: number = 10, // Reduced default from 20 to 10
   startAfterDoc?: QueryDocumentSnapshot<DocumentData> | null,
   filters?: OrderFilters | null
 ): Promise<StoreOrdersResult> {
@@ -250,31 +289,33 @@ export async function getStoreOrders(
     });
 
     // Process orders
-    const orders: StoreOrderWithVendorStatus[] = [];
+    const basicOrders = ordersToProcess.map(parseStoreOrder);
     
-    for (const orderDoc of ordersToProcess) {
-      const order = parseStoreOrder(orderDoc);
+    // PERFORMANCE OPTIMIZATION: Batch fetch all subcollections in parallel
+    const subcollections = await batchGetSubcollections(
+      basicOrders.map(o => o.id),
+      brandId
+    );
+    
+    // Combine data
+    const orders: StoreOrderWithVendorStatus[] = basicOrders.map(order => {
+      const orderSubcollections = subcollections[order.id] || {
+        vendorStatuses: {},
+        fulfillmentData: {
+          fulfillmentStatuses: {},
+          fulfillmentAggregateStatus: "unfulfilled" as FulfillmentAggregateStatus,
+          fulfillmentLines: {},
+        },
+      };
       
-      // Get vendor line statuses
-      const vendorLineStatuses = await getVendorLineStatuses(order.id, brandId);
-      
-      // Get fulfillment data
-      const fulfillmentData = await getFulfillmentData(order.id, brandId);
-      
-      // Get timeline events
-      const timelineEvents = await getTimelineEvents(order.id);
-      
-      // Determine visible line items (all products for brand)
-      const visibleLineItems = order.lineItems.filter(item => item._type === "product");
-      
-      orders.push({
+      return {
         ...order,
-        vendorLineStatuses,
-        ...fulfillmentData,
-        visibleLineItems,
-        visibilityReason: "brand",
-      });
-    }
+        vendorLineStatuses: orderSubcollections.vendorStatuses,
+        ...orderSubcollections.fulfillmentData,
+        visibleLineItems: order.lineItems.filter(item => item._type === "product"),
+        visibilityReason: "brand" as const,
+      };
+    });
 
     return {
       orders,
@@ -323,33 +364,38 @@ export function watchStoreOrders(
         collection(db, "storeOrders"),
         where("brandId", "==", brandId),
         orderBy("createdAt", "desc"),
-        limit(50)
+        limit(20) // Reduced from 50 to 20 for better performance
       );
 
       unsubscribe = onSnapshot(q, async (snapshot) => {
         try {
-          const orders: StoreOrderWithVendorStatus[] = [];
+          const basicOrders = snapshot.docs.map(parseStoreOrder);
           
-          for (const orderDoc of snapshot.docs) {
-            const order = parseStoreOrder(orderDoc);
+          // PERFORMANCE OPTIMIZATION: Batch fetch subcollections
+          const subcollections = await batchGetSubcollections(
+            basicOrders.map(o => o.id),
+            brandId
+          );
+          
+          // Combine data
+          const orders: StoreOrderWithVendorStatus[] = basicOrders.map(order => {
+            const orderSubcollections = subcollections[order.id] || {
+              vendorStatuses: {},
+              fulfillmentData: {
+                fulfillmentStatuses: {},
+                fulfillmentAggregateStatus: "unfulfilled" as FulfillmentAggregateStatus,
+                fulfillmentLines: {},
+              },
+            };
             
-            // Get vendor line statuses
-            const vendorLineStatuses = await getVendorLineStatuses(order.id, brandId);
-            
-            // Get fulfillment data
-            const fulfillmentData = await getFulfillmentData(order.id, brandId);
-            
-            // Determine visible line items
-            const visibleLineItems = order.lineItems.filter(item => item._type === "product");
-            
-            orders.push({
+            return {
               ...order,
-              vendorLineStatuses,
-              ...fulfillmentData,
-              visibleLineItems,
-              visibilityReason: "brand",
-            });
-          }
+              vendorLineStatuses: orderSubcollections.vendorStatuses,
+              ...orderSubcollections.fulfillmentData,
+              visibleLineItems: order.lineItems.filter(item => item._type === "product"),
+              visibilityReason: "brand" as const,
+            };
+          });
           
           onUpdate(orders);
         } catch (error) {
@@ -380,7 +426,7 @@ export async function applyStoreOrderFilters(
   userId: string,
   filters: OrderFilters
 ): Promise<StoreOrdersResult> {
-  return getStoreOrders(userId, 20, undefined, filters);
+  return getStoreOrders(userId, 10, undefined, filters); // Reduced from 20 to 10
 }
 
 // Get single store order with full details

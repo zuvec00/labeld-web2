@@ -66,7 +66,7 @@ export interface OrderDoc {
   };
   provider: PaymentProvider | null;
   providerRef?: { initRef?: string; verifyRef?: string };
-  deliverTo?: { name?: string; email?: string; phone?: string };
+  deliverTo?: { name?: string; email?: string; phone?: string; fullName?:string; };
   shipping?: {
     method: "delivery" | "pickup";
     address?: {
@@ -108,7 +108,7 @@ export interface StoreOrderDoc {
   };
   provider: PaymentProvider | null;
   providerRef?: { initRef?: string; verifyRef?: string };
-  deliverTo?: { fullName?: string; email?: string; phone?: string };
+  deliverTo?: { fullName?: string; email?: string; phone?: string; notes?: string };
   shipping?: {
     method: "delivery" | "pickup";
     address?: {
