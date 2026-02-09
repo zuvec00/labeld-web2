@@ -22,6 +22,7 @@ interface UploadOptions {
   tags?: string[];
   transformation?: Record<string, unknown>;
   overwrite?: boolean;
+  format?: string;
 }
 
 // Type definitions for Firebase Callable responses
@@ -84,7 +85,7 @@ export async function uploadProfileImageCloudinary(
     const base64 = await fileToBase64(file);
     const functions = getFunctionsInstance();
     const uploadFunction = httpsCallable<
-      { file: string; folder: string; tags: string[] },
+      { file: string; folder: string; tags: string[]; format?: string },
       CloudinaryUploadResult
     >(functions, "uploadImageToCloudinary");
 
@@ -113,13 +114,14 @@ export async function uploadProfileImageCloudinary(
  */
 export async function uploadBrandImageCloudinary(
   file: File,
-  uid: string
+  uid: string,
+  options?: { format?: string }
 ): Promise<string> {
   try {
     const base64 = await fileToBase64(file);
     const functions = getFunctionsInstance();
     const uploadFunction = httpsCallable<
-      { file: string; folder: string; tags: string[] },
+      { file: string; folder: string; tags: string[]; format?: string },
       CloudinaryUploadResult
     >(functions, "uploadImageToCloudinary");
 
@@ -127,6 +129,7 @@ export async function uploadBrandImageCloudinary(
       file: base64,
       folder: `brandImages/${uid}`,
       tags: ["brand", "logo", uid],
+      ...(options?.format && { format: options.format }),
     });
 
     if (!result.data.success) {
@@ -154,7 +157,7 @@ export async function uploadContentImageCloudinary(
     const base64 = await fileToBase64(file);
     const functions = getFunctionsInstance();
     const uploadFunction = httpsCallable<
-      { file: string; folder: string; tags: string[] },
+      { file: string; folder: string; tags: string[]; format?: string },
       CloudinaryUploadResult
     >(functions, "uploadImageToCloudinary");
 
@@ -189,7 +192,7 @@ export async function uploadImageCloudinary(
     const base64 = await fileToBase64(file);
     const functions = getFunctionsInstance();
     const uploadFunction = httpsCallable<
-      { file: string; folder?: string; tags?: string[]; publicId?: string },
+      { file: string; folder?: string; tags?: string[]; publicId?: string; format?: string },
       CloudinaryUploadResult
     >(functions, "uploadImageToCloudinary");
 
@@ -198,6 +201,7 @@ export async function uploadImageCloudinary(
       folder: options.folder,
       tags: options.tags,
       publicId: options.publicId,
+      format: options.format,
     });
 
     if (!result.data.success) {

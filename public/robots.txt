@@ -11,6 +11,8 @@ Disallow: /user/setup
 Disallow: /user/setup/*
 Disallow: /scan
 Disallow: /scan/*
+Disallow: /scan-booking
+Disallow: /bookings/*
 Disallow: /brand-space/*
 Disallow: /collections/*
 Disallow: /pieces/*

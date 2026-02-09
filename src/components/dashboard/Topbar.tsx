@@ -13,6 +13,7 @@ import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ui/ThemeToggle";
+import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -28,6 +29,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 	// Onboarding status for View Store logic
 	const { isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
+	const networkStatus = useNetworkStatus();
 
 	useEffect(() => {
 		const fetchUserProfile = async () => {
@@ -180,6 +182,28 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
 				{/* Right Actions */}
 				<div className="flex items-center gap-3 sm:gap-4">
+					{/* Network Status Indicator */}
+					{networkStatus !== "online" && (
+						<div
+							className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold animate-in fade-in slide-in-from-top-2 duration-300 ${
+								networkStatus === "offline"
+									? "bg-red-500/10 text-red-500 border-red-500/20"
+									: "bg-amber-500/10 text-amber-500 border-amber-500/20"
+							}`}
+						>
+							<div
+								className={`w-2 h-2 rounded-full animate-pulse ${
+									networkStatus === "offline" ? "bg-red-500" : "bg-amber-500"
+								}`}
+							/>
+							<span className="hidden sm:inline">
+								{networkStatus === "offline"
+									? "No Connection"
+									: "Poor Connection"}
+							</span>
+						</div>
+					)}
+
 					{/* Theme Toggle - visible on all screen sizes */}
 					<ThemeToggle />
 

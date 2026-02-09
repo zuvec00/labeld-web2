@@ -41,7 +41,7 @@ export default function BrandIdentityView({
 			primaryColor: "#000000",
 			secondaryColor: "#ffffff",
 			themeMode: "light",
-		}
+		},
 	);
 
 	// Sync with prop when fetched
@@ -73,7 +73,7 @@ export default function BrandIdentityView({
 
 	const handleFileUpload = async (
 		e: React.ChangeEvent<HTMLInputElement>,
-		type: "logo" | "favicon"
+		type: "logo" | "favicon",
 	) => {
 		const file = e.target.files?.[0];
 		if (!file || !user?.uid) return;
@@ -91,7 +91,8 @@ export default function BrandIdentityView({
 			if (type === "logo") setUploadingLogo(true);
 			else setUploadingFavicon(true);
 
-			const url = await uploadBrandImageWeb(file, user.uid);
+			const options = type === "favicon" ? { format: "ico" } : undefined;
+			const url = await uploadBrandImageWeb(file, user.uid, options);
 
 			if (type === "logo") {
 				handleChange("logoUrl", url);

@@ -21,6 +21,8 @@ module.exports = {
 		'/user/setup/*',
 		'/scan',
 		'/scan/*',
+		'/scan-booking', // Booking QR scanner
+		'/bookings/*', // Protected bookings dashboard
 		'/brand-space/*',
 		'/collections/*',
 		'/pieces/*',
@@ -51,6 +53,8 @@ module.exports = {
 					'/user/setup/*',
 					'/scan',
 					'/scan/*',
+					'/scan-booking', // Booking QR scanner
+					'/bookings/*', // Protected bookings dashboard
 					'/brand-space/*',
 					'/collections/*',
 					'/pieces/*',

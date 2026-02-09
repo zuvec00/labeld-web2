@@ -111,7 +111,8 @@ export default function EventIdentityControls({
 			else setUploadingFavicon(true);
 
 			// Reuse the generic brand upload function as it handles user-scoped storage path
-			const url = await uploadBrandImageWeb(file, user.uid);
+			const options = type === "favicon" ? { format: "ico" } : undefined;
+			const url = await uploadBrandImageWeb(file, user.uid, options);
 
 			if (type === "logo") {
 				handleChange("logoUrl", url);

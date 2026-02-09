@@ -29,10 +29,10 @@ export async function uploadProfileImageWeb(file: File, userId: string) {
 }
 
 
-export async function uploadBrandImageWeb(file: File, uid: string) {
+export async function uploadBrandImageWeb(file: File, uid: string, options?: { format?: string }) {
   try {
     // Try Cloudinary First
-    return await uploadBrandImageCloudinary(file, uid);
+    return await uploadBrandImageCloudinary(file, uid, options);
   } catch (error) {
     console.warn("Cloudinary upload failed, falling back to Firebase Storage", error);
     // Fallback to Firebase Storage

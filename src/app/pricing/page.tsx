@@ -19,6 +19,7 @@ import Link from "next/link";
 import Topbar from "@/components/dashboard/Topbar";
 import { useRouter } from "next/navigation";
 import UpgradeConfirmModal from "@/components/pricing/UpgradeConfirmModal";
+import SubscriptionTermsModal from "@/components/pricing/SubscriptionTermsModal";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app, db } from "@/lib/firebase/firebaseConfig"; // Ensure app is initialized
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
@@ -161,6 +162,7 @@ export default function PublicPricingPage() {
 	const router = useRouter();
 	const [billing, setBilling] = React.useState<BillingCycle>("annual");
 	const [upgradeModalOpen, setUpgradeModalOpen] = React.useState(false);
+	const [termsModalOpen, setTermsModalOpen] = React.useState(false);
 	const [showStickyBanner, setShowStickyBanner] = React.useState(true);
 
 	const searchParams =
@@ -371,6 +373,11 @@ export default function PublicPricingPage() {
 				periodDisplay={selectedOption.period}
 				// @ts-ignore - Anticipating prop addition or ignoring for now
 				mode={pricingMode}
+			/>
+
+			<SubscriptionTermsModal
+				isOpen={termsModalOpen}
+				onClose={() => setTermsModalOpen(false)}
 			/>
 
 			{/* Sticky Promo Banner */}
@@ -978,8 +985,14 @@ export default function PublicPricingPage() {
 			</main>
 
 			{/* Minimal Footer */}
-			<footer className="py-12 border-t border-stroke/50 text-center text-sm text-text-muted">
+			<footer className="py-12 border-t border-stroke/50 text-center text-sm text-text-muted flex flex-col items-center gap-4">
 				<p>© {new Date().getFullYear()} Labeld. All rights reserved.</p>
+				<button
+					onClick={() => setTermsModalOpen(true)}
+					className="text-xs text-text-muted hover:text-text underline decoration-text-muted/30 underline-offset-4"
+				>
+					Subscription Terms & Paid Services
+				</button>
 			</footer>
 		</div>
 	);
