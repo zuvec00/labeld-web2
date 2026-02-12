@@ -11,6 +11,7 @@ import { useDashboardContext } from "@/hooks/useDashboardContext";
 import AcquisitionSurveyModal from "@/components/modals/AcquisitionSurveyModal";
 import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import TourOverlay from "@/components/tutorial/TourOverlay";
+import ThemeSelectionModal from "@/components/modals/ThemeSelectionModal";
 
 export default function DashboardLayout({
 	children,
@@ -75,6 +76,9 @@ export default function DashboardLayout({
 
 				{/* Tutorial Tour Overlay */}
 				<TourOverlay />
+
+				{/* Theme Selection Modal */}
+				<ThemeSelectionModal />
 			</div>
 		</TutorialProvider>
 	);

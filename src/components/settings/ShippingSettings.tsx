@@ -286,7 +286,7 @@ export default function ShippingSettings() {
 		<div className="max-w-4xl mx-auto space-y-12 pb-24">
 			{/* Header */}
 			<div className="space-y-1">
-				<h1 className="text-2xl md:text-3xl font-heading font-medium text-white tracking-tight">
+				<h1 className="text-2xl md:text-3xl font-heading font-medium text-text tracking-tight">
 					How do you deliver your orders?
 				</h1>
 				<p className="text-text-muted text-lg font-light">
@@ -296,7 +296,7 @@ export default function ShippingSettings() {
 
 			{/* Shipping Strategy */}
 			<div className="space-y-4">
-				<h2 className="text-white font-medium text-lg">Shipping Strategy</h2>
+				<h2 className="text-text font-medium text-lg">Shipping Strategy</h2>
 				<div className="grid md:grid-cols-2 gap-4">
 					{/* Card A - Flat Rate */}
 					<button
@@ -318,7 +318,7 @@ export default function ShippingSettings() {
 						<div className="p-3 bg-surface-neutral/50 w-fit rounded-xl mb-4 group-hover:bg-green-500/10 group-hover:text-green-400 transition-colors">
 							<Globe className="w-6 h-6" />
 						</div>
-						<h3 className="text-xl font-bold text-white mb-2">
+						<h3 className="text-xl font-bold text-text mb-2">
 							Flat Rate Shipping
 						</h3>
 						<p className="text-sm text-text-muted leading-relaxed">
@@ -347,7 +347,7 @@ export default function ShippingSettings() {
 						<div className="p-3 bg-surface-neutral/50 w-fit rounded-xl mb-4 group-hover:bg-green-500/10 group-hover:text-green-400 transition-colors">
 							<MapPin className="w-6 h-6" />
 						</div>
-						<h3 className="text-xl font-bold text-white mb-2">
+						<h3 className="text-xl font-bold text-text mb-2">
 							Location-based Shipping
 						</h3>
 						<p className="text-sm text-text-muted leading-relaxed">
@@ -374,7 +374,7 @@ export default function ShippingSettings() {
 								type="number"
 								value={flatFee}
 								onChange={(e) => setFlatFee(e.target.value)}
-								className="w-full bg-surface border border-stroke rounded-xl pl-10 pr-4 py-4 text-2xl font-bold text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/20"
+								className="w-full bg-surface border border-stroke rounded-xl pl-10 pr-4 py-4 text-2xl font-bold text-text focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/20"
 								placeholder="0.00"
 							/>
 						</div>
@@ -385,7 +385,7 @@ export default function ShippingSettings() {
 				) : (
 					/* Location Fees Config */
 					<div className="space-y-6">
-						<h3 className="text-lg font-medium text-white">
+						<h3 className="text-lg font-medium text-text">
 							Shipping Rates by Location
 						</h3>
 
@@ -463,7 +463,7 @@ export default function ShippingSettings() {
 													</div>
 												</div>
 												<div className="w-2 h-2 rounded-full bg-green-500/50" />
-												<span className="text-white font-medium">{state}</span>
+												<span className="text-text font-medium">{state}</span>
 											</div>
 											<div className="flex items-center gap-6">
 												<span className="font-mono text-text-muted">
@@ -492,7 +492,7 @@ export default function ShippingSettings() {
 								value={newStateName}
 								onChange={(e) => setNewStateName(e.target.value)}
 								placeholder="Location (e.g. Lagos)"
-								className="w-36 md:w-90 bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
+								className="w-36 md:w-90 bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-text focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
 							/>
 							<div className="relative flex-1">
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted/50 text-sm">
@@ -503,13 +503,13 @@ export default function ShippingSettings() {
 									value={newStateFee}
 									onChange={(e) => setNewStateFee(e.target.value)}
 									placeholder="0.00"
-									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl pl-8 pr-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
+									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl pl-8 pr-4 py-3 text-text focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
 								/>
 							</div>
 							<button
 								onClick={handleAddRate}
 								disabled={!newStateName.trim() || !newStateFee}
-								className="bg-white/5 border border-white/10 hover:bg-white/10 text-white p-3 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+								className="bg-white/5 border border-white/10 hover:bg-white/10 text-text p-3 rounded-xl transition-all disabled:opacity-30 disabled:cursor-not-allowed"
 							>
 								<Plus className="w-5 h-5" />
 							</button>
@@ -520,7 +520,7 @@ export default function ShippingSettings() {
 
 			{/* Delivery Methods Section */}
 			<div className="space-y-6">
-				<h2 className="text-white font-medium text-lg">Delivery Methods</h2>
+				<h2 className="text-text font-medium text-lg">Delivery Methods</h2>
 
 				{/* Option 1: Shipping (Visual Only Toggle) */}
 				<div className="flex items-center justify-between p-4 rounded-xl border border-stroke/30 bg-surface/20 opacity-75">
@@ -529,7 +529,7 @@ export default function ShippingSettings() {
 							<Truck className="w-5 h-5" />
 						</div>
 						<div>
-							<div className="text-white font-medium">Ship Orders</div>
+							<div className="text-text font-medium">Ship Orders</div>
 							<div className="text-xs text-text-muted">
 								Deliver to customer address
 							</div>
@@ -549,7 +549,7 @@ export default function ShippingSettings() {
 								<Store className="w-5 h-5" />
 							</div>
 							<div>
-								<div className="text-white font-medium">Local Pickup</div>
+								<div className="text-text font-medium">Local Pickup</div>
 								<div className="text-xs text-text-muted">
 									Allow customers to collect orders
 								</div>
@@ -591,7 +591,7 @@ export default function ShippingSettings() {
 									value={pickupAddress}
 									onChange={(e) => setPickupAddress(e.target.value)}
 									placeholder="123 Example Street, City, State"
-									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/30"
+									className="w-full bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-text focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/30"
 								/>
 								<p className="text-xs text-text-muted/50">
 									This address will be shown to customers who choose pickup at
@@ -619,7 +619,7 @@ export default function ShippingSettings() {
 						disabled={saving}
 						className={`
               flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105
-              bg-white text-black font-bold text-lg
+              bg-text text-bg font-bold text-lg
               hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(74,222,128,0.4)]
               disabled:opacity-50 disabled:cursor-not-allowed
             `}

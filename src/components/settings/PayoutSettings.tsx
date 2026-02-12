@@ -183,7 +183,7 @@ export default function PayoutSettings() {
 		<div className="max-w-5xl mx-auto space-y-12 pb-20">
 			{/* Header */}
 			<div className="space-y-1">
-				<h1 className="text-2xl md:text-3xl font-heading font-medium text-white tracking-tight">
+				<h1 className="text-2xl md:text-3xl font-heading font-medium text-text tracking-tight">
 					When do you want to receive your earnings?
 				</h1>
 				<p className="text-text-muted text-lg font-light">
@@ -194,7 +194,7 @@ export default function PayoutSettings() {
 			{/* Store Earnings Schedule */}
 			<div className="space-y-4">
 				<div className="flex items-center justify-between">
-					<h2 className="text-white font-medium text-lg">
+					<h2 className="text-text font-medium text-lg">
 						Store Earnings Schedule
 					</h2>
 					{/* Current Selection Pill */}
@@ -255,8 +255,8 @@ export default function PayoutSettings() {
 										{schedule === "weekly"
 											? "Standard Speed"
 											: schedule === "1day"
-											? "Fastest Option"
-											: "Expedited"}
+												? "Fastest Option"
+												: "Expedited"}
 									</div>
 								</div>
 
@@ -343,7 +343,7 @@ export default function PayoutSettings() {
 						disabled={isSaving}
 						className={`
               flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl transition-all duration-300 transform hover:scale-105
-              bg-white text-black font-bold text-lg
+              bg-text text-bg font-bold text-lg
               hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(74,222,128,0.4)]
               disabled:opacity-50 disabled:cursor-not-allowed
             `}

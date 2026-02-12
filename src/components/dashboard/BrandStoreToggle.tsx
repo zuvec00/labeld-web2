@@ -65,7 +65,7 @@ export default function BrandStoreToggle({
 		const db = getFirestore();
 		const productsQuery = query(
 			collection(db, "dropProducts"),
-			where("brandId", "==", uid)
+			where("brandId", "==", uid),
 		);
 		const snapshot = await getDocs(productsQuery);
 
@@ -108,7 +108,7 @@ export default function BrandStoreToggle({
 		try {
 			// Check if shipping rules exist
 			const shippingDoc = await getDoc(
-				doc(db, "users", uid, "shippingRules", "settings")
+				doc(db, "users", uid, "shippingRules", "settings"),
 			);
 
 			if (!shippingDoc.exists()) {
@@ -198,15 +198,15 @@ export default function BrandStoreToggle({
 				<div className="flex items-center gap-2">
 					<span className="text-sm font-medium text-text">Store Status:</span>
 					<div
-						className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+						className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
 							isOpen
-								? "bg-green-200/70 text-green-700 dark:bg-green-700/20 dark:text-green-300"
-								: "bg-[#23242C] text-gray-400 border border-stroke"
+								? "bg-green-100 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-500/20"
+								: "bg-gray-100 text-gray-500 border-gray-200 dark:bg-[#23242C] dark:text-gray-400 dark:border-stroke"
 						}`}
 					>
 						<div
 							className={`w-1.5 h-1.5 rounded-full ${
-								isOpen ? "bg-green-500" : "bg-gray-500"
+								isOpen ? "bg-green-500" : "bg-gray-400 dark:bg-gray-500"
 							}`}
 						/>
 						{isOpen ? "Open" : "Closed"}
@@ -216,18 +216,18 @@ export default function BrandStoreToggle({
 				<button
 					onClick={handleToggle}
 					disabled={updating}
-					className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ring-1 ring-stroke focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
+					className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ring-1 ring-transparent focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 ${
 						isOpen
-							? "bg-green-600/80"
-							: "bg-[#23242C] dark:bg-[#23242C] border border-stroke"
+							? "bg-green-500"
+							: "bg-gray-200 dark:bg-[#23242C] border border-gray-300 dark:border-stroke"
 					} ${updating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
 					aria-label="Toggle store open/closed"
 				>
 					<span
-						className={`inline-block h-4 w-4 transform rounded-full ${
+						className={`inline-block h-4 w-4 transform rounded-full shadow-sm ${
 							isOpen
-								? "bg-white dark:bg-bg translate-x-6"
-								: "bg-gray-200 dark:bg-[#2D2E36] translate-x-1"
+								? "bg-white translate-x-6"
+								: "bg-white dark:bg-[#2D2E36] translate-x-1"
 						} transition-transform`}
 					/>
 				</button>
@@ -252,14 +252,16 @@ export default function BrandStoreToggle({
 
 								{/* Shipping Rules Check */}
 								{!shippingRules.hasRules && (
-									<div className="bg-red-500/20 border border-red-500/30 rounded-lg p-4 mb-4">
+									<div className="bg-red-50 border border-red-200 dark:bg-red-500/20 dark:border-red-500/30 rounded-lg p-4 mb-4">
 										<div className="flex items-start gap-3">
-											<span className="text-red-400 text-lg">🚫</span>
+											<span className="text-red-500 dark:text-red-400 text-lg">
+												🚫
+											</span>
 											<div>
-												<p className="text-sm font-semibold text-red-300 mb-1">
+												<p className="text-sm font-semibold text-red-800 dark:text-red-300 mb-1">
 													Shipping Rules Required
 												</p>
-												<p className="text-sm text-red-200">
+												<p className="text-sm text-red-600 dark:text-red-200">
 													You must configure shipping rules before opening your
 													store. Go to Settings → Shipping to set up your
 													shipping fees and options.
@@ -272,28 +274,28 @@ export default function BrandStoreToggle({
 								{/* Products Check */}
 								{productStats.total > 0 ? (
 									<div className="space-y-3 mb-4">
-										<div className="bg-[#22304D]/60 dark:bg-[#23243A]/80 border border-blue-800/20 rounded-lg p-3">
-											<p className="text-sm font-semibold text-blue-200 mb-2">
+										<div className="bg-blue-50 border border-blue-200 dark:bg-[#22304D]/60 dark:border-blue-800/20 rounded-lg p-3">
+											<p className="text-sm font-semibold text-blue-900 dark:text-blue-200 mb-2">
 												📦 Product Summary
 											</p>
-											<ul className="text-sm text-blue-200 space-y-1">
+											<ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
 												<li>• Total Products: {productStats.total}</li>
 												{productStats.withoutStock > 0 && (
-													<li className="text-yellow-300">
+													<li className="text-yellow-600 dark:text-yellow-300">
 														⚠️ {productStats.withoutStock} product
 														{productStats.withoutStock > 1 ? "s" : ""} without
 														stock set
 													</li>
 												)}
 												{productStats.withoutSizes > 0 && (
-													<li className="text-yellow-300">
+													<li className="text-yellow-600 dark:text-yellow-300">
 														⚠️ {productStats.withoutSizes} product
 														{productStats.withoutSizes > 1 ? "s" : ""} without
 														sizes
 													</li>
 												)}
 												{productStats.withoutImages > 0 && (
-													<li className="text-red-300">
+													<li className="text-red-600 dark:text-red-300">
 														❌ {productStats.withoutImages} product
 														{productStats.withoutImages > 1 ? "s" : ""} without
 														images
@@ -302,8 +304,8 @@ export default function BrandStoreToggle({
 											</ul>
 										</div>
 
-										<div className="bg-[#2A213F]/50 border border-purple-800/20 rounded-lg p-3">
-											<p className="text-xs text-purple-200">
+										<div className="bg-purple-50 border border-purple-200 dark:bg-[#2A213F]/50 dark:border-purple-800/20 rounded-lg p-3">
+											<p className="text-xs text-purple-900 dark:text-purple-200">
 												💡 <strong>Tip:</strong> Products without stock will
 												show as unlimited. Products without sizes or images may
 												impact customer experience.
@@ -311,7 +313,7 @@ export default function BrandStoreToggle({
 										</div>
 									</div>
 								) : (
-									<div className="bg-[#23243A]/80 border border-stroke rounded-lg p-4 mb-4">
+									<div className="bg-gray-50 border border-gray-200 dark:bg-[#23243A]/80 dark:border-stroke rounded-lg p-4 mb-4">
 										<p className="text-sm text-text-muted">
 											You don&apos;t have any products yet. You can still open
 											your store and add products later.
@@ -319,7 +321,7 @@ export default function BrandStoreToggle({
 									</div>
 								)}
 
-								<p className="text-xs text-text-soft">
+								<p className="text-xs text-text-muted">
 									Opening your store will make it visible to customers who can
 									browse and purchase your products.
 								</p>
@@ -329,7 +331,7 @@ export default function BrandStoreToggle({
 						<div className="flex gap-3 justify-end">
 							<button
 								onClick={() => setShowPrompt(false)}
-								className="px-4 py-2 text-sm font-medium text-text-soft bg-[#262633] hover:bg-[#31313f] rounded-lg transition-colors border border-stroke"
+								className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text bg-white dark:bg-[#262633] hover:bg-gray-50 dark:hover:bg-[#31313f] rounded-lg transition-colors border border-stroke"
 							>
 								Cancel
 							</button>

@@ -543,7 +543,7 @@ export default function EditPiecePage() {
 									onClick={() => setStockMode("global")}
 									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
 										stockMode === "global"
-											? "bg-white shadow text-bg"
+											? "bg-text shadow text-bg"
 											: "text-text-muted hover:text-text"
 									}`}
 								>
@@ -554,7 +554,7 @@ export default function EditPiecePage() {
 									onClick={() => setStockMode("variants")}
 									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
 										stockMode === "variants"
-											? "bg-white shadow text-bg"
+											? "bg-text shadow text-bg"
 											: "text-text-muted hover:text-text"
 									}`}
 								>

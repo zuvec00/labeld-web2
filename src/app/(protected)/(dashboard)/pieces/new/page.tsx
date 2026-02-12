@@ -589,7 +589,7 @@ export default function NewPiecePage() {
 									onClick={() => setStockMode("global")}
 									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
 										stockMode === "global"
-											? "bg-white shadow text-bg"
+											? "bg-text shadow text-bg"
 											: "text-text-muted hover:text-text"
 									}`}
 								>
@@ -600,7 +600,7 @@ export default function NewPiecePage() {
 									onClick={() => setStockMode("variants")}
 									className={`px-3 py-1.5 text-xs md:text-sm font-medium rounded-md transition-all ${
 										stockMode === "variants"
-											? "bg-white shadow text-bg"
+											? "bg-text shadow text-bg"
 											: "text-text-muted hover:text-text"
 									}`}
 								>
@@ -880,8 +880,8 @@ export default function NewPiecePage() {
 					<Button
 						text="Cancel"
 						onClick={() => router.back()}
-						variant="secondary"
-						className="text-text-muted hover:text-text"
+						variant="outline"
+						className="text-text-muted hover:text-text border-text"
 					/>
 					<Button
 						text={saving ? "Dropping..." : "Drop Product"}
