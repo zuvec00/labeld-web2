@@ -180,6 +180,7 @@ export default function EventsIndexPage() {
 			<div className="flex items-center justify-between">
 				<h1 className="font-heading font-medium text-2xl">Events</h1>
 				<Button2
+					data-tour="create-event"
 					text="Create new event"
 					variant="primary"
 					className="font-medium"

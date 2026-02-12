@@ -136,6 +136,19 @@ export default function Sidebar({
 											href={item.href}
 											prefetch={true}
 											onClick={onItemClick}
+											data-tour={
+												item.href === "/brand-space"
+													? "brand-space-nav"
+													: item.href === "/pieces"
+														? "products-nav"
+													: item.href === "/events"
+														? "events-nav"
+														: item.href === "/orders"
+															? "orders-nav"
+															: item.href === "/wallet"
+																? "wallet-nav"
+																: undefined
+											}
 											className={[
 												"flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",
 												active

@@ -86,6 +86,7 @@ export function BrandSpaceView({ uid }: { uid: string }) {
 			{/* offset = half of 96px (mobile) / 112px (sm) logo */}
 			<div className="mt-14 sm:mt-16" />
 			<BrandHeader
+				data-tour="brand-header"
 				brandName={brand.brandName}
 				username={brand.username}
 				bio={brand.bio}

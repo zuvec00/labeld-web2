@@ -39,7 +39,10 @@ export default function BalanceHeader({ summary }: BalanceHeaderProps) {
 			</div>
 
 			{/* Balance Cards */}
-			<div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+			<div
+				className="grid grid-cols-1 md:grid-cols-3 gap-6"
+				data-tour="balance-cards"
+			>
 				{/* Eligible Balance */}
 				<div className="rounded-[20px] bg-surface border border-stroke p-6 hover:border-accent/30 transition-colors group">
 					<div className="flex items-center justify-between mb-3">

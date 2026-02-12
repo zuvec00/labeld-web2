@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useWallet } from "./useWallet";
 import { useBrandSpace } from "./useBrandSpace";
 import { useDashboardContext } from "./useDashboardContext";
@@ -37,31 +38,18 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 		range: "today", // range doesn't matter for total pieces count usually, but strict typing requires it
 	});
 
-	const [shippingConfigured, setShippingConfigured] = useState(false);
-	const [shippingLoading, setShippingLoading] = useState(true);
-
-	// Fetch shipping settings
-	useEffect(() => {
-		if (!user?.uid) {
-			setShippingLoading(false);
-			return;
-		}
-
-		async function checkShipping() {
-			try {
-				const settingsRef = doc(db, "users", user!.uid, "shippingRules", "settings");
-				const snap = await getDoc(settingsRef);
-				// Consider configured if doc exists and mode is set (defaults are usually set on creation, but let's check existence)
-				setShippingConfigured(snap.exists());
-			} catch (e) {
-				console.error("Failed to check shipping settings", e);
-			} finally {
-				setShippingLoading(false);
-			}
-		}
-
-		checkShipping();
-	}, [user?.uid]);
+	// Fetch shipping settings with cache
+	const { data: shippingConfigured, isLoading: shippingLoading } = useQuery({
+		queryKey: ["shippingSettings", user?.uid],
+		queryFn: async () => {
+			if (!user?.uid) return false;
+			const settingsRef = doc(db, "users", user.uid, "shippingRules", "settings");
+			const snap = await getDoc(settingsRef);
+			return snap.exists();
+		},
+		enabled: !!user?.uid,
+		staleTime: 1000 * 60 * 5, // 5 minutes cache
+	});
 
 	if (!user) {
 		return {
@@ -112,7 +100,7 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 			id: "shipping",
 			title: "Add shipping prices on your website",
 			description: "Add shipping prices on your website for your customers to checkout",
-			isComplete: isShippingComplete,
+			isComplete: !!shippingConfigured,
 			cta: "Configure Shipping",
 			href: "/settings?section=shipping", // Updated route
 		},

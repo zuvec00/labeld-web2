@@ -23,6 +23,7 @@ import { EventSection, EventOrganizerIdentity } from "@/lib/models/eventSite";
 import EventSectionControls from "@/components/events/site-customization/EventSectionControls";
 import EventIdentityControls from "@/components/events/site-customization/EventIdentityControls";
 import EventSectionInspector from "@/components/events/site-customization/EventSectionInspector";
+import EventOnboardingChecklist from "@/components/onboarding/EventOnboardingChecklist";
 
 // Mock templates for the UI
 const MOCK_TEMPLATES = [
@@ -418,7 +419,7 @@ export default function EventSiteCustomizationPage() {
 						/>
 					)}
 				</div>
-
+				<EventOnboardingChecklist />
 				{/* SECTION 1: Experience Website Status */}
 				<section className="bg-surface border border-stroke rounded-xl p-5 md:p-6 lg:p-8 relative overflow-hidden">
 					<div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none">
@@ -488,7 +489,6 @@ export default function EventSiteCustomizationPage() {
 						</div>
 					</div>
 				</section>
-
 				{/* SECTION 2: Templates Gallery */}
 				<section>
 					<div className="mb-6">
@@ -653,7 +653,6 @@ export default function EventSiteCustomizationPage() {
 						})}
 					</div>
 				</section>
-
 				{/* SECTION 3: Capabilities */}
 				<section className="bg-bg-subtle/30 rounded-xl p-6 md:p-8 border border-stroke border-dashed">
 					<h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted mb-6">

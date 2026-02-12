@@ -18,7 +18,10 @@ export default function SnapshotStrip({
 	className,
 }: SnapshotStripProps) {
 	return (
-		<div className={cn("grid grid-cols-2 sm:grid-cols-4 gap-4", className)}>
+		<div
+			className={cn("grid grid-cols-2 sm:grid-cols-4 gap-4", className)}
+			data-tour="orders-snapshot"
+		>
 			{items.map((item, index) => (
 				<button
 					key={index}
@@ -29,7 +32,7 @@ export default function SnapshotStrip({
 						item.active
 							? "bg-surface border-stroke shadow-sm"
 							: "bg-surface border-transparent hover:border-stroke/50",
-						!item.onClick && "cursor-default hover:border-transparent"
+						!item.onClick && "cursor-default hover:border-transparent",
 					)}
 				>
 					<span className="text-xs font-medium text-text-muted uppercase tracking-wide">

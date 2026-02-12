@@ -19,6 +19,7 @@ import DashboardContextSwitch from "@/components/dashboard/DashboardContextSwitc
 import EventTimelineControls from "@/components/dashboard/EventTimelineControls";
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
+import EventOnboardingChecklist from "@/components/onboarding/EventOnboardingChecklist";
 import AdvancedHealth from "@/components/pro/AdvancedHealth";
 import { X, Lightbulb } from "lucide-react";
 
@@ -221,8 +222,9 @@ export default function DashboardPage() {
 						</div>
 					)}
 				</div>
-				{/* Onboarding Checklist (Only for Brand) */}
+				{/* Onboarding Checklist (Role-appropriate) */}
 				{activeRole === "brand" && <OnboardingChecklist />}
+				{activeRole === "eventOrganizer" && <EventOnboardingChecklist />}
 
 				{/* Upgrade CTA for Free Plan */}
 				{activeRole === "brand" &&

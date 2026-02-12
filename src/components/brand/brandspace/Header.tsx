@@ -31,6 +31,7 @@ export default function BrandHeader({
 	productCount = 0,
 	lastDropDate,
 	subscriptionTier,
+	...props
 }: {
 	brandName: string;
 	username: string;
@@ -44,7 +45,7 @@ export default function BrandHeader({
 	productCount?: number;
 	lastDropDate?: Date | null;
 	subscriptionTier?: "free" | "pro";
-}) {
+} & React.HTMLAttributes<HTMLDivElement>) {
 	const heatInt = Math.max(0, Math.floor(Number.isFinite(heat) ? heat : 0));
 	const color = getHeatColor(80);
 	const router = useRouter();
@@ -101,7 +102,7 @@ export default function BrandHeader({
 		: "";
 
 	return (
-		<div className="px-4 sm:px-6">
+		<div className="px-4 sm:px-6" {...props}>
 			<div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center gap-2">

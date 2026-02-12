@@ -14,6 +14,7 @@ import MaintenanceModal from "@/components/modals/MaintenanceModal";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
+import HelpMenu from "@/components/dashboard/HelpMenu";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -206,6 +207,9 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 
 					{/* Theme Toggle - visible on all screen sizes */}
 					<ThemeToggle />
+
+					{/* Help Menu */}
+					<HelpMenu />
 
 					{/* View Store Button (Brand Only) */}
 					{activeRole === "brand" && (

@@ -21,6 +21,7 @@ import SectionInspector from "@/components/brand/site-customization/SectionInspe
 import Button from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useRouter } from "next/navigation";
+import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 
 export default function SiteCustomizationPage() {
 	const router = useRouter();
@@ -269,7 +270,7 @@ export default function SiteCustomizationPage() {
 					</button>
 				</div>
 			</div>
-
+			<OnboardingChecklist />
 			{/* Content Area */}
 			{activeTab === "design" ? (
 				// Existing Design/Templates Flow
@@ -495,7 +496,6 @@ export default function SiteCustomizationPage() {
 					initialIdentity={brandIdentity}
 				/>
 			)}
-
 			{/* Upgrade Modal */}
 			<UpgradeModal
 				isOpen={isUpgradeModalOpen}

@@ -1,59 +1,41 @@
 "use client";
 
-import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
+import { useEventOnboardingStatus } from "@/hooks/useEventOnboardingStatus";
+import { useTutorial } from "@/hooks/useTutorial";
 import {
 	Circle,
-	Store,
 	CreditCard,
-	Truck,
-	Shirt,
+	Ticket,
+	Calendar,
 	ArrowRight,
 	Play,
-} from "lucide-react"; // Icons for steps
+} from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useTutorial } from "@/hooks/useTutorial";
 
-export default function OnboardingChecklist() {
-	const { steps, percentage, isComplete, loading } = useBrandOnboardingStatus();
+export default function EventOnboardingChecklist() {
+	const { steps, percentage, isComplete, loading } = useEventOnboardingStatus();
 	const { startTour } = useTutorial();
 	const router = useRouter();
 
 	if (loading) {
-		return (
-			<div></div>
-			// <div className="rounded-2xl border border-stroke bg-bg overflow-hidden transition-all animate-pulse">
-			// 	<div className="p-5">
-			// 		<div className="flex items-start justify-between gap-4">
-			// 			<div className="flex-1 space-y-2">
-			// 				<div className="h-5 w-48 bg-stroke rounded-md"></div>
-			// 				<div className="h-4 w-64 bg-stroke/60 rounded-md"></div>
-			// 			</div>
-			// 			<div className="h-8 w-8 bg-stroke rounded-md"></div>
-			// 		</div>
-			// 		<div className="mt-5 h-1.5 w-full bg-stroke rounded-full"></div>
-			// 		<div className="mt-6">
-			// 			<div className="h-10 w-32 bg-stroke rounded-xl"></div>
-			// 		</div>
-			// 	</div>
-			// </div>
-		);
+		return <div></div>;
 	}
 	if (isComplete) return null; // Hide when done
 
 	// Icons map
 	const icons = {
 		bank: CreditCard,
-		profile: Store,
-		shipping: Truck,
-		product: Shirt,
+		profile: Calendar,
+		event: Calendar,
+		tickets: Ticket,
 	};
 
 	// Time estimates map
 	const timeEstimates = {
 		bank: "2 min",
 		profile: "2 min",
-		shipping: "5 min",
-		product: "3 min",
+		event: "5 min",
+		tickets: "3 min",
 	};
 
 	// Filter for incomplete steps only
@@ -69,7 +51,7 @@ export default function OnboardingChecklist() {
 					<div className="flex items-start justify-between">
 						<div>
 							<h2 className="font-heading font-medium text-base">
-								Finished setting up your account
+								Finish setting up your account
 							</h2>
 							<div className="flex items-center gap-3 mt-2">
 								<span className="text-sm text-text">{percentage}%</span>
@@ -84,11 +66,11 @@ export default function OnboardingChecklist() {
 								<span className="text-cta">
 									{completedCount} of {totalSteps}
 								</span>{" "}
-								{/* tasks completed */}
+								tasks completed
 							</p>
 						</div>
 						<button
-							onClick={() => startTour("brand-setup")}
+							onClick={() => startTour("event-setup")}
 							className="text-xs font-medium text-cta hover:text-cta/80 transition-colors flex items-center gap-1.5 bg-cta/10 px-3 py-1.5 rounded-lg"
 						>
 							<Play className="w-3.5 h-3.5 fill-current" />
@@ -135,9 +117,14 @@ export default function OnboardingChecklist() {
 									<div className="mt-4 flex justify-end">
 										<button
 											onClick={() => router.push(step.href)}
-											className="flex items-center gap-1.5 text-xs font-medium text-text hover:text-cta transition-colors"
+											className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
+												step.cta.includes("First")
+													? "text-text-muted cursor-not-allowed"
+													: "text-text hover:text-cta"
+											}`}
+											disabled={step.cta.includes("First")}
 										>
-											{step.actionType === "modal" ? "Open" : "Start"}
+											{step.actionType === "modal" ? "Open" : step.cta}
 											<ArrowRight className="w-3.5 h-3.5" />
 										</button>
 									</div>

@@ -62,7 +62,7 @@ export default function OnboardingFlow() {
 				console.error("Failed to update user preference", e);
 			}
 		}
-		router.push("/dashboard");
+		router.push("/dashboard?tour=brand-setup");
 	};
 
 	const handlePreAuthComplete = () => {
@@ -198,7 +198,7 @@ export default function OnboardingFlow() {
 	};
 
 	const handleFinalLaunch = async () => {
-		router.push("/dashboard");
+		router.push("/dashboard?tour=brand-setup");
 	};
 
 	// Progress "Momentum" Bar

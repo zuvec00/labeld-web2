@@ -207,7 +207,7 @@ export default function EventOnboardingFlow() {
 	};
 
 	const handleFinalLaunch = async () => {
-		router.push("/events"); // Redirect to events dashboard
+		router.push("/dashboard?tour=event-setup"); // Redirect to events dashboard
 	};
 
 	const progress = {

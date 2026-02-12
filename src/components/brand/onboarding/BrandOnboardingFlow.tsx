@@ -414,9 +414,9 @@ export default function BrandOnboardingFlow({
 
 			if (isModal && onClose) {
 				onClose();
-				router.push("/dashboard");
+				router.push("/dashboard?tour=brand-setup");
 			} else {
-				router.push("/dashboard");
+				router.push("/dashboard?tour=brand-setup");
 			}
 		} catch (e) {
 			console.error(e);

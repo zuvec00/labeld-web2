@@ -116,12 +116,18 @@ export default function BrandspacePage() {
 				<div className="max-w-md text-center">
 					<h1 className="font-heading font-semibold text-2xl">{copy.title}</h1>
 					<p className="text-text-muted mt-2">{copy.subtitle}</p>
-					<Button
-						text={copy.cta}
-						className="mt-5"
-						variant="primary"
-						onClick={() => router.push(copy.href)}
-					/>
+					<div className="mt-5 flex flex-col gap-2">
+						<Button
+							text={copy.cta}
+							variant="primary"
+							onClick={() => router.push(copy.href)}
+						/>
+						<Button
+							text="Start guided tour"
+							variant="outline"
+							onClick={() => router.push("/dashboard?tour=brand-setup")}
+						/>
+					</div>
 				</div>
 			</div>
 		);

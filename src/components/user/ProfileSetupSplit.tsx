@@ -27,7 +27,7 @@ export default function ProfileSetupSplit() {
 	});
 	const [loading, setLoading] = useState(false);
 	const [usernameError, setUsernameError] = useState<string | undefined>(
-		undefined
+		undefined,
 	);
 
 	const isValidUsername = useMemo(() => {
@@ -53,7 +53,7 @@ export default function ProfileSetupSplit() {
 		const { ok, normalized } = validateUsername(data.username);
 		if (!ok) {
 			setUsernameError(
-				"Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars."
+				"Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars.",
 			);
 			return;
 		}
@@ -74,25 +74,25 @@ export default function ProfileSetupSplit() {
 					// Primary: Upload to Cloudinary (optimized for images)
 					profileImageUrl = await uploadProfileImageCloudinary(
 						data.profileFile,
-						user.uid
+						user.uid,
 					);
 					console.log(
 						"✅ Profile image uploaded to Cloudinary:",
-						profileImageUrl
+						profileImageUrl,
 					);
 				} catch (cloudinaryError) {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					profileImageUrl = await uploadProfileImageWeb(
 						data.profileFile,
-						user.uid
+						user.uid,
 					);
 					console.log(
 						"✅ Profile image uploaded to Firebase Storage:",
-						profileImageUrl
+						profileImageUrl,
 					);
 				}
 			}
@@ -139,7 +139,7 @@ export default function ProfileSetupSplit() {
 		const { ok, normalized } = validateUsername(data.username);
 		if (!ok) {
 			setUsernameError(
-				"Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars."
+				"Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars.",
 			);
 			return;
 		}
@@ -160,25 +160,25 @@ export default function ProfileSetupSplit() {
 					// Primary: Upload to Cloudinary (optimized for images)
 					profileImageUrl = await uploadProfileImageCloudinary(
 						data.profileFile,
-						user.uid
+						user.uid,
 					);
 					console.log(
 						"✅ Profile image uploaded to Cloudinary:",
-						profileImageUrl
+						profileImageUrl,
 					);
 				} catch (cloudinaryError) {
 					// Fallback: Upload to Firebase Storage
 					console.warn(
 						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError
+						cloudinaryError,
 					);
 					profileImageUrl = await uploadProfileImageWeb(
 						data.profileFile,
-						user.uid
+						user.uid,
 					);
 					console.log(
 						"✅ Profile image uploaded to Firebase Storage:",
-						profileImageUrl
+						profileImageUrl,
 					);
 				}
 			}
@@ -195,7 +195,7 @@ export default function ProfileSetupSplit() {
 			});
 
 			// 6) navigate to events for both brand and non-brand
-			router.push("/events");
+			router.push("/events?tour=event-setup");
 		} catch (e) {
 			console.error(e);
 			alert(e || "Something went wrong saving your profile.");
