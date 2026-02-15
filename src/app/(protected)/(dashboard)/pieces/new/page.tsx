@@ -1,8 +1,6 @@
-/* /app/brand/piece/new/page.tsx */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
@@ -11,11 +9,15 @@ import { formatWithCommasDouble } from "@/lib/format";
 
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
-import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import {
+	uploadImageCloudinary,
+	uploadFileDirectCloudinary,
+} from "@/lib/storage/cloudinary";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { sendNotificationCF } from "@/lib/firebase/callables/users";
 import { addDropProductCF } from "@/lib/firebase/queries/product";
 import RadarPromotionPopup from "@/components/radar/RadarPromotionPopup";
+import { useUploadStore } from "@/lib/stores/upload";
 
 /* ----------------------------- Currency list ---------------------------- */
 const currencyList: Array<{
@@ -74,10 +76,24 @@ function serializeBrandSnapshot(b: any) {
 	return out;
 }
 
+type UploadState = {
+	file: File;
+	previewUrl: string;
+	uploadId?: string;
+	uploadedUrl?: string; // Set when complete
+	status: "pending" | "uploading" | "completed" | "error";
+	error?: string;
+};
+
 /* ---------------------------------- Page --------------------------------- */
 export default function NewPiecePage() {
 	const router = useRouter();
 	const auth = getAuth();
+	// We need a ref to access the *current* state inside callbacks if needed,
+	// but mostly we rely on the component re-rendering.
+	// We use the global store ID to track status.
+
+	const { addUpload, updateUpload, removeUpload } = useUploadStore();
 
 	const [bootLoading, setBootLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -94,6 +110,7 @@ export default function NewPiecePage() {
 	const [collectionId, setCollectionId] = useState<string>("");
 	const [pieceName, setPieceName] = useState("");
 	const [price, setPrice] = useState("");
+	const [costPrice, setCostPrice] = useState("");
 	const [selectedCurrency, setSelectedCurrency] = useState<{
 		flag: string;
 		abbreviation: string;
@@ -102,9 +119,118 @@ export default function NewPiecePage() {
 	const [launchDate, setLaunchDate] = useState<Date | null>(null);
 	const [availableNow, setAvailableNow] = useState(false);
 
-	const [mainFile, setMainFile] = useState<File | null>(null);
-	const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-	const [sizeGuideFile, setSizeGuideFile] = useState<File | null>(null);
+	// Updated state for background uploads
+	const [mainImage, setMainImage] = useState<UploadState | null>(null);
+	const [galleryImages, setGalleryImages] = useState<UploadState[]>([]);
+	const [sizeGuideImage, setSizeGuideImage] = useState<UploadState | null>(
+		null,
+	);
+
+	// Helper to start upload immediately
+	const startBackgroundUpload = async (
+		file: File,
+		type: "main" | "gallery" | "size-guide",
+	): Promise<UploadState> => {
+		const previewUrl = URL.createObjectURL(file);
+		const uid = auth.currentUser?.uid || "anonymous";
+
+		// Create store entry
+		const uploadId = addUpload({
+			type: "image",
+			fileName: file.name, // or maybe truncate for UI
+			progress: 0,
+			status: "uploading",
+		});
+
+		// Initial state
+		const initialState: UploadState = {
+			file,
+			previewUrl,
+			uploadId,
+			status: "uploading",
+		};
+
+		// Start async upload
+		(async () => {
+			try {
+				// Use direct upload for progress
+				// Construct folder/tags based on type
+				const folder = `productImages/${uid}`;
+				const tags = ["product", type, uid];
+
+				const url = await uploadFileDirectCloudinary(
+					file,
+					{
+						folder,
+						tags,
+						resourceType: "image",
+					},
+					(progress) => {
+						updateUpload(uploadId, { progress: Math.round(progress) });
+					},
+				);
+
+				// Success
+				updateUpload(uploadId, { status: "completed", progress: 100 });
+				// Update local state to reflect success
+				if (type === "main") {
+					setMainImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "completed", uploadedUrl: url }
+							: prev,
+					);
+				} else if (type === "gallery") {
+					setGalleryImages((prev) =>
+						prev.map((img) =>
+							img.uploadId === uploadId
+								? { ...img, status: "completed", uploadedUrl: url }
+								: img,
+						),
+					);
+				} else if (type === "size-guide") {
+					setSizeGuideImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "completed", uploadedUrl: url }
+							: prev,
+					);
+				}
+
+				// Auto-dismiss toast
+				setTimeout(() => removeUpload(uploadId), 3000);
+			} catch (error: any) {
+				console.error("Background upload failed:", error);
+				updateUpload(uploadId, {
+					status: "error",
+					error: error.message || "Upload failed",
+				});
+				// Update local state to error
+				const errMsg = error.message || "Upload failed";
+				if (type === "main") {
+					setMainImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "error", error: errMsg }
+							: prev,
+					);
+				} else if (type === "gallery") {
+					setGalleryImages((prev) =>
+						prev.map((img) =>
+							img.uploadId === uploadId
+								? { ...img, status: "error", error: errMsg }
+								: img,
+						),
+					);
+				} else if (type === "size-guide") {
+					setSizeGuideImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "error", error: errMsg }
+							: prev,
+					);
+				}
+			}
+		})();
+
+		return initialState;
+	};
 
 	const [description, setDescription] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
@@ -172,16 +298,6 @@ export default function NewPiecePage() {
 		};
 	}, [auth.currentUser, router]);
 
-	/* ------------------------------- derived ------------------------------- */
-	const parsedPrice = Number.isFinite(Number(price)) ? Number(price) : NaN;
-
-	const isDisabled =
-		!pieceName.trim() ||
-		!mainFile ||
-		Number.isNaN(parsedPrice) ||
-		!selectedCurrency ||
-		!(availableNow ? true : !!launchDate);
-
 	// auto-fill IG link toggle
 	// useEffect(() => {
 	// 	if (!brandIG) return;
@@ -193,110 +309,74 @@ export default function NewPiecePage() {
 	// 	}
 	// }, [useInstagramLink, brandIG]);
 
+	/* ------------------------------- derived ------------------------------- */
+	const parsedPrice = Number.isFinite(Number(price)) ? Number(price) : NaN;
+
+	const isDisabled =
+		!pieceName.trim() ||
+		!mainImage ||
+		Number.isNaN(parsedPrice) ||
+		!selectedCurrency ||
+		!(availableNow ? true : !!launchDate);
+
 	/* -------------------------------- actions ------------------------------- */
 	async function onCreate() {
 		if (isDisabled) return;
 		setSaving(true);
 		setErr(null);
+
 		try {
 			const uid = auth.currentUser?.uid;
 			if (!uid) {
 				router.push("/");
 				return;
 			}
-			// 1) upload main
-			let mainVisualUrl: string;
-			try {
-				// Primary: Upload to Cloudinary
-				mainVisualUrl = await uploadImageCloudinary(mainFile!, {
-					folder: `productImages/${uid}`,
-					tags: ["product", "main", uid],
-				});
-				console.log(
-					"✅ Main product image uploaded to Cloudinary:",
-					mainVisualUrl,
-				);
-			} catch (cloudinaryError) {
-				// Fallback: Upload to Firebase Storage
-				console.warn(
-					"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-					cloudinaryError,
-				);
-				mainVisualUrl = await uploadFileGetURL(
-					mainFile!,
-					`productImages/${uid}/${Date.now()}-${mainFile!.name}`,
-				);
-				console.log(
-					"✅ Main product image uploaded to Firebase Storage:",
-					mainVisualUrl,
-				);
+
+			// 1) Verify Main Image (Wait if uploading)
+			let mainVisualUrl = mainImage?.uploadedUrl;
+			if (!mainVisualUrl) {
+				if (mainImage?.status === "uploading") {
+					// Wait loop? Or just block? In a real app we might want to poll or wait for state update.
+					// For simplicity, we can just error out or show a specific message.
+					// Better: wait for a few seconds.
+					setErr("Main image is still uploading. Please wait...");
+					setSaving(false);
+					return;
+				}
+				if (mainImage?.status === "error") {
+					setErr("Main image failed to upload. Please retry.");
+					setSaving(false);
+					return;
+				}
+				setErr("Main image is required.");
+				setSaving(false);
+				return;
 			}
 
-			// 2) upload gallery (optional, cap 4)
-			let galleryImageUrls: string[] | undefined;
-			if (galleryFiles.length) {
-				const take = galleryFiles.slice(0, 4);
-				galleryImageUrls = [];
-
-				for (const f of take) {
-					try {
-						// Primary: Upload to Cloudinary
-						const url = await uploadImageCloudinary(f, {
-							folder: `productImages/${uid}`,
-							tags: ["product", "gallery", uid],
-						});
-						galleryImageUrls.push(url);
-						console.log(
-							"✅ Gallery product image uploaded to Cloudinary:",
-							url,
-						);
-					} catch (cloudinaryError) {
-						// Fallback: Upload to Firebase Storage
-						console.warn(
-							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
-							cloudinaryError,
-						);
-						const url = await uploadFileGetURL(
-							f,
-							`productImages/${uid}/${Date.now()}-${f.name}`,
-						);
-						galleryImageUrls.push(url);
-						console.log(
-							"✅ Gallery product image uploaded to Firebase Storage:",
-							url,
-						);
-					}
-				}
+			// 2) Verify Gallery (Wait if uploading)
+			// Filter out failed ones or just wait?
+			// Let's filter to only completed ones for now.
+			const galleryImageUrls: string[] = [];
+			const pendingGallery = galleryImages.some(
+				(img) => img.status === "uploading",
+			);
+			if (pendingGallery) {
+				setErr("Gallery images are still uploading. Please wait...");
+				setSaving(false);
+				return;
 			}
-
-			// 3) upload size guide (optional)
-			let sizeGuideUrl: string | undefined;
-			if (sizeGuideFile) {
-				try {
-					// Primary: Upload to Cloudinary
-					sizeGuideUrl = await uploadImageCloudinary(sizeGuideFile, {
-						folder: `productImages/${uid}`,
-						tags: ["product", "size-guide", uid],
-					});
-					console.log(
-						"✅ Size guide image uploaded to Cloudinary:",
-						sizeGuideUrl,
-					);
-				} catch (cloudinaryError) {
-					// Fallback: Upload to Firebase Storage
-					console.warn(
-						"⚠️ Cloudinary upload failed for size guide, falling back to Firebase Storage:",
-						cloudinaryError,
-					);
-					sizeGuideUrl = await uploadFileGetURL(
-						sizeGuideFile,
-						`productImages/${uid}/${Date.now()}-${sizeGuideFile.name}`,
-					);
-					console.log(
-						"✅ Size guide image uploaded to Firebase Storage:",
-						sizeGuideUrl,
-					);
+			galleryImages.forEach((img) => {
+				if (img.status === "completed" && img.uploadedUrl) {
+					galleryImageUrls.push(img.uploadedUrl);
 				}
+			});
+
+			// 3) Verify Size Guide (Wait if uploading)
+			let sizeGuideUrl: string | undefined = sizeGuideImage?.uploadedUrl;
+			if (sizeGuideImage?.status === "uploading") {
+				setErr("Size guide is still uploading. Please wait...");
+				setSaving(false);
+				return;
 			}
 
 			// 4) launch date
@@ -337,7 +417,7 @@ export default function NewPiecePage() {
 							)
 						: null,
 				mainVisualUrl,
-				galleryImages: galleryImageUrls,
+				galleryImages: galleryImageUrls.length ? galleryImageUrls : undefined,
 				sizeGuideUrl: sizeGuideUrl || null,
 				description: description.trim() ? description.trim() : null,
 				styleTags: tags.length ? tags : null,
@@ -351,6 +431,9 @@ export default function NewPiecePage() {
 				feeSettings: {
 					absorbTransactionFee: absorbTransactionFee,
 				},
+				costPrice: Number.isFinite(Number(costPrice))
+					? Number(costPrice)
+					: null,
 				// ⭐ denormalized brand snapshot
 				brand: brandSnap ?? undefined,
 			};
@@ -483,6 +566,33 @@ export default function NewPiecePage() {
 								</div>
 							)}
 						</div>
+					</div>
+
+					{/* Cost Price (Internal) */}
+					<div className="mt-4 pt-4 border-t border-stroke/40">
+						<Label text="Cost Price (Internal)" />
+						<Input
+							type="number"
+							value={costPrice}
+							onChange={setCostPrice}
+							placeholder="Enter amount"
+						/>
+						{costPrice &&
+							!Number.isNaN(
+								Number.isFinite(Number(costPrice)) ? Number(costPrice) : NaN,
+							) && (
+								<div className="text-text-muted text-sm mt-1">
+									{selectedCurrency?.abbreviation
+										? `${selectedCurrency.abbreviation} `
+										: ""}
+									{formatWithCommasDouble(
+										Number.isFinite(Number(costPrice))
+											? Number(costPrice)
+											: NaN,
+									)}
+								</div>
+							)}
+						<Hint text="Used for internal profit calculation. Not visible to customers." />
 					</div>
 
 					<div className="mt-4">
@@ -791,17 +901,54 @@ export default function NewPiecePage() {
 				{/* 5. Visuals */}
 				<Group>
 					<Label text="Main Product Visual" required />
-					<SingleImagePicker file={mainFile} onPick={setMainFile} />
+					<SingleImagePicker
+						file={mainImage?.file ?? null}
+						previewUrl={mainImage?.previewUrl}
+						isUploading={mainImage?.status === "uploading"}
+						isError={mainImage?.status === "error"}
+						onPick={async (f) => {
+							if (f) {
+								setMainImage(await startBackgroundUpload(f, "main"));
+							} else {
+								setMainImage(null);
+							}
+						}}
+					/>
 					<Hint text="This is the first image people see" />
 
 					<div className="mt-6">
 						<Label text="Gallery Shots" />
-						<MultiImagePicker files={galleryFiles} onPick={setGalleryFiles} />
+						<MultiImagePicker
+							images={galleryImages}
+							onAddFiles={async (addedFiles) => {
+								const newStates = await Promise.all(
+									addedFiles.map((f) => startBackgroundUpload(f, "gallery")),
+								);
+								setGalleryImages((prev) => [...prev, ...newStates]);
+							}}
+							onRemove={(index) => {
+								setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+							}}
+						/>
 						<Hint text="Extra angles or details (up to 4)" />
 					</div>
 					<div className="mt-6">
 						<Label text="Size Guide" />
-						<SingleImagePicker file={sizeGuideFile} onPick={setSizeGuideFile} />
+						<SingleImagePicker
+							file={sizeGuideImage?.file ?? null}
+							previewUrl={sizeGuideImage?.previewUrl}
+							isUploading={sizeGuideImage?.status === "uploading"}
+							isError={sizeGuideImage?.status === "error"}
+							onPick={async (f) => {
+								if (f) {
+									setSizeGuideImage(
+										await startBackgroundUpload(f, "size-guide"),
+									);
+								} else {
+									setSizeGuideImage(null);
+								}
+							}}
+						/>
 						<Hint text="Upload a size guide image to help customers choose the right size" />
 					</div>
 				</Group>
@@ -1174,29 +1321,50 @@ function DateTimePicker({
 }
 function SingleImagePicker({
 	file,
+	previewUrl,
+	isUploading,
+	isError,
 	onPick,
 }: {
 	file: File | null;
+	previewUrl?: string; // Add previewUrl prop
+	isUploading?: boolean;
+	isError?: boolean;
 	onPick: (f: File | null) => void;
 }) {
 	return (
 		<div className="w-full max-w-xs">
 			<label
-				className="block w-full relative cursor-pointer rounded-xl border-2 border-dashed border-stroke hover:border-text transition-colors overflow-hidden group bg-surface hover:bg-surface/80"
+				className={`block w-full relative cursor-pointer rounded-xl border-2 border-dashed transition-colors overflow-hidden group bg-surface hover:bg-surface/80 ${
+					isError
+						? "border-alert"
+						: isUploading
+							? "border-accent"
+							: "border-stroke hover:border-text"
+				}`}
 				style={{ aspectRatio: "1/1" }}
 			>
 				{file ? (
 					<>
 						<img
-							src={URL.createObjectURL(file)}
+							src={previewUrl || URL.createObjectURL(file)}
 							alt=""
-							className="w-full h-full object-cover"
+							className={`w-full h-full object-cover ${
+								isUploading ? "opacity-50" : ""
+							}`}
 						/>
-						<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-							<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-								Change Image
-							</span>
-						</div>
+						{isUploading && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<Spinner size="md" />
+							</div>
+						)}
+						{!isUploading && (
+							<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+								<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+									Change Image
+								</span>
+							</div>
+						)}
 					</>
 				) : (
 					<div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
@@ -1223,6 +1391,7 @@ function SingleImagePicker({
 					accept="image/*"
 					className="sr-only"
 					onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+					disabled={isUploading}
 				/>
 			</label>
 		</div>
@@ -1230,40 +1399,62 @@ function SingleImagePicker({
 }
 
 function MultiImagePicker({
-	files,
-	onPick,
+	images,
+	onAddFiles,
+	onRemove,
 }: {
-	files: File[];
-	onPick: (next: File[]) => void;
+	images: UploadState[]; // Updated to use UploadState
+	onAddFiles: (files: File[]) => void;
+	onRemove: (index: number) => void;
 }) {
 	const MAX = 4;
-	const total = files.length;
+	const total = images.length;
 	const slotsLeft = Math.max(0, MAX - total);
 
 	function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
 		const picked = Array.from(e.target.files ?? []);
 		if (!picked.length) return;
 		const take = picked.slice(0, slotsLeft);
-		onPick([...files, ...take]);
+		onAddFiles(take);
 		e.currentTarget.value = "";
 	}
 
 	return (
 		<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
 			{/* Existing Images */}
-			{files.map((f, i) => {
-				const url = URL.createObjectURL(f);
+			{images.map((img, i) => {
+				const isUploading = img.status === "uploading";
+				const isError = img.status === "error";
+
 				return (
 					<div
-						key={`${f.name}-${i}`}
-						className="relative rounded-xl border border-stroke overflow-hidden group"
+						key={`${img.file.name}-${i}`}
+						className={`relative rounded-xl border overflow-hidden group ${
+							isError
+								? "border-alert"
+								: isUploading
+									? "border-accent"
+									: "border-stroke"
+						}`}
 						style={{ aspectRatio: "1/1" }}
 					>
-						<img src={url} alt="" className="w-full h-full object-cover" />
+						<img
+							src={img.previewUrl}
+							alt=""
+							className={`w-full h-full object-cover ${
+								isUploading ? "opacity-50" : ""
+							}`}
+						/>
+						{isUploading && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<Spinner size="sm" />
+							</div>
+						)}
 						<button
 							type="button"
 							className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
-							onClick={() => onPick(files.filter((_, idx) => idx !== i))}
+							onClick={() => onRemove(i)}
+							title="Remove"
 						>
 							<span className="sr-only">Remove</span>
 							<svg

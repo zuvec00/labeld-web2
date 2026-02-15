@@ -117,23 +117,23 @@ export default function PayoutSettings() {
 	const getFeePercent = (schedule: PayoutScheduleType): number => {
 		const configs = {
 			weekly: 0,
-			"5days": 1,
-			"3days": 2.5,
-			"2days": 4,
-			"1day": 8,
+			"5days": 0.5, // Not used in UI but kept for safety
+			"3days": 0.5,
+			"2days": 1, // Not used in UI but kept for safety
+			"1day": 1,
 		};
-		return configs[schedule];
+		return configs[schedule] ?? 0;
 	};
 
 	const getFeeCap = (schedule: PayoutScheduleType): number => {
 		const configs = {
 			weekly: 0,
-			"5days": 250000,
-			"3days": 400000,
-			"2days": 500000,
-			"1day": 500000,
+			"5days": 100000,
+			"3days": 100000,
+			"2days": 300000,
+			"1day": 300000,
 		};
-		return configs[schedule];
+		return configs[schedule] ?? 0;
 	};
 
 	const getTimelineDays = (schedule: PayoutScheduleType): number => {
@@ -144,18 +144,18 @@ export default function PayoutSettings() {
 			"2days": 2,
 			"1day": 1,
 		};
-		return configs[schedule];
+		return configs[schedule] ?? 7;
 	};
 
 	const getLabel = (schedule: PayoutScheduleType): string => {
 		const configs = {
-			weekly: "Weekly",
-			"5days": "5 Days",
-			"3days": "3 Days",
-			"2days": "2 Days",
-			"1day": "1 Day",
+			weekly: "Weekly (7 days)",
+			"5days": "Standard Speed (3–5 days)",
+			"3days": "Standard Speed (3–5 days)",
+			"2days": "Priority (1–2 days)",
+			"1day": "Priority (1–2 days)",
 		};
-		return configs[schedule];
+		return configs[schedule] ?? "Weekly";
 	};
 
 	// --- Derived Calculations ---
@@ -201,33 +201,25 @@ export default function PayoutSettings() {
 					<div className="px-3 py-1 rounded-full bg-surface-neutral border border-stroke flex items-center gap-2">
 						<div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
 						<span className="text-xs text-text-muted font-medium uppercase tracking-wide">
-							Current: {getLabel(currentSchedule)} ·{" "}
-							{getTimelineDays(currentSchedule)} Business Days
+							Current: {getLabel(currentSchedule)}
 						</span>
 					</div>
 				</div>
 
 				{/* Cards Grid */}
-				<div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-					{(
-						[
-							"weekly",
-							"5days",
-							"3days",
-							"2days",
-							"1day",
-						] as PayoutScheduleType[]
-					).map((schedule) => {
-						const isSelected = selectedSchedule === schedule;
-						const fee = getFeePercent(schedule);
-						const cap = getFeeCap(schedule);
+				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+					{(["weekly", "3days", "1day"] as PayoutScheduleType[]).map(
+						(schedule) => {
+							const isSelected = selectedSchedule === schedule;
+							const fee = getFeePercent(schedule);
+							const cap = getFeeCap(schedule);
 
-						return (
-							<button
-								key={schedule}
-								onClick={() => setSelectedSchedule(schedule)}
-								className={`
-                  relative flex flex-col justify-between p-4 rounded-xl min-h-[140px] text-left transition-all duration-300
+							return (
+								<button
+									key={schedule}
+									onClick={() => setSelectedSchedule(schedule)}
+									className={`
+                  relative flex flex-col justify-between p-6 rounded-xl min-h-[160px] text-left transition-all duration-300
                   ${
 										isSelected
 											? "bg-surface border-green-500/50 shadow-[0_0_20px_rgba(34,197,94,0.15)] scale-[1.02] z-10"
@@ -235,56 +227,61 @@ export default function PayoutSettings() {
 									}
                   border
                 `}
-							>
-								{/* Selection Indicator */}
-								{isSelected && (
-									<div className="absolute top-3 right-3 text-green-500">
-										<CheckCircle2 className="w-4 h-4" />
-									</div>
-								)}
-
-								<div className="space-y-1">
-									<div
-										className={`text-xl font-bold tracking-tight ${
-											isSelected ? "text-green-400" : "text-text"
-										}`}
-									>
-										{getLabel(schedule)}
-									</div>
-									<div className="text-xs text-text-muted font-medium">
-										{schedule === "weekly"
-											? "Standard Speed"
-											: schedule === "1day"
-												? "Fastest Option"
-												: "Expedited"}
-									</div>
-								</div>
-
-								<div className="space-y-0.5 pt-4 border-t border-white/5 mt-4">
-									<div className="flex items-baseline justify-between">
-										<span className="text-xs text-text-muted">Fee</span>
-										<span
-											className={`text-sm font-semibold ${
-												isSelected ? "text-white" : "text-text-muted"
-											}`}
-										>
-											{fee === 0 ? "Free" : `${fee}%`}
-										</span>
-									</div>
-									{fee > 0 && (
-										<div className="flex items-baseline justify-between">
-											<span className="text-[10px] text-text-muted/50 uppercase">
-												Max Cap
-											</span>
-											<span className="text-[10px] text-text-muted/70">
-												₦{formatWithCommasDouble(cap / 100)}
-											</span>
+								>
+									{/* Selection Indicator */}
+									{isSelected && (
+										<div className="absolute top-4 right-4 text-green-500">
+											<CheckCircle2 className="w-5 h-5" />
 										</div>
 									)}
-								</div>
-							</button>
-						);
-					})}
+
+									<div className="space-y-2">
+										<div
+											className={`text-xl font-bold tracking-tight ${
+												isSelected ? "text-green-400" : "text-text"
+											}`}
+										>
+											{schedule === "weekly"
+												? "Weekly (7 days)"
+												: schedule === "3days"
+													? "3–5 days"
+													: "Priority (1–2 days)"}
+										</div>
+										<div className="text-sm text-text-muted font-medium">
+											{schedule === "weekly"
+												? "Standard processing"
+												: schedule === "3days"
+													? "Faster processing"
+													: "Fastest processing"}
+										</div>
+									</div>
+
+									<div className="space-y-1 pt-6 border-t border-white/5 mt-6">
+										<div className="flex items-baseline justify-between">
+											<span className="text-sm text-text-muted">Fee</span>
+											<span
+												className={`text-base font-semibold ${
+													isSelected ? "text-text" : "text-text-muted"
+												}`}
+											>
+												{fee === 0 ? "Free" : `${fee}%`}
+											</span>
+										</div>
+										{fee > 0 && (
+											<div className="flex items-baseline justify-between">
+												<span className="text-xs text-text-muted/50 uppercase">
+													Capped at
+												</span>
+												<span className="text-xs text-text-muted/70">
+													₦{formatWithCommasDouble(cap / 100)}
+												</span>
+											</div>
+										)}
+									</div>
+								</button>
+							);
+						},
+					)}
 				</div>
 			</div>
 

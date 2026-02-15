@@ -11,11 +11,13 @@ import {
 	ChevronUp,
 	ExternalLink,
 	AlertCircle,
+	TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 
 interface MoneySnapshotProps {
 	gmv: number;
+	grossProfit?: number;
 	ordersCount: number;
 	payoutEligible: number;
 	fulfillmentCounts: {
@@ -160,6 +162,7 @@ function FulfillmentSummary({
 
 export default function MoneySnapshot({
 	gmv,
+	grossProfit,
 	ordersCount,
 	payoutEligible,
 	fulfillmentCounts,
@@ -174,8 +177,8 @@ export default function MoneySnapshot({
 					<div className="h-6 w-40 bg-stroke rounded animate-pulse mb-2" />
 					<div className="h-4 w-64 bg-stroke rounded animate-pulse" />
 				</div>
-				<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-					{[1, 2, 3, 4].map((i) => (
+				<div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+					{[1, 2, 3, 4, 5].map((i) => (
 						<div
 							key={i}
 							className="rounded-xl bg-surface border border-stroke p-4"
@@ -241,13 +244,20 @@ export default function MoneySnapshot({
 				</p>
 			</div>
 
-			<div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+			<div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
 				<MetricCard
 					icon={DollarSign}
 					label="Total Revenue"
 					value={formatCurrency(gmv)}
 					subtitle="Gross merchandise value"
 					iconColor="text-green-500"
+				/>
+				<MetricCard
+					icon={TrendingUp}
+					label="Est. Profit"
+					value={formatCurrency(grossProfit ?? 0)}
+					subtitle="After product costs"
+					iconColor="text-emerald-500"
 				/>
 				<MetricCard
 					icon={ShoppingBag}

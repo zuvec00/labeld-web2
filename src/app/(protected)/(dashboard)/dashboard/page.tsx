@@ -203,7 +203,10 @@ export default function DashboardPage() {
 				<div className="flex items-center gap-3">
 					<DashboardContextSwitch
 						activeRole={activeRole}
-						onRoleChange={setActiveRole}
+						onRoleChange={(role) =>
+							role !== "all" &&
+							setActiveRole(role as "brand" | "eventOrganizer")
+						}
 						canSwitch={canSwitchRoles}
 					/>
 					{/* Dismissible tip for context switching */}
@@ -287,6 +290,7 @@ export default function DashboardPage() {
 					{/* Section C: Money Snapshot - Is attention turning into money? */}
 					<MoneySnapshot
 						gmv={gmv}
+						grossProfit={dashboardData?.kpis.grossProfit}
 						ordersCount={ordersCount}
 						payoutEligible={payoutEligible}
 						fulfillmentCounts={fulfillmentCounts}

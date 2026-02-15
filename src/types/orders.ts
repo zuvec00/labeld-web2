@@ -125,6 +125,12 @@ export interface StoreOrderDoc {
   updatedAt?: any;
   paidAt?: any;
   cancelledAt?: any;
+  profit?: {
+    totalCostMinor: number;
+    grossProfitMinor: number;
+    grossMarginPct: number;
+    isEstimated: boolean;
+  };
 }
 
 export interface VendorLineStatusDoc {

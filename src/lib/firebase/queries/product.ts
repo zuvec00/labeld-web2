@@ -52,6 +52,7 @@ export type Product = {
   feeSettings?: {
     absorbTransactionFee: boolean;
   } | null;
+  costPrice?: number | null;
 
   // denormalized brand fields (optional)
   brandName?: string | null;
@@ -92,6 +93,7 @@ function toProduct(id: string, d: DocumentData): Product {
     feeSettings: d.feeSettings ? {
       absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
     } : null,
+    costPrice: d.costPrice !== undefined && d.costPrice !== null ? Number(d.costPrice) : null,
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,

@@ -13,6 +13,7 @@ import {
 	updateStoreFulfillmentStatus,
 	getStoreFulfillmentLines,
 } from "@/lib/firebase/callables/shipping";
+import { AlertCircle } from "lucide-react";
 
 interface StoreOrderDetailDrawerProps {
 	order: StoreOrderWithVendorStatus | null;
@@ -452,6 +453,62 @@ export default function StoreOrderDetailDrawer({
 								</div>
 							</div>
 						</div>
+
+						{/* Unit Economics (Internal) */}
+						{order.profit && (
+							<div className="bg-surface rounded-lg p-4 border border-stroke/50">
+								<h3 className="text-lg font-medium text-text mb-3 flex items-center gap-2">
+									Unit Economics
+									<span className="text-xs bg-surface-neutral text-text-muted px-2 py-0.5 rounded-full border border-stroke">
+										Internal
+									</span>
+								</h3>
+								<div className="grid grid-cols-2 gap-4">
+									<div>
+										<p className="text-sm text-text-muted">Revenue</p>
+										<p className="font-medium text-text">
+											{formatCurrency(order.amount.itemsSubtotalMinor)}
+										</p>
+									</div>
+									<div>
+										<p className="text-sm text-text-muted">Cost</p>
+										<p className="font-medium text-text">
+											{formatCurrency(order.profit.totalCostMinor)}
+										</p>
+									</div>
+									<div>
+										<p className="text-sm text-text-muted">Profit</p>
+										<p
+											className={`font-medium ${
+												order.profit.grossProfitMinor >= 0
+													? "text-green-600"
+													: "text-alert"
+											}`}
+										>
+											{formatCurrency(order.profit.grossProfitMinor)}
+										</p>
+									</div>
+									<div>
+										<p className="text-sm text-text-muted">Margin</p>
+										<p
+											className={`font-medium ${
+												order.profit.grossMarginPct >= 0
+													? "text-green-600"
+													: "text-alert"
+											}`}
+										>
+											{order.profit.grossMarginPct.toFixed(1)}%
+										</p>
+									</div>
+								</div>
+								{order.profit.isEstimated && (
+									<div className="mt-3 text-xs text-orange-600 bg-orange-50 border border-orange-100 p-2 rounded flex items-start gap-2">
+										<AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+										Estimated (missing cost price for some items)
+									</div>
+								)}
+							</div>
+						)}
 
 						{/* Shipping Information */}
 						{order.shipping && (

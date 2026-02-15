@@ -4,13 +4,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { NAV_SECTIONS } from "./nav";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
 
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
-import ThemeToggle from "@/components/ui/ThemeToggle";
+import DashboardContextSwitch from "@/components/dashboard/DashboardContextSwitch";
 import { Eye } from "lucide-react";
 
 export default function Sidebar({
@@ -23,10 +23,36 @@ export default function Sidebar({
 	const pathname = usePathname();
 	const { signOutApp } = useAuth();
 
-	// Logic duplicated from Topbar for mobile compatibility
-	const { activeRole, roleDetection } = useDashboardContext();
+	const {
+		activeRole,
+		setActiveRole,
+		roleDetection,
+		canSwitchRoles,
+		loading: contextLoading,
+	} = useDashboardContext();
 	const { isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
+
+	// Local state for sidebar filtering mode: "brand" | "eventOrganizer" | "all"
+	const [sidebarMode, setSidebarMode] = useState<
+		"brand" | "eventOrganizer" | "all"
+	>(activeRole);
+
+	// Sync sidebar mode if activeRole changes externally (e.g. initial load)
+	// But if user explicitly selected "all" locally, we might want to keep it?
+	// For now, let's just sync defaults to avoid confusion.
+	useEffect(() => {
+		if (sidebarMode !== "all" && activeRole !== sidebarMode) {
+			setSidebarMode(activeRole);
+		}
+	}, [activeRole, sidebarMode]);
+
+	const handleModeChange = (newMode: "brand" | "eventOrganizer" | "all") => {
+		setSidebarMode(newMode);
+		if (newMode !== "all") {
+			setActiveRole(newMode);
+		}
+	};
 
 	const handleViewStore = () => {
 		if (activeRole !== "brand") return;
@@ -48,6 +74,17 @@ export default function Sidebar({
 		}
 	};
 
+	// --- Filter Logic ---
+	const filteredSections = NAV_SECTIONS.map((section) => ({
+		...section,
+		items: section.items.filter((item) => {
+			if (!item.roles) return true; // Show to all
+			if (sidebarMode === "all") return true; // Show everything
+			if (!activeRole) return true; // Fallback
+			return item.roles.includes(sidebarMode as any);
+		}),
+	})).filter((section) => section.items.length > 0);
+
 	return (
 		<nav className="w-full h-full flex flex-col bg-surface border-r border-stroke">
 			{/* Brand Header */}
@@ -55,32 +92,56 @@ export default function Sidebar({
 				{isMobile && activeRole === "brand" ? (
 					// Mobile Header - View Store Button
 					<div className="w-full flex items-center justify-between">
-						<button
-							onClick={handleViewStore}
-							className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-stroke bg-bg/50 hover:bg-surface hover:border-accent/50 transition-all group"
-						>
-							<span className="text-sm font-medium text-text group-hover:text-accent transition-colors">
-								View Store
-							</span>
-							<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
-						</button>
+						{/* If capable of switching, show minimal switch here? */}
+						{canSwitchRoles ? (
+							<DashboardContextSwitch
+								activeRole={sidebarMode}
+								onRoleChange={handleModeChange}
+								canSwitch={true}
+								isCompact={true}
+								includeAll={true}
+							/>
+						) : (
+							<button
+								onClick={handleViewStore}
+								className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-stroke bg-bg/50 hover:bg-surface hover:border-accent/50 transition-all group"
+							>
+								<span className="text-sm font-medium text-text group-hover:text-accent transition-colors">
+									View Store
+								</span>
+								<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
+							</button>
+						)}
 					</div>
 				) : (
-					// Desktop Header - Logo
-					<>
-						<div className="flex flex-col justify-center size-8">
-							<Image
-								src="/1.svg"
-								alt="Labeld"
-								width={32}
-								height={32}
-								className="h-8 w-8"
-							/>
-						</div>
-						<span className="font-heading font-semibold text-lg text-text">
-							LABELD STUDIO
-						</span>
-					</>
+					// Desktop Header
+					<div className="w-full flex items-center justify-between">
+						{canSwitchRoles ? (
+							<div className="w-full">
+								<DashboardContextSwitch
+									activeRole={sidebarMode}
+									onRoleChange={handleModeChange}
+									canSwitch={true}
+									includeAll={true}
+								/>
+							</div>
+						) : (
+							<div className="flex items-center gap-2">
+								<div className="flex flex-col justify-center size-8">
+									<Image
+										src="/1.svg"
+										alt="Labeld"
+										width={32}
+										height={32}
+										className="h-8 w-8"
+									/>
+								</div>
+								<span className="font-heading font-semibold text-lg text-text">
+									LABELD STUDIO
+								</span>
+							</div>
+						)}
+					</div>
 				)}
 			</div>
 
@@ -89,22 +150,8 @@ export default function Sidebar({
 				onClose={() => setShowMaintenance(false)}
 			/>
 
-			{/* Brand header - Hidden on mobile sidebar wrapper as it has its own header, or keep it consistent? 
-                The design requested removing the hamburger from here. 
-                On desktop, this header area might be unneeded if the Topbar covers branding.
-                However, usually the sidebar top-left has the logo.
-                Looking at current layout: Topbar has "LABELD STUDIO" and Logo.
-                So Sidebar probably doesn't need a header on Desktop if it's just navigation.
-                But let's keep it simple for now.
-            */}
-
-			{/* If we want to hide the header on mobile because MobileSidebar has one, we can check isMobile.
-               But MobileSidebar passes children.
-               Let's just remove the internal hamburger button logic. 
-            */}
-
 			<div className="flex-1 overflow-y-auto py-2 pb-6">
-				{NAV_SECTIONS.map((section, i) => (
+				{filteredSections.map((section, i) => (
 					<div key={i} className="px-3 py-3">
 						{section.title && (
 							<div className="px-3 text-xs uppercase tracking-wide text-text-muted/70 mb-2 font-semibold">
@@ -136,18 +183,19 @@ export default function Sidebar({
 											href={item.href}
 											prefetch={true}
 											onClick={onItemClick}
+											// Data tour attributes
 											data-tour={
 												item.href === "/brand-space"
 													? "brand-space-nav"
 													: item.href === "/pieces"
 														? "products-nav"
-													: item.href === "/events"
-														? "events-nav"
-														: item.href === "/orders"
-															? "orders-nav"
-															: item.href === "/wallet"
-																? "wallet-nav"
-																: undefined
+														: item.href === "/events"
+															? "events-nav"
+															: item.href === "/orders"
+																? "orders-nav"
+																: item.href === "/wallet"
+																	? "wallet-nav"
+																	: undefined
 											}
 											className={[
 												"flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all group",

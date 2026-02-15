@@ -34,6 +34,7 @@ export interface DashboardKPIs {
   nextPayoutAt?: number;
   pendingFulfillment: number;
   refunds: number;
+  grossProfit?: number;
   followers: number;
   followersChange?: number;
 }
@@ -236,6 +237,7 @@ export function useDashboard(): UseDashboardReturn {
 
     // Calculate KPIs from store orders (brand commerce)
     const gmv = filteredStoreOrders.reduce((sum, order) => sum + (order.amount?.itemsSubtotalMinor || 0), 0);
+    const grossProfit = filteredStoreOrders.reduce((sum, order) => sum + (order.profit?.grossProfitMinor || 0), 0);
     const ordersCount = filteredStoreOrders.length;
     const aov = ordersCount > 0 ? gmv / ordersCount : 0;
 
@@ -473,6 +475,7 @@ export function useDashboard(): UseDashboardReturn {
         nextPayoutAt: walletData.summary?.payout.nextPayoutAt,
         pendingFulfillment: fulfillmentCounts.unfulfilled,
         refunds,
+        grossProfit,
         followers: 0,
       },
       revenueData,

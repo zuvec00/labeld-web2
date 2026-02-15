@@ -415,14 +415,14 @@ export default function PublicPricingPage() {
 							<Button
 								variant="primary"
 								onClick={handleUpgradeClick}
-								className="h-8 md:h-9 px-3 md:px-4 text-xs md:text-sm bg-white text-black hover:bg-white/90 border-0"
+								className="h-8 md:h-9 px-3 md:px-4 text-xs md:text-sm bg-text text-bg hover:bg-text/90 border-0"
 							>
 								<span className="md:hidden">Claim</span>
 								<span className="hidden md:inline">Claim Now</span>
 							</Button>
 							<button
 								onClick={() => setShowStickyBanner(false)}
-								className="p-1.5 hover:bg-white/10 rounded-full transition-colors"
+								className="p-1.5 hover:bg-text/10 rounded-full transition-colors"
 							>
 								<X className="w-4 h-4 text-white/50" />
 							</button>
@@ -757,7 +757,7 @@ export default function PublicPricingPage() {
 								className={`w-full justify-center h-14 text-base shadow-lg group hover:shadow-accent/40 disabled:opacity-50 disabled:shadow-none transition-all
                                     ${
 																			canClaimPromo
-																				? "bg-white text-black hover:bg-white/90 shadow-white/20 border-0"
+																				? "bg-text text-bg hover:bg-text/90 shadow-white/20 border-0"
 																				: `${accentShadow}/20 ${accentBg} text-bg`
 																		}
                                 `}

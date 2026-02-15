@@ -1,8 +1,6 @@
-/* /app/brand/piece/[id]/edit/page.tsx */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getAuth } from "firebase/auth";
 import Button from "@/components/ui/button";
@@ -17,7 +15,11 @@ import {
 } from "@/lib/firebase/queries/product";
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
-import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import {
+	uploadImageCloudinary,
+	uploadFileDirectCloudinary,
+} from "@/lib/storage/cloudinary";
+import { useUploadStore } from "@/lib/stores/upload";
 
 /* ----------------------------- Currency source ---------------------------- */
 
@@ -45,11 +47,23 @@ function asDate(v: any): Date | null {
 	return null;
 }
 
+type UploadState = {
+	file: File | null; // null if existing
+	previewUrl: string;
+	uploadId?: string;
+	uploadedUrl?: string; // Set when complete or for existing
+	status: "pending" | "uploading" | "completed" | "error";
+	error?: string;
+};
+
 /* ---------------------------------- Page --------------------------------- */
 
 export default function EditPiecePage() {
 	const { id } = useParams<{ id: string }>();
 	const router = useRouter();
+	const auth = getAuth(); // Used for upload
+
+	const { addUpload, updateUpload, removeUpload } = useUploadStore();
 
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -65,6 +79,7 @@ export default function EditPiecePage() {
 	const [collectionId, setCollectionId] = useState<string | "">("");
 	const [pieceName, setPieceName] = useState("");
 	const [price, setPrice] = useState<string>("");
+	const [costPrice, setCostPrice] = useState<string>("");
 	const [selectedCurrency, setSelectedCurrency] = useState<{
 		flag: string;
 		abbreviation: string;
@@ -73,12 +88,118 @@ export default function EditPiecePage() {
 	const [launchDate, setLaunchDate] = useState<Date | null>(null);
 	const [availableNow, setAvailableNow] = useState(false);
 
-	const [mainFile, setMainFile] = useState<File | null>(null);
-	const [galleryFiles, setGalleryFiles] = useState<File[]>([]);
-	const [sizeGuideFile, setSizeGuideFile] = useState<File | null>(null);
-	const [onlineMain, setOnlineMain] = useState<string>("");
-	const [onlineGallery, setOnlineGallery] = useState<string[]>([]);
-	const [onlineSizeGuide, setOnlineSizeGuide] = useState<string>("");
+	// Updated State for Files
+	const [mainImage, setMainImage] = useState<UploadState | null>(null);
+	const [galleryImages, setGalleryImages] = useState<UploadState[]>([]);
+	const [sizeGuideImage, setSizeGuideImage] = useState<UploadState | null>(
+		null,
+	);
+
+	// Helper to start upload immediately
+	const startBackgroundUpload = async (
+		file: File,
+		type: "main" | "gallery" | "size-guide",
+	): Promise<UploadState> => {
+		const previewUrl = URL.createObjectURL(file);
+		const uid = auth.currentUser?.uid || "anonymous";
+
+		// Create store entry
+		const uploadId = addUpload({
+			type: "image",
+			fileName: file.name,
+			progress: 0,
+			status: "uploading",
+		});
+
+		// Initial state
+		const initialState: UploadState = {
+			file,
+			previewUrl,
+			uploadId,
+			status: "uploading",
+		};
+
+		// Start async upload
+		(async () => {
+			try {
+				const folder = `productImages/${uid}`;
+				const tags = ["product", type, uid];
+				// Add product ID to tags if available? Not necessary but good practice.
+				if (product?.id) tags.push(product.id);
+
+				const url = await uploadFileDirectCloudinary(
+					file,
+					{
+						folder,
+						tags,
+						resourceType: "image",
+					},
+					(progress) => {
+						updateUpload(uploadId, { progress: Math.round(progress) });
+					},
+				);
+
+				// Success
+				updateUpload(uploadId, { status: "completed", progress: 100 });
+				// Update local state to reflect success
+				if (type === "main") {
+					setMainImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "completed", uploadedUrl: url }
+							: prev,
+					);
+				} else if (type === "gallery") {
+					setGalleryImages((prev) =>
+						prev.map((img) =>
+							img.uploadId === uploadId
+								? { ...img, status: "completed", uploadedUrl: url }
+								: img,
+						),
+					);
+				} else if (type === "size-guide") {
+					setSizeGuideImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "completed", uploadedUrl: url }
+							: prev,
+					);
+				}
+
+				// Auto-dismiss toast
+				setTimeout(() => removeUpload(uploadId), 3000);
+			} catch (error: any) {
+				console.error("Background upload failed:", error);
+				updateUpload(uploadId, {
+					status: "error",
+					error: error.message || "Upload failed",
+				});
+				// Update local state to error
+				const errMsg = error.message || "Upload failed";
+				if (type === "main") {
+					setMainImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "error", error: errMsg }
+							: prev,
+					);
+				} else if (type === "gallery") {
+					setGalleryImages((prev) =>
+						prev.map((img) =>
+							img.uploadId === uploadId
+								? { ...img, status: "error", error: errMsg }
+								: img,
+						),
+					);
+				} else if (type === "size-guide") {
+					setSizeGuideImage((prev) =>
+						prev?.uploadId === uploadId
+							? { ...prev, status: "error", error: errMsg }
+							: prev,
+					);
+				}
+			}
+		})();
+
+		return initialState;
+	};
 
 	const [description, setDescription] = useState("");
 	const [tags, setTags] = useState<string[]>([]);
@@ -127,6 +248,7 @@ export default function EditPiecePage() {
 
 				setPieceName(p.dropName ?? "");
 				setPrice(p.price != null ? String(p.price) : "");
+				setCostPrice(p.costPrice != null ? String(p.costPrice) : "");
 				const code = getCurrencyFromMap(p.currency) || "";
 				const found = currencyList.find((c) => c.abbreviation === code) ?? null;
 				setSelectedCurrency(found);
@@ -135,9 +257,41 @@ export default function EditPiecePage() {
 				setAvailableNow(!!p.isAvailableNow);
 				setCollectionId(p.dropId ?? "");
 
-				setOnlineMain(p.mainVisualUrl || "");
-				setOnlineGallery(p.galleryImages ?? []);
-				setOnlineSizeGuide((p as any).sizeGuideUrl || "");
+				// Initialize state for images using existing URLs
+				if (p.mainVisualUrl) {
+					setMainImage({
+						file: null,
+						previewUrl: p.mainVisualUrl,
+						uploadedUrl: p.mainVisualUrl,
+						status: "completed",
+					});
+				} else {
+					setMainImage(null);
+				}
+
+				if (p.galleryImages && Array.isArray(p.galleryImages)) {
+					setGalleryImages(
+						p.galleryImages.map((url) => ({
+							file: null,
+							previewUrl: url,
+							uploadedUrl: url,
+							status: "completed",
+						})),
+					);
+				} else {
+					setGalleryImages([]);
+				}
+
+				if ((p as any).sizeGuideUrl) {
+					setSizeGuideImage({
+						file: null,
+						previewUrl: (p as any).sizeGuideUrl,
+						uploadedUrl: (p as any).sizeGuideUrl,
+						status: "completed",
+					});
+				} else {
+					setSizeGuideImage(null);
+				}
 
 				setDescription(p.description ?? "");
 				setTags(p.styleTags ?? []);
@@ -214,111 +368,57 @@ export default function EditPiecePage() {
 		Number.isNaN(parsedPrice) ||
 		!selectedCurrency ||
 		!(availableNow ? true : !!launchDate) ||
-		!(onlineMain || mainFile);
+		!mainImage;
 
 	async function onSave() {
 		if (isDisabled || !product) return;
 		setSaving(true);
 		setErr(null);
+
 		try {
 			const auth = getAuth();
 			const userId = auth.currentUser?.uid || "anonymous";
 
-			// upload images if replaced
-			let mainVisualUrl = onlineMain;
-			if (mainFile) {
-				try {
-					// Primary: Upload to Cloudinary
-					mainVisualUrl = await uploadImageCloudinary(mainFile, {
-						folder: `productImages/${userId}`,
-						tags: ["product", "main", userId],
-					});
-					console.log(
-						"✅ Main product image uploaded to Cloudinary:",
-						mainVisualUrl,
-					);
-				} catch (cloudinaryError) {
-					// Fallback: Upload to Firebase Storage
-					console.warn(
-						"⚠️ Cloudinary upload failed, falling back to Firebase Storage:",
-						cloudinaryError,
-					);
-					mainVisualUrl = await uploadFileGetURL(
-						mainFile,
-						`productImages/${userId}/${Date.now()}-${mainFile.name}`,
-					);
-					console.log(
-						"✅ Main product image uploaded to Firebase Storage:",
-						mainVisualUrl,
-					);
+			// 1) Verify Main Image
+			let mainVisualUrl = mainImage?.uploadedUrl;
+			if (!mainVisualUrl) {
+				if (mainImage?.status === "uploading") {
+					setErr("Main image is still uploading. Please wait...");
+					setSaving(false);
+					return;
 				}
+				if (mainImage?.status === "error") {
+					setErr("Main image failed to upload. Please retry.");
+					setSaving(false);
+					return;
+				}
+				setErr("Main image is required.");
+				setSaving(false);
+				return;
 			}
 
-			let galleryImageUrls: string[] | undefined;
-			if (galleryFiles.length) {
-				galleryImageUrls = [];
-
-				for (const f of galleryFiles) {
-					try {
-						// Primary: Upload to Cloudinary
-						const url = await uploadImageCloudinary(f, {
-							folder: `productImages/${userId}`,
-							tags: ["product", "gallery", userId],
-						});
-						galleryImageUrls.push(url);
-						console.log(
-							"✅ Gallery product image uploaded to Cloudinary:",
-							url,
-						);
-					} catch (cloudinaryError) {
-						// Fallback: Upload to Firebase Storage
-						console.warn(
-							"⚠️ Cloudinary upload failed for gallery image, falling back to Firebase Storage:",
-							cloudinaryError,
-						);
-						const url = await uploadFileGetURL(
-							f,
-							`productImages/${userId}/${Date.now()}-${f.name}`,
-						);
-						galleryImageUrls.push(url);
-						console.log(
-							"✅ Gallery product image uploaded to Firebase Storage:",
-							url,
-						);
-					}
-				}
-			} else if (onlineGallery?.length) {
-				galleryImageUrls = [...onlineGallery];
+			// 2) Verify Gallery
+			const galleryImageUrls: string[] = [];
+			const pendingGallery = galleryImages.some(
+				(img) => img.status === "uploading",
+			);
+			if (pendingGallery) {
+				setErr("Gallery images are still uploading. Please wait...");
+				setSaving(false);
+				return;
 			}
-
-			// upload size guide if replaced
-			let sizeGuideUrl = onlineSizeGuide;
-			if (sizeGuideFile) {
-				try {
-					// Primary: Upload to Cloudinary
-					sizeGuideUrl = await uploadImageCloudinary(sizeGuideFile, {
-						folder: `productImages/${userId}`,
-						tags: ["product", "size-guide", userId],
-					});
-					console.log(
-						"✅ Size guide image uploaded to Cloudinary:",
-						sizeGuideUrl,
-					);
-				} catch (cloudinaryError) {
-					// Fallback: Upload to Firebase Storage
-					console.warn(
-						"⚠️ Cloudinary upload failed for size guide, falling back to Firebase Storage:",
-						cloudinaryError,
-					);
-					sizeGuideUrl = await uploadFileGetURL(
-						sizeGuideFile,
-						`productImages/${userId}/${Date.now()}-${sizeGuideFile.name}`,
-					);
-					console.log(
-						"✅ Size guide image uploaded to Firebase Storage:",
-						sizeGuideUrl,
-					);
+			galleryImages.forEach((img) => {
+				if (img.status === "completed" && img.uploadedUrl) {
+					galleryImageUrls.push(img.uploadedUrl);
 				}
+			});
+
+			// 3) Verify Size Guide
+			let sizeGuideUrl: string | undefined = sizeGuideImage?.uploadedUrl;
+			if (sizeGuideImage?.status === "uploading") {
+				setErr("Size guide is still uploading. Please wait...");
+				setSaving(false);
+				return;
 			}
 
 			const launch: Date = availableNow ? new Date() : (launchDate as Date);
@@ -329,6 +429,9 @@ export default function EditPiecePage() {
 				dropId: collectionId || null,
 				dropName: pieceName.trim(),
 				price: parsedPrice,
+				costPrice: Number.isFinite(Number(costPrice))
+					? Number(costPrice)
+					: null,
 				currency: selectedCurrency
 					? {
 							abbreviation: selectedCurrency.abbreviation,
@@ -357,7 +460,7 @@ export default function EditPiecePage() {
 							)
 						: null,
 				mainVisualUrl,
-				galleryImages: galleryImageUrls ?? null,
+				galleryImages: galleryImageUrls.length ? galleryImageUrls : null,
 				sizeGuideUrl: sizeGuideUrl || null,
 				description: description.trim() ? description.trim() : null,
 				styleTags: tags.length ? tags : null,
@@ -486,6 +589,33 @@ export default function EditPiecePage() {
 								</div>
 							)}
 						</div>
+					</div>
+
+					{/* Cost Price (Internal) */}
+					<div className="mt-4 pt-4 border-t border-stroke/40">
+						<Label text="Cost Price (Internal)" />
+						<Input
+							type="number"
+							value={costPrice}
+							onChange={setCostPrice}
+							placeholder="Enter amount"
+						/>
+						{costPrice &&
+							!Number.isNaN(
+								Number.isFinite(Number(costPrice)) ? Number(costPrice) : NaN,
+							) && (
+								<div className="text-text-muted text-sm mt-1">
+									{selectedCurrency?.abbreviation
+										? `${selectedCurrency.abbreviation} `
+										: ""}
+									{formatWithCommasDouble(
+										Number.isFinite(Number(costPrice))
+											? Number(costPrice)
+											: NaN,
+									)}
+								</div>
+							)}
+						<Hint text="Used for internal profit calculation. Not visible to customers." />
 					</div>
 
 					<div className="mt-4">
@@ -746,12 +876,17 @@ export default function EditPiecePage() {
 				<Group>
 					<Label text="Main Product Visual" required />
 					<SingleImagePicker
-						existingUrl={onlineMain}
-						file={mainFile}
-						onPick={(f) => setMainFile(f)}
-						onClear={() => {
-							setMainFile(null);
-							setOnlineMain(""); // force re-upload if removing current
+						file={mainImage?.file ?? null}
+						previewUrl={mainImage?.previewUrl}
+						isUploading={mainImage?.status === "uploading"}
+						isError={mainImage?.status === "error"}
+						onPick={async (f) => {
+							if (f) {
+								setMainImage(await startBackgroundUpload(f, "main"));
+							} else {
+								// If clearing, we might want to revert to nothing
+								setMainImage(null);
+							}
 						}}
 					/>
 					<Hint text="This is the first image people see" />
@@ -759,13 +894,16 @@ export default function EditPiecePage() {
 					<div className="mt-6">
 						<Label text="Gallery Shots" />
 						<MultiImagePicker
-							existingUrls={onlineGallery}
-							files={galleryFiles}
-							onPick={(next) => setGalleryFiles(next)}
-							onClearExisting={() => setOnlineGallery([])}
-							onRemoveExisting={(url) =>
-								setOnlineGallery((prev) => prev.filter((u) => u !== url))
-							}
+							images={galleryImages}
+							onAddFiles={async (addedFiles) => {
+								const newStates = await Promise.all(
+									addedFiles.map((f) => startBackgroundUpload(f, "gallery")),
+								);
+								setGalleryImages((prev) => [...prev, ...newStates]);
+							}}
+							onRemove={(index) => {
+								setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+							}}
 						/>
 						<Hint text="Extra angles or details (up to 4)" />
 					</div>
@@ -773,12 +911,18 @@ export default function EditPiecePage() {
 					<div className="mt-6">
 						<Label text="Size Guide" />
 						<SingleImagePicker
-							existingUrl={onlineSizeGuide}
-							file={sizeGuideFile}
-							onPick={(f) => setSizeGuideFile(f)}
-							onClear={() => {
-								setSizeGuideFile(null);
-								setOnlineSizeGuide("");
+							file={sizeGuideImage?.file ?? null}
+							previewUrl={sizeGuideImage?.previewUrl}
+							isUploading={sizeGuideImage?.status === "uploading"}
+							isError={sizeGuideImage?.status === "error"}
+							onPick={async (f) => {
+								if (f) {
+									setSizeGuideImage(
+										await startBackgroundUpload(f, "size-guide"),
+									);
+								} else {
+									setSizeGuideImage(null);
+								}
 							}}
 						/>
 						<Hint text="Upload a size guide image to help customers choose the right size" />
@@ -1146,90 +1290,54 @@ function DateTimePicker({
 }
 
 function SingleImagePicker({
-	existingUrl,
 	file,
+	previewUrl,
+	isUploading,
+	isError,
 	onPick,
-	onClear,
 }: {
-	existingUrl?: string;
 	file: File | null;
+	previewUrl?: string;
+	isUploading?: boolean;
+	isError?: boolean;
 	onPick: (f: File | null) => void;
-	onClear: () => void;
 }) {
 	return (
 		<div className="w-full max-w-xs">
 			<label
-				className="block w-full relative cursor-pointer rounded-xl border-2 border-dashed border-stroke hover:border-text transition-colors overflow-hidden group bg-surface hover:bg-surface/80"
+				className={`block w-full relative cursor-pointer rounded-xl border-2 border-dashed transition-colors overflow-hidden group bg-surface hover:bg-surface/80 ${
+					isError
+						? "border-alert"
+						: isUploading
+							? "border-accent"
+							: "border-stroke hover:border-text"
+				}`}
 				style={{ aspectRatio: "1/1" }}
 			>
-				{file ? (
-					<>
-						<img
-							src={URL.createObjectURL(file)}
-							alt="Preview"
-							className="w-full h-full object-cover"
-						/>
-						<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-							<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-								Change Image
-							</span>
-						</div>
-						<button
-							type="button"
-							className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-red-500 text-white transition-colors z-10 backdrop-blur-sm"
-							onClick={(e) => {
-								e.preventDefault();
-								onPick(null);
-							}}
-							title="Remove"
-						>
-							<svg
-								className="w-5 h-5"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-						</button>
-					</>
-				) : existingUrl ? (
+				{previewUrl ? (
 					<>
 						<OptimizedImage
-							src={existingUrl}
-							alt="Current image"
+							src={previewUrl}
+							alt="Preview"
 							fill
 							sizeContext="card"
 							objectFit="cover"
-							className="w-full h-full"
+							className={`w-full h-full object-cover ${
+								isUploading ? "opacity-50" : ""
+							}`}
 						/>
-						<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-							<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
-								Change Image
-							</span>
-						</div>
-						<button
-							type="button"
-							className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-black/50 hover:bg-red-500 text-white transition-colors z-10 backdrop-blur-sm"
-							onClick={(e) => {
-								e.preventDefault();
-								onClear();
-							}}
-							title="Remove"
-						>
-							<svg
-								className="w-5 h-5"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-						</button>
+						{isUploading && (
+							<div className="absolute inset-0 flex items-center justify-center">
+								<Spinner size="md" />
+							</div>
+						)}
+						{!isUploading && (
+							<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+								<span className="text-white font-medium bg-black/50 px-3 py-1 rounded-full backdrop-blur-sm">
+									Change Image
+								</span>
+							</div>
+						)}
 					</>
 				) : (
 					<div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center">
@@ -1256,6 +1364,7 @@ function SingleImagePicker({
 					accept="image/*"
 					className="sr-only"
 					onChange={(e) => onPick(e.target.files?.[0] ?? null)}
+					disabled={isUploading}
 				/>
 			</label>
 		</div>
@@ -1265,22 +1374,18 @@ function SingleImagePicker({
 /* -------- Flutter-parity gallery picker: grid layout, cap 4, clear/remove ------ */
 
 function MultiImagePicker({
-	existingUrls,
-	files,
-	onPick,
-	onClearExisting,
-	onRemoveExisting,
+	images,
+	onAddFiles,
+	onRemove,
 }: {
-	existingUrls: string[];
-	files: File[];
-	onPick: (next: File[]) => void;
-	onClearExisting: () => void;
-	onRemoveExisting: (url: string) => void;
+	images: UploadState[];
+	onAddFiles: (files: File[]) => void;
+	onRemove: (index: number) => void;
 }) {
 	const MAX = 4;
 	const [msg, setMsg] = useState<string | null>(null);
 
-	const total = (existingUrls?.length || 0) + (files?.length || 0);
+	const total = images.length;
 	const slotsLeft = Math.max(0, MAX - total);
 
 	function handleAdd(e: React.ChangeEvent<HTMLInputElement>) {
@@ -1294,7 +1399,7 @@ function MultiImagePicker({
 		}
 
 		const take = picked.slice(0, slotsLeft);
-		onPick([...files, ...take]);
+		onAddFiles(take);
 
 		if (picked.length > take.length) {
 			setMsg(
@@ -1308,62 +1413,44 @@ function MultiImagePicker({
 		e.currentTarget.value = "";
 	}
 
-	function removeLocalAt(i: number) {
-		onPick(files.filter((_, idx) => idx !== i));
-	}
-
 	return (
 		<div>
 			<div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-				{/* Existing Images */}
-				{existingUrls.map((u) => (
-					<div
-						key={u}
-						className="relative rounded-xl border border-stroke overflow-hidden group"
-						style={{ aspectRatio: "1/1" }}
-					>
-						<OptimizedImage
-							src={u}
-							alt="Gallery image"
-							fill
-							sizeContext="thumbnail"
-							objectFit="cover"
-						/>
-						<button
-							type="button"
-							className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
-							title="Remove"
-							onClick={() => onRemoveExisting(u)}
-						>
-							<svg
-								className="w-4 h-4"
-								viewBox="0 0 24 24"
-								fill="none"
-								stroke="currentColor"
-								strokeWidth="2"
-							>
-								<line x1="18" y1="6" x2="6" y2="18" />
-								<line x1="6" y1="6" x2="18" y2="18" />
-							</svg>
-						</button>
-					</div>
-				))}
+				{/* Images */}
+				{images.map((img, i) => {
+					const isUploading = img.status === "uploading";
+					const isError = img.status === "error";
 
-				{/* Local Files */}
-				{files.map((f, i) => {
-					const url = URL.createObjectURL(f);
 					return (
 						<div
-							key={`${f.name}-${i}`}
-							className="relative rounded-xl border border-stroke overflow-hidden group"
+							key={`${img.file?.name ?? img.uploadedUrl}-${i}`}
+							className={`relative rounded-xl border overflow-hidden group ${
+								isError
+									? "border-alert"
+									: isUploading
+										? "border-accent"
+										: "border-stroke"
+							}`}
 							style={{ aspectRatio: "1/1" }}
 						>
-							<img src={url} alt="" className="w-full h-full object-cover" />
+							<OptimizedImage
+								src={img.previewUrl}
+								alt="Gallery image"
+								fill
+								sizeContext="thumbnail"
+								objectFit="cover"
+								className={isUploading ? "opacity-50" : ""}
+							/>
+							{isUploading && (
+								<div className="absolute inset-0 flex items-center justify-center">
+									<Spinner size="sm" />
+								</div>
+							)}
 							<button
 								type="button"
 								className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center backdrop-blur-sm transition-colors"
 								title="Remove"
-								onClick={() => removeLocalAt(i)}
+								onClick={() => onRemove(i)}
 							>
 								<svg
 									className="w-4 h-4"
@@ -1418,30 +1505,6 @@ function MultiImagePicker({
 					</label>
 				)}
 			</div>
-
-			{/* Bulk Actions (Clear) */}
-			{(existingUrls.length > 0 || files.length > 0) && (
-				<div className="mt-3 flex items-center gap-3">
-					{files.length > 0 && (
-						<button
-							type="button"
-							onClick={() => onPick([])}
-							className="text-alert text-xs border border-alert/30 rounded-lg px-2.5 py-1.5 hover:bg-alert/5"
-						>
-							Clear uploads
-						</button>
-					)}
-					{existingUrls.length > 0 && (
-						<button
-							type="button"
-							onClick={onClearExisting}
-							className="text-alert text-xs border border-alert/30 rounded-lg px-2.5 py-1.5 hover:bg-alert/5"
-						>
-							Clear existing
-						</button>
-					)}
-				</div>
-			)}
 
 			{msg && <div className="text-xs text-alert mt-2">{msg}</div>}
 		</div>
