@@ -299,7 +299,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 										>
 											<div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
 												<Image
-													src={roleDetection?.brandLogoUrl}
+													src={roleDetection?.brandLogoUrl || ""}
 													alt={displayName}
 													width={36}
 													height={36}
@@ -323,9 +323,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 											}}
 											className="!font-sans w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
 										>
-											<div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
-												
-											</div>
+											<div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500"></div>
 											<div className="flex flex-col items-start">
 												<span className="font-medium">Organizer Profile</span>
 												<span className="text-[10px] text-text-muted">
