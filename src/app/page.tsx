@@ -1,16 +1,35 @@
-import OnboardingSplit from "@/components/marketing/OnboardingHero";
+import LandingPage from "@/components/landing-page/LandingPage";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-	title: "Labeld Studio — Brand & Event Management for Creators",
+	metadataBase: new URL("https://studio.labeld.app"),
+	title:
+		"Labeld Studio — Website Builder, Storefront & Event Ticketing for Independent Brands",
 	description:
-		"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
+		"Launch your brand site, sell product drops/merch, host ticketed events, and manage orders & analytics — all from one dashboard. Built for independent brands and organizers.",
+	alternates: {
+		canonical: "https://studio.labeld.app/",
+	},
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			"max-image-preview": "large",
+			"max-snippet": -1,
+			"max-video-preview": -1,
+		},
+	},
 	openGraph: {
-		title: "Labeld Studio — Brand & Event Management for Creators",
+		title:
+			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 		description:
-			"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
+			"Build your brand site, sell drops/merch, host ticketed events, and manage everything from one dashboard.",
 		type: "website",
-		url: "https://studio.labeld.app",
+		url: "https://studio.labeld.app/",
+		siteName: "Labeld Studio",
+		locale: "en_NG",
 		images: [
 			{
 				url: "/images/onboarding-hero.JPEG",
@@ -22,13 +41,23 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title: "Labeld Studio — Brand & Event Management for Creators",
+		title:
+			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 		description:
-			"Create and manage your streetwear brand, product drops, or events with Labeld Studio. One unified dashboard for brands and organizers.",
+			"Launch your brand site, sell drops, host events, and manage orders — all in one dashboard.",
 		images: ["/images/onboarding-hero.JPEG"],
 	},
+	keywords: [
+		"Labeld Studio",
+		"website builder for brands",
+		"storefront for independent brands",
+		"event ticketing Nigeria",
+		"sell merch online",
+		"product drops",
+		"Paystack storefront alternative",
+	],
 };
 
 export default function Landing() {
-	return <OnboardingSplit />;
+	return <LandingPage />;
 }

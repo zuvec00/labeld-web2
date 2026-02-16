@@ -107,7 +107,7 @@ export const PRICING_CONTENT = {
 			),
 			subtext: (
 				<>
-					Free lets you sell tickets on Labeld.
+					Free lets you sell tickets on Labeld Events.
 					<br className="hidden sm:block" />
 					Event Pro gives you your own event site, checkout, and analytics.
 				</>

@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.1",
+    "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-switch": "^1.2.6",
     "@radix-ui/react-toast": "^1.2.15",
@@ -21,6 +22,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.1.0",
     "firebase-admin": "^13.4.0",
+    "framer-motion": "^12.34.0",
     "jsqr": "^1.4.0",
     "lucide-react": "^0.540.0",
     "next": "^16.1.0",

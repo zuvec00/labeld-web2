@@ -230,7 +230,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 					<div className="relative profile-dropdown-container">
 						<button
 							onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-							className="flex items-center gap-3 hover:bg-surface rounded-full pr-2 transition-colors outline-none"
+							className=" !font-sans flex items-center gap-3 hover:bg-surface rounded-full pr-2 transition-colors outline-none"
 						>
 							<div className="flex flex-col items-end hidden sm:flex">
 								<div className="flex items-center gap-2">
@@ -249,7 +249,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 										</span>
 									) : null}
 								</div>
-								<span className="text-xs text-text-muted">
+								<span className=" text-xs text-text-muted">
 									{accountTypeLabel}
 								</span>
 							</div>
@@ -295,10 +295,16 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 												setIsDropdownOpen(false);
 												router.push("/brand-space/profile/edit");
 											}}
-											className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
+											className="!font-sans w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
 										>
 											<div className="h-8 w-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500">
-												B
+												<Image
+													src={roleDetection?.brandLogoUrl}
+													alt={displayName}
+													width={36}
+													height={36}
+													className="object-cover h-full w-full rounded-full"
+												/>
 											</div>
 											<div className="flex flex-col items-start">
 												<span className="font-medium">Brand Profile</span>
@@ -315,10 +321,10 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 												setIsDropdownOpen(false);
 												router.push("/organizer-space/edit");
 											}}
-											className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
+											className="!font-sans w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-text hover:bg-bg transition-colors"
 										>
 											<div className="h-8 w-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500">
-												E
+												
 											</div>
 											<div className="flex flex-col items-start">
 												<span className="font-medium">Organizer Profile</span>
