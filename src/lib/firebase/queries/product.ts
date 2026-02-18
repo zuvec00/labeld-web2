@@ -16,49 +16,9 @@ import {
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "../firebaseConfig";
   
-export type ProductLite = {
-  id: string;
-  dropName: string;
-  launchDate?: Date | null;
-};
+import { Product, ProductLite } from "@/lib/models/product";
 
-export type ProductColor = {
-  label: string;
-  hex: string;
-};
-
-export type Product = {
-  id: string;
-  brandId: string;
-  userId?: string;
-  dropId?: string | null;
-  dropName: string;
-  price: number;
-  currency?: Record<string, string> | string | null; // matches Flutter's flexible map
-  launchDate: Date | null;
-  isAvailableNow?: boolean;
-  mainVisualUrl: string;
-  galleryImages?: string[] | null;
-  sizeGuideUrl?: string | null;
-  description?: string | null;
-  styleTags?: string[] | null;
-  sizeOptions?: string[] | null;
-  colors?: ProductColor[] | null;
-  copLink?: string | null;
-  stockRemaining?: number | null;
-  stockMode?: "global" | "variants" | null;
-  variantStock?: Record<string, number> | null;
-  discountPercent?: number | null;
-  feeSettings?: {
-    absorbTransactionFee: boolean;
-  } | null;
-  costPrice?: number | null;
-
-  // denormalized brand fields (optional)
-  brandName?: string | null;
-  brandUsername?: string | null;
-  brandLogoUrl?: string | null;
-};
+export type { Product, ProductLite };
 
 
 const toDate = (v: any): Date | null =>
@@ -97,6 +57,7 @@ function toProduct(id: string, d: DocumentData): Product {
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,
+    reviewSummary: d.reviewSummary ?? null,
   };
 }
 
@@ -146,6 +107,7 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,
+    reviewSummary: d.reviewSummary ?? null,
   };
 }
 

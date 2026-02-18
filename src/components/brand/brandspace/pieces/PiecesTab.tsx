@@ -19,6 +19,7 @@ import {
 	List,
 	ChevronLeft,
 	ChevronRight,
+	Star,
 } from "lucide-react";
 import PiecesListView from "./PiecesListView";
 
@@ -356,6 +357,8 @@ function PieceCard({
 	const isSoldOut = !isUnlimited && remaining === 0;
 	const isLowStock = !isUnlimited && remaining > 0 && remaining < 5; // Threshold 5
 
+	const avgRating = piece.reviewSummary?.avgRating;
+
 	return (
 		<div className="group cursor-pointer space-y-3" onClick={onOpen}>
 			<div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl bg-surface border border-stroke/50">
@@ -378,6 +381,18 @@ function PieceCard({
 						</div>
 					)}
 				</div>
+
+				{/* Rating Badge (Top Right) */}
+				{/* {avgRating && avgRating > 0 && (
+					<div className="absolute top-2 right-2">
+						<div className="flex items-center gap-1 bg-black/60 backdrop-blur text-white px-1.5 py-0.5 rounded-full">
+							<span className="text-[10px] font-bold">
+								{avgRating.toFixed(1)}
+							</span>
+							<Star className="w-2.5 h-2.5 fill-white text-white" />
+						</div>
+					</div>
+				)} */}
 
 				{/* Overlay: Actions & Revenue */}
 				<div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
@@ -412,13 +427,24 @@ function PieceCard({
 					{piece.dropName}
 				</h3>
 				<div className="flex items-center justify-between">
-					<div className="text-sm text-text-muted font-bold">
-						{currency ? `${currency} ` : ""}
-						{formatWithCommasDouble(piece.price)}
+					<div className="flex items-center gap-2">
+						<div className="text-sm text-text-muted font-bold">
+							{currency ? `${currency} ` : ""}
+							{formatWithCommasDouble(piece.price)}
+						</div>
 					</div>
 
 					{/* Status Dot (Live/Hidden) */}
 					<div className="flex items-center gap-2">
+						{/* Rating (Inline with Price) */}
+						{avgRating && avgRating > 0 && (
+							<div className="flex items-center gap-0.5 text-text-muted">
+								<span className="text-[10px] font-bold pt-0.5">
+									{avgRating.toFixed(1)}
+								</span>
+								<Star className="w-3 h-3 fill-text-muted text-text-muted" />
+							</div>
+						)}
 						{/* Text Status for Cards */}
 						{isSoldOut ? (
 							<span className="text-[10px] font-medium text-alert uppercase">

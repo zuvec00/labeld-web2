@@ -1,4 +1,5 @@
 import { Timestamp } from "firebase/firestore";
+import type { ReviewSummary } from "./review";
 
 export interface BrandModel {
   uid: string;                 // same as user uid
@@ -34,6 +35,9 @@ export interface BrandModel {
   isOpen?: boolean;            // store open/closed status
 
   storefrontConfig?: import("./site-customization").BrandStorefrontConfig; // Persisted storefront config
+
+  // Reviews
+  reviewSummary?: ReviewSummary | null; // Aggregated rating summary for fast rendering
 
   // Acquisition Survey
   acquisitionSurvey?: {
