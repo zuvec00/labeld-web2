@@ -62,13 +62,8 @@ function determineDefaultRole(state: RoleDetectionResult): DashboardRole {
 
 // Helper to validate if a stored role is valid for the user's current data
 function isRoleValidForUser(role: DashboardRole, state: RoleDetectionResult): boolean {
-  if (role === "brand") {
-    return state.hasBrandProfile || state.hasPieces;
-  }
-  if (role === "eventOrganizer") {
-    return state.hasEventOrganizerProfile || state.hasEvents;
-  }
-  return false;
+  // Always allow switching to any role, even if profile doesn't exist yet (for onboarding)
+  return true;
 }
 
 export function useDashboardContext(): UseDashboardContextReturn {
@@ -299,11 +294,8 @@ export function useDashboardContext(): UseDashboardContextReturn {
   }, []);
 
   // Determine if user can switch between roles
-  const canSwitchRoles = Boolean(
-    roleDetection &&
-    (roleDetection.hasBrandProfile || roleDetection.hasPieces) &&
-    (roleDetection.hasEventOrganizerProfile || roleDetection.hasEvents)
-  );
+  // Always allow switching to support cross-role adoption
+  const canSwitchRoles = true;
 
   return {
     user,

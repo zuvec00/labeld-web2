@@ -55,19 +55,36 @@ export default function Sidebar({
 	};
 
 	const handleViewStore = () => {
-		if (activeRole !== "brand") return;
-
 		if (isComplete) {
-			const username = roleDetection?.brandUsername;
-			const slug = roleDetection?.brandSlug || username;
-			const isPro = roleDetection?.brandSubscriptionTier === "pro";
+			let url = "";
 
-			if (slug) {
-				const url = isPro
-					? `https://${slug}.labeld.app`
-					: `https://shop.labeld.app/${slug}`;
+			if (activeRole === "brand") {
+				const username = roleDetection?.brandUsername;
+				const slug = roleDetection?.brandSlug || username;
+				const isPro = roleDetection?.brandSubscriptionTier === "pro";
 
+				if (slug) {
+					url = isPro
+						? `https://${slug}.labeld.app`
+						: `https://shop.labeld.app/${slug}`;
+				}
+			} else if (activeRole === "eventOrganizer") {
+				const username = roleDetection?.organizerName; // Assuming name is usable, or we need a slug
+				const slug =
+					roleDetection?.eventSlug ||
+					username?.toLowerCase().replace(/\s+/g, "-");
+
+				if (slug) {
+					// Assuming generic event URL structure for now, can be updated
+					url = `https://events.labeld.app/${slug}`;
+				}
+			}
+
+			if (url) {
 				window.open(url, "_blank");
+			} else {
+				// Fallback or detailed error if needed
+				console.warn("Could not determine public URL");
 			}
 		} else {
 			setShowMaintenance(true);
@@ -87,60 +104,47 @@ export default function Sidebar({
 
 	return (
 		<nav className="w-full h-full flex flex-col bg-surface border-r border-stroke">
-			{/* Brand Header */}
+			{/* Header */}
 			<div className="h-16 lg:h-[72px] flex items-center gap-2 px-4 border-b border-stroke flex-shrink-0">
-				{isMobile && activeRole === "brand" ? (
-					// Mobile Header - View Store Button
-					<div className="w-full flex items-center justify-between">
-						{/* If capable of switching, show minimal switch here? */}
-						{canSwitchRoles ? (
+				{isMobile ? (
+					// Mobile Header - Switcher + View Button
+					<div className="w-full flex items-center justify-between gap-2">
+						{/* Context Switcher - Flexible width */}
+						<div className="flex-1 min-w-0">
 							<DashboardContextSwitch
 								activeRole={sidebarMode}
 								onRoleChange={handleModeChange}
-								canSwitch={true}
+								canSwitch={canSwitchRoles} // Always true now
 								isCompact={true}
 								includeAll={true}
 							/>
-						) : (
-							<button
-								onClick={handleViewStore}
-								className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-stroke bg-bg/50 hover:bg-surface hover:border-accent/50 transition-all group"
-							>
-								<span className="text-sm font-medium text-text group-hover:text-accent transition-colors">
-									View Store
-								</span>
-								<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
-							</button>
-						)}
+						</div>
+
+						{/* View Button - Icon only to save space */}
+						<button
+							onClick={handleViewStore}
+							className="flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-xl border border-stroke bg-bg/50 hover:bg-surface hover:border-accent/50 transition-all group"
+						>
+							<span className="text-sm font-medium text-text group-hover:text-accent transition-colors hidden xs:inline-block">
+								{activeRole === "brand" ? "View Store" : "View Events"}
+							</span>
+							<span className="text-sm font-medium text-text group-hover:text-accent transition-colors xs:hidden">
+								View
+							</span>
+							<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
+						</button>
 					</div>
 				) : (
-					// Desktop Header
+					// Desktop Header - Always Switcher
 					<div className="w-full flex items-center justify-between">
-						{canSwitchRoles ? (
-							<div className="w-full">
-								<DashboardContextSwitch
-									activeRole={sidebarMode}
-									onRoleChange={handleModeChange}
-									canSwitch={true}
-									includeAll={true}
-								/>
-							</div>
-						) : (
-							<div className="flex items-center gap-2">
-								<div className="flex flex-col justify-center size-8">
-									<Image
-										src="/1.svg"
-										alt="Labeld"
-										width={32}
-										height={32}
-										className="h-8 w-8"
-									/>
-								</div>
-								<span className="font-heading font-semibold text-lg text-text">
-									LABELD STUDIO
-								</span>
-							</div>
-						)}
+						<div className="w-full">
+							<DashboardContextSwitch
+								activeRole={sidebarMode}
+								onRoleChange={handleModeChange}
+								canSwitch={canSwitchRoles}
+								includeAll={true}
+							/>
+						</div>
 					</div>
 				)}
 			</div>

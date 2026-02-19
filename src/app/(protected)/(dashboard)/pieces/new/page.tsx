@@ -320,8 +320,21 @@ export default function NewPiecePage() {
 		!(availableNow ? true : !!launchDate);
 
 	/* -------------------------------- actions ------------------------------- */
+	/* -------------------------------- actions ------------------------------- */
 	async function onCreate() {
-		if (isDisabled) return;
+		// Validation with specific messages
+		const missing: string[] = [];
+		if (!pieceName.trim()) missing.push("Product Name");
+		if (Number.isNaN(parsedPrice)) missing.push("Price");
+		if (!selectedCurrency) missing.push("Currency");
+		if (!mainImage) missing.push("Main Image");
+		if (!availableNow && !launchDate) missing.push("Launch Date");
+
+		if (missing.length > 0) {
+			setErr(`Please complete: ${missing.join(", ")}`);
+			return;
+		}
+
 		setSaving(true);
 		setErr(null);
 
@@ -458,7 +471,7 @@ export default function NewPiecePage() {
 				/* non-fatal */
 			}
 
-			// 8) Show radar promotion popup with piece data
+			// 8) Show radar promotion popup with product data
 			if (!id) {
 				console.error(
 					"No product ID returned from addDropProductCF. Result:",
@@ -479,7 +492,7 @@ export default function NewPiecePage() {
 			});
 			setShowRadarPopup(true);
 		} catch (e: any) {
-			setErr(e?.message ?? "Failed to create piece.");
+			setErr(e?.message ?? "Failed to create product.");
 		} finally {
 			setSaving(false);
 		}
@@ -504,7 +517,7 @@ export default function NewPiecePage() {
 			<div className="px-4 sm:px-6 pt-6">
 				<h1 className="font-heading font-semibold text-2xl">Drop a Product</h1>
 				<p className="text-text-muted mt-1">
-					Ready to show off your next masterpiece? Drop a piece and let your
+					Ready to show off your next masterpiece? Drop a product and let your
 					fans fall in love.
 				</p>
 			</div>
@@ -535,7 +548,7 @@ export default function NewPiecePage() {
 								...collections.map((c) => ({ label: c.name, value: c.id })),
 							]}
 						/>
-						<Hint text="Use this to connect your piece to one of your collections." />
+						<Hint text="Use this to connect your product to one of your collections." />
 					</div>
 				</Group>
 
@@ -893,7 +906,7 @@ export default function NewPiecePage() {
 								setAvailableNow(v);
 								setLaunchDate(v ? new Date() : null);
 							}}
-							label="Make this piece live immediately"
+							label="Make this product live immediately"
 						/>
 					</div>
 				</Group>
@@ -959,7 +972,7 @@ export default function NewPiecePage() {
 					<Textarea
 						value={description}
 						onChange={setDescription}
-						placeholder="Tell the story behind this piece. Inspiration, process, or meaning — anything you want people to feel."
+						placeholder="Tell the story behind this product. Inspiration, process, or meaning — anything you want people to feel."
 					/>
 				</Group>
 
@@ -971,7 +984,7 @@ export default function NewPiecePage() {
 						onChange={setTags}
 						placeholder="Add your tags"
 					/>
-					<Hint text="Helps people discover your piece" />
+					<Hint text="Helps people discover your product" />
 				</Group>
 
 				{/* 8. Advanced Settings (Discount) */}
@@ -1031,9 +1044,9 @@ export default function NewPiecePage() {
 						className="text-text-muted hover:text-text border-text"
 					/>
 					<Button
-						text={saving ? "Dropping..." : "Drop Product"}
+						text={saving ? "Saving…" : "Save Changes"}
 						onClick={onCreate}
-						disabled={isDisabled || saving}
+						disabled={saving}
 						variant="primary"
 					/>
 				</div>

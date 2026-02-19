@@ -351,7 +351,7 @@ export default function EditPiecePage() {
 					setAbsorbTransactionFee(true); // Default to true
 				}
 			} catch (e: any) {
-				setErr(e?.message ?? "Failed to load piece.");
+				setErr(e?.message ?? "Failed to load product.");
 			} finally {
 				setLoading(false);
 			}
@@ -371,7 +371,21 @@ export default function EditPiecePage() {
 		!mainImage;
 
 	async function onSave() {
-		if (isDisabled || !product) return;
+		if (!product) return;
+
+		// Validation with specific messages
+		const missing: string[] = [];
+		if (!pieceName.trim()) missing.push("Product Name");
+		if (Number.isNaN(parsedPrice)) missing.push("Price");
+		if (!selectedCurrency) missing.push("Currency");
+		if (!mainImage) missing.push("Main Image");
+		if (!availableNow && !launchDate) missing.push("Launch Date");
+
+		if (missing.length > 0) {
+			setErr(`Please complete: ${missing.join(", ")}`);
+			return;
+		}
+
 		setSaving(true);
 		setErr(null);
 
@@ -491,7 +505,7 @@ export default function EditPiecePage() {
 
 	async function onDelete() {
 		if (!product) return;
-		if (!confirm("Delete this piece? This cannot be undone.")) return;
+		if (!confirm("Delete this product? This cannot be undone.")) return;
 		setDeleting(true);
 		setErr(null);
 		try {
@@ -529,7 +543,7 @@ export default function EditPiecePage() {
 		<div className="pb-24">
 			<div className="px-4 sm:px-6 pt-6">
 				<h1 className="font-heading font-semibold text-2xl">Edit Product</h1>
-				<p className="text-text-muted mt-1">Update your piece details below.</p>
+				<p className="text-text-muted mt-1">Update your product details below.</p>
 			</div>
 
 			<div className="px-4 sm:px-6 mt-6 space-y-4">
@@ -558,7 +572,7 @@ export default function EditPiecePage() {
 								...collections.map((c) => ({ label: c.name, value: c.id })),
 							]}
 						/>
-						<Hint text="Use this to connect your piece to one of your collections." />
+						<Hint text="Use this to connect your product to one of your collections." />
 					</div>
 				</Group>
 
@@ -867,7 +881,7 @@ export default function EditPiecePage() {
 								setAvailableNow(v);
 								if (v) setLaunchDate(new Date());
 							}}
-							label="Make this piece live immediately"
+							label="Make this product live immediately"
 						/>
 					</div>
 				</Group>
@@ -935,7 +949,7 @@ export default function EditPiecePage() {
 					<Textarea
 						value={description}
 						onChange={setDescription}
-						placeholder="Tell the story behind this piece. Inspiration, process, or meaning — anything you want people to feel."
+						placeholder="Tell the story behind this product. Inspiration, process, or meaning — anything you want people to feel."
 					/>
 				</Group>
 
@@ -947,7 +961,7 @@ export default function EditPiecePage() {
 						onChange={setTags}
 						placeholder="Add your tags"
 					/>
-					<Hint text="Helps people discover your piece" />
+					<Hint text="Helps people discover your product" />
 				</Group>
 
 				{/* 8. Advanced Settings (Discount) */}
@@ -1010,7 +1024,7 @@ export default function EditPiecePage() {
 					<Button
 						text={saving ? "Saving…" : "Save Changes"}
 						onClick={onSave}
-						disabled={isDisabled || saving}
+						disabled={saving}
 						variant="primary"
 					/>
 				</div>
