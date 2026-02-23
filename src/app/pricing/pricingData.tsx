@@ -47,6 +47,7 @@ export const PRICING_CONTENT = {
 					"0% fees on your personal storefront sales",
 					"Custom store profile URL (subdomain)",
 					"Reduced / white-label Labeld branding",
+					"Optionally featured on Labeld socials",
 				],
 				customizationFeatures: [
 					"Custom templates & layouts",
@@ -122,9 +123,10 @@ export const PRICING_CONTENT = {
 				description: "Sell tickets inside the Labeld events.",
 				features: [
 					"Appear on Labeld Events",
-					"Basic event details",
-					"Standard checkout",
+					"Sell tickets, tables & packages",
+					"Standard checkout & payouts",
 					"Manage attendees",
+					"QR-based entry confirmations",
 				],
 				domainPrefix: "events",
 				domainSuffix: "yourevent",
@@ -136,8 +138,8 @@ export const PRICING_CONTENT = {
 				ownershipFeatures: [
 					"Your own branded event site",
 					"Custom event pages & themes",
-					"Sell tickets, tables, and packages",
-					"QR-based entry confirmations",
+					"Manage bookings & reservations",
+					"Optionally featured on Labeld socials",
 				],
 				customizationFeatures: [
 					"Custom event URL",
@@ -154,18 +156,28 @@ export const PRICING_CONTENT = {
 		comparison: {
 			selling: [
 				{ label: "List on Labeld Events", free: true, pro: true },
-				{ label: "Standard Checkout", free: true, pro: true },
-				{ label: "Ticket Sales", free: true, pro: true },
+				{ label: "Sell Tickets, Tables & Packages", free: true, pro: true },
+				{ label: "Standard Checkout & Payouts", free: true, pro: true },
+				{ label: "QR-Based Entry Confirmations", free: true, pro: true },
 			],
 			branding: [
 				{ label: "Basic Event Details", free: true, pro: true },
 				{ label: "Branding Control", free: false, pro: true },
 				{ label: "Custom Event Site", free: false, pro: true },
+				{
+					label: "Optionally Featured on Labeld Socials",
+					free: false,
+					pro: true,
+				},
 			],
 			customization: [
 				{ label: "Standard Layout", free: true, pro: true },
 				{ label: "Custom Themes", free: false, pro: true },
 				{ label: "Reduced Branding", free: false, pro: true },
+			],
+			management: [
+				{ label: "Manage Attendees", free: true, pro: true },
+				{ label: "Manage Bookings & Reservations", free: false, pro: true },
 			],
 			analytics: [
 				{ label: "Basic Sales Data", free: true, pro: true },

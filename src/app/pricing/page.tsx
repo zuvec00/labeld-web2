@@ -920,6 +920,44 @@ export default function PublicPricingPage() {
 									</tr>
 								))}
 
+                                                                {/* --- Management (Organizers only) --- */}
+                                                                {"management" in content.comparison && (
+                                                                    <>
+                                                                        <tr className="border-b border-stroke">
+                                                                            <td
+                                                                                colSpan={3}
+                                                                                className="pt-16 pb-6 pl-4 font-heading font-semibold text-xl text-text"
+                                                                            >
+                                                                                Management
+                                                                            </td>
+                                                                        </tr>
+                                                                        {(content.comparison as any).management.map((row: any, i: number) => (
+                                                                            <tr
+                                                                                key={i}
+                                                                                className="border-b border-stroke/20 hover:bg-surface/5 transition-colors"
+                                                                            >
+                                                                                <td className="py-5 pl-4 text-text">{row.label}</td>
+                                                                                <td className="py-5 text-center text-text">
+                                                                                    {row.free === true ? (
+                                                                                        <Check className="w-5 h-5 mx-auto opacity-70" />
+                                                                                    ) : row.free === false ? (
+                                                                                        "—"
+                                                                                    ) : (
+                                                                                        <span className="text-xs">{row.free}</span>
+                                                                                    )}
+                                                                                </td>
+                                                                                <td className={`py-5 text-center ${accentText}`}>
+                                                                                    {row.pro === true ? (
+                                                                                        <Check className="w-5 h-5 mx-auto" />
+                                                                                    ) : (
+                                                                                        "—"
+                                                                                    )}
+                                                                                </td>
+                                                                            </tr>
+                                                                        ))}
+                                                                    </>
+                                                                )}
+
 								{/* --- Analytics & Insights --- */}
 								<tr className="border-b border-stroke">
 									<td

@@ -4,9 +4,9 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	metadataBase: new URL("https://studio.labeld.app"),
 	title:
-		"Labeld Studio — Website Builder, Storefront & Event Ticketing for Independent Brands",
+		"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 	description:
-		"Launch your brand site, sell product drops/merch, host ticketed events, and manage orders & analytics — all from one dashboard. Built for independent brands and organizers.",
+		"Build your brand site, sell products, host ticketed events, and manage everything from one dashboard.",
 	alternates: {
 		canonical: "https://studio.labeld.app/",
 	},
