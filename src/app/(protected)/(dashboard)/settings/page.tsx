@@ -11,19 +11,22 @@ import {
 	Bell,
 	CreditCard,
 	DollarSign,
+	Lightbulb,
 } from "lucide-react";
 import Button from "@/components/ui/button";
 import AccountSecurity from "@/components/settings/AccountSecurity";
 import ShippingSettings from "@/components/settings/ShippingSettings";
 import PayoutSettings from "@/components/settings/PayoutSettings";
 import BillingSettings from "@/components/settings/BillingSettings";
+import FeatureRequests from "@/components/settings/FeatureRequests";
 
 type SettingsSection =
 	| "main"
 	| "account-security"
 	| "shipping"
 	| "payout"
-	| "billing";
+	| "billing"
+	| "feature-requests";
 
 export default function SettingsPage() {
 	const [currentSection, setCurrentSection] = useState<SettingsSection>("main");
@@ -55,6 +58,14 @@ export default function SettingsPage() {
 			title: "Payout Settings",
 			description: "Configure how quickly you receive your earnings",
 			icon: DollarSign,
+			available: true,
+		},
+		{
+			id: "feature-requests" as const,
+			title: "Suggest an Improvement",
+			description:
+				"Tell us what features you'd like to see next in Labeld Studio",
+			icon: Lightbulb,
 			available: true,
 		},
 		{
@@ -163,6 +174,24 @@ export default function SettingsPage() {
 
 				{/* Shipping Settings Component */}
 				<ShippingSettings />
+			</div>
+		);
+	}
+
+	if (currentSection === "feature-requests") {
+		return (
+			<div className="space-y-6">
+				{/* Back Arrow */}
+				<button
+					onClick={handleBackToMain}
+					className="flex items-center gap-2 text-text-muted hover:text-text transition-colors"
+				>
+					<ArrowLeft className="w-4 h-4" />
+					<span className="text-sm">Back to Settings</span>
+				</button>
+
+				{/* Feature Requests Component */}
+				<FeatureRequests />
 			</div>
 		);
 	}
