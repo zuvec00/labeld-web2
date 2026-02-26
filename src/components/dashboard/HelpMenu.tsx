@@ -85,7 +85,7 @@ export default function HelpMenu() {
 				aria-expanded={open}
 				aria-label="Help"
 			>
-				<HelpCircle className="w-5 h-5" />
+				<HelpCircle className="w-5 h-5 text-text-muted" />
 			</button>
 
 			{open && (

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import HelpMenu from "@/components/dashboard/HelpMenu";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -205,11 +206,19 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 						</div>
 					)}
 
-					{/* Theme Toggle - visible on all screen sizes */}
-					<ThemeToggle />
+					{/* Utility Icons Group */}
+					<div className="flex items-center gap-1 sm:gap-2 bg-surface/50 p-1 rounded-2xl border border-stroke hidden sm:flex">
+						<ThemeToggle />
+						<NotificationBell />
+						<HelpMenu />
+					</div>
 
-					{/* Help Menu */}
-					<HelpMenu />
+					{/* Mobile Utility Icons (Ungrouped or simpler styling for space) */}
+					<div className="flex sm:hidden items-center gap-1">
+						<ThemeToggle />
+						<NotificationBell />
+						<HelpMenu />
+					</div>
 
 					{/* View Store Button (Brand Only) */}
 					{activeRole === "brand" && (

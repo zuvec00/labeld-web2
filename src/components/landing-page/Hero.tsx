@@ -106,13 +106,13 @@ const Hero = () => {
 					>
 						Start Your Studio
 					</ButtonVite>
-					<ButtonVite
+					{/* <ButtonVite
 						size="lg"
 						variant="outline"
 						className="border-border text-foreground hover:bg-surface font-heading text-sm tracking-wide px-8 h-12 transition-transform duration-200 hover:scale-[1.03]"
 					>
 						View Demo
-					</ButtonVite>
+					</ButtonVite> */}
 				</motion.div>
 
 				<motion.div
