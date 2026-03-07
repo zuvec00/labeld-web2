@@ -19,7 +19,7 @@ export interface StorefrontDailyMetrics {
 
 export interface ProductPerformanceMetric {
   productId: string;
-  productName: string; // Hydrated from catalog
+  productName: string; // Hydrated from catalog 
   imageUrl?: string;   // Hydrated from catalog
   views: number;
   addToCarts: number;

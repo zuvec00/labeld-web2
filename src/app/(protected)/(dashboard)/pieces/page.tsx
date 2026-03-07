@@ -124,7 +124,7 @@ export default function PiecesPage() {
 				</div>
 			</div>
 		);
-	}
+	}     
 
 	// ✅ status === "complete"
 	return <PiecesTab brandId={state.uid} />;

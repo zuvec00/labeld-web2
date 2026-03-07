@@ -38,7 +38,7 @@ const BILLING_OPTIONS = [
 
 const Pricing = () => {
 	const [billing, setBilling] =
-		useState<(typeof BILLING_OPTIONS)[number]["id"]>("annual");
+		useState<(typeof BILLING_OPTIONS)[number]["id"]>("monthly");
 	const selectedPlan = BILLING_OPTIONS.find((p) => p.id === billing)!;
 
 	return (
