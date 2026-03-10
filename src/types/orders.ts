@@ -108,7 +108,17 @@ export interface StoreOrderDoc {
   };
   provider: PaymentProvider | null;
   providerRef?: { initRef?: string; verifyRef?: string };
-  deliverTo?: { fullName?: string; email?: string; phone?: string; notes?: string };
+  deliverTo?: { 
+    fullName?: string; 
+    email?: string; 
+    phone?: string; 
+    notes?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
   shipping?: {
     method: "delivery" | "pickup";
     address?: {

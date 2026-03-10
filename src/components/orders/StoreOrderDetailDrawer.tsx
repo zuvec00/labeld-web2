@@ -273,6 +273,36 @@ export default function StoreOrderDetailDrawer({
 									</p>
 								</div>
 								<div>
+									<p className="text-sm text-text-muted">Address</p>
+									<div className="font-medium text-text text-sm">
+										{order.deliverTo?.address ? (
+											<div className="space-y-0.5">
+												<p>{order.deliverTo.address}</p>
+												{(order.deliverTo.city || order.deliverTo.state) && (
+													<p>
+														{[order.deliverTo.city, order.deliverTo.state]
+															.filter(Boolean)
+															.join(", ")}
+													</p>
+												)}
+												{(order.deliverTo.postalCode ||
+													order.deliverTo.country) && (
+													<p>
+														{[
+															order.deliverTo.postalCode,
+															order.deliverTo.country,
+														]
+															.filter(Boolean)
+															.join(", ")}
+													</p>
+												)}
+											</div>
+										) : (
+											"Not provided"
+										)}
+									</div>
+								</div>
+								<div>
 									<p className="text-sm text-text-muted">Notes</p>
 									<p className="font-medium text-text">
 										{order.deliverTo?.notes || "Not provided"}
