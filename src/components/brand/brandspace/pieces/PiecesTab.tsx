@@ -20,8 +20,14 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Star,
+	Instagram,
+	Sparkles,
 } from "lucide-react";
 import PiecesListView from "./PiecesListView";
+import InstagramConnectModal from "@/components/brand/instagram/InstagramConnectModal";
+import { useInstagram } from "@/hooks/useInstagram";
+import InstagramImportModal from "../../instagram/InstagramImportModal";
+// import InstagramImportModal from "@/components/brand/instagram/InstagramImportModal";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -36,6 +42,11 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 	const [currentPage, setCurrentPage] = useState(1);
 	const router = useRouter();
 	const { orders, loading: loadingOrders } = useStoreOrders();
+	const { connection } = useInstagram();
+
+	const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
+	const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
+	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
 	// Load view preference on mount
 	useEffect(() => {
@@ -165,7 +176,13 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 					Add your pieces so people can see and shop your products.
 				</p>
 				<button
-					onClick={() => router.push("/pieces/new")}
+					onClick={() => {
+						if (brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2") {
+							setIsFabMenuOpen(!isFabMenuOpen);
+						} else {
+							router.push("/pieces/new");
+						}
+					}}
 					className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
 					title="Drop a Product"
 				>
@@ -303,14 +320,77 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 				</div>
 			)}
 
-			<button
-				data-tour="create-product"
-				onClick={() => router.push("/pieces/new")}
-				className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-				title="Drop a Product"
-			>
-				<Plus className="w-6 h-6" />
-			</button>
+			{/* FAB Menu */}
+			<div className="fixed bottom-8 right-6 z-50 flex flex-col items-end gap-3">
+				{isFabMenuOpen && brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2" && (
+					<div className="flex flex-col items-end gap-3 mb-2 animate-in slide-in-from-bottom-4 duration-200">
+						<button
+							onClick={() => {
+								setIsFabMenuOpen(false);
+								router.push("/pieces/new");
+							}}
+							className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-stroke rounded-xl shadow-xl hover:bg-surface-neutral transition-colors"
+						>
+							<span className="text-sm font-semibold">Manual Entry</span>
+							<div className="w-10 h-10 rounded-full bg-surface border border-stroke flex items-center justify-center">
+								<Plus className="w-5 h-5" />
+							</div>
+						</button>
+
+						<button
+							onClick={() => {
+								setIsFabMenuOpen(false);
+								if (connection?.isConnected) {
+									setIsImportModalOpen(true);
+								} else {
+									setIsConnectModalOpen(true);
+								}
+							}}
+							className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-stroke rounded-xl shadow-xl hover:bg-surface-neutral transition-colors group"
+						>
+							<div className="flex flex-col items-end">
+								<span className="text-sm font-semibold flex items-center gap-1.5">
+									Instagram <Sparkles className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+								</span>
+								<span className="text-[10px] text-text-muted">Generate from posts</span>
+							</div>
+							<div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 flex items-center justify-center text-white">
+								<Instagram className="w-5 h-5" />
+							</div>
+						</button>
+					</div>
+				)}
+
+				<button
+					data-tour="create-product"
+					onClick={() => {
+						if (brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2") {
+							setIsFabMenuOpen(!isFabMenuOpen);
+						} else {
+							router.push("/pieces/new");
+						}
+					}}
+					className={`h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center transition-all duration-300 ${isFabMenuOpen ? 'rotate-45 scale-90 bg-surface border border-stroke text-text' : 'hover:scale-105'}`}
+					title="Drop a Product"
+				>
+					<Plus className="w-6 h-6" />
+				</button>
+			</div>
+
+			<InstagramConnectModal 
+				isOpen={isConnectModalOpen}
+				onClose={() => setIsConnectModalOpen(false)}
+				onSuccess={() => {
+					setIsConnectModalOpen(false);
+					setIsImportModalOpen(true);
+				}}
+			/>
+
+			<InstagramImportModal 
+				isOpen={isImportModalOpen}
+				onClose={() => setIsImportModalOpen(false)}
+				brandId={brandId}
+			/>
 		</div>
 	);
 }

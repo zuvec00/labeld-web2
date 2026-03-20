@@ -101,6 +101,25 @@ export default function OptimizedImage({
 
 	const isCloudinary = isCloudinaryUrl(src);
 
+	// Whitelisted hostnames for next/image (must match next.config.ts)
+	const isWhitelisted = (url: string) => {
+		try {
+			const hostname = new URL(url).hostname;
+			return (
+				hostname.endsWith("firebasestorage.googleapis.com") ||
+				hostname.endsWith("storage.googleapis.com") ||
+				hostname.endsWith("images.unsplash.com") ||
+				hostname.endsWith("cdninstagram.com") ||
+				hostname.endsWith("fbcdn.net") ||
+				hostname.endsWith("res.cloudinary.com")
+			);
+		} catch {
+			return false;
+		}
+	};
+
+	const shouldOptimize = isCloudinary || isWhitelisted(src);
+
 	// Determine sizes attribute
 	const sizesAttr = sizes || getResponsiveSizes(sizeContext);
 
@@ -110,6 +129,23 @@ export default function OptimizedImage({
 		objectPosition,
 		...style,
 	};
+
+	// If not whitelisted and not cloudinary, fall back to regular <img> immediately
+	if (!shouldOptimize) {
+		return (
+			<img
+				src={src}
+				alt={alt}
+				className={className}
+				style={imageStyle}
+				loading={loading}
+				draggable={draggable}
+				onClick={onClick}
+				onLoad={onLoad}
+				onError={handleError}
+			/>
+		);
+	}
 
 	// For Cloudinary URLs, use custom loader
 	if (isCloudinary) {

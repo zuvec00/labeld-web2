@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, XCircle, Instagram, ArrowLeft, Globe, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GradientText } from "@/components/ui/GradientText";
@@ -13,6 +13,7 @@ function IntegrationsContent() {
 	const router = useRouter();
 	const status = searchParams.get("status");
 	const reason = searchParams.get("reason");
+	const [showTechnicalDetails, setShowTechnicalDetails] = useState(false);
 
 	const isSuccess = status === "success";
 	const isError = status === "error";
@@ -29,6 +30,18 @@ function IntegrationsContent() {
 		router.push("/dashboard");
 	};
 
+	// Helper to format/sanitize the error message
+	const getErrorDisplay = () => {
+		if (!reason) return "Something went wrong while connecting your Instagram account. Please try again.";
+		
+		// If it's a very long string or looks like JSON, we'll truncate the main view
+		if (reason.length > 120 || reason.includes("{") || reason.includes("[")) {
+			return "Failed to connect to Instagram due to a technical error. Review the details below.";
+		}
+		
+		return reason;
+	};
+
 	return (
 		<div className="min-h-screen bg-bg text-text flex flex-col items-center justify-center p-6 relative overflow-hidden">
 			{/* Background Ambience */}
@@ -42,7 +55,7 @@ function IntegrationsContent() {
 				initial={{ opacity: 0, y: 20 }}
 				animate={{ opacity: 1, y: 0 }}
 				transition={{ duration: 0.6, ease: "easeOut" }}
-				className="w-full max-w-md bg-surface border border-stroke rounded-[32px] p-8 md:p-10 shadow-2xl relative z-10 backdrop-blur-sm"
+				className="w-full max-w-lg bg-surface border border-stroke rounded-[32px] p-8 md:p-10 shadow-2xl relative z-10 backdrop-blur-sm"
 			>
 				<div className="flex flex-col items-center text-center">
 					{/* Logo */}
@@ -103,15 +116,53 @@ function IntegrationsContent() {
 						)}
 					</div>
 
-					{/* Message */}
-					<p className="text-text-muted leading-relaxed mb-10">
-						{isSuccess 
-							? "Instagram connected successfully. You can return to Labeld Studio and continue importing your posts." 
-							: isError 
-								? (reason || "Something went wrong while connecting your Instagram account. Please try again.")
-								: "Please wait while we process your request."
-						}
-					</p>
+					{/* Message Area */}
+					<div className="w-full mb-10 overflow-hidden">
+						{isSuccess ? (
+							<p className="text-text-muted leading-relaxed">
+								Instagram connected successfully. You can return to Labeld Studio and continue importing your posts.
+							</p>
+						) : isError ? (
+							<div className="space-y-4">
+								<p className="text-text-muted leading-relaxed">
+									{getErrorDisplay()}
+								</p>
+								
+								{/* Technical Details Toggle */}
+								{reason && (reason.length > 80 || reason.includes("{")) && (
+									<div className="w-full text-left">
+										<button 
+											onClick={() => setShowTechnicalDetails(!showTechnicalDetails)}
+											className="text-[10px] uppercase tracking-wider font-bold text-text-muted/60 hover:text-text-muted mb-2 transition-colors flex items-center gap-1"
+										>
+											{showTechnicalDetails ? "Hide Details" : "Show technical reason"}
+											<motion.span animate={{ rotate: showTechnicalDetails ? 180 : 0 }}>
+												<svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+												</svg>
+											</motion.span>
+										</button>
+										
+										{showTechnicalDetails && (
+											<motion.div 
+												initial={{ height: 0, opacity: 0 }}
+												animate={{ height: "auto", opacity: 1 }}
+												className="bg-bg/50 border border-stroke rounded-xl p-4 max-h-40 overflow-y-auto"
+											>
+												<code className="text-xs text-alert/80 break-all font-mono whitespace-pre-wrap">
+													{reason}
+												</code>
+											</motion.div>
+										)}
+									</div>
+								)}
+							</div>
+						) : (
+							<p className="text-text-muted leading-relaxed">
+								Please wait while we process your request.
+							</p>
+						)}
+					</div>
 
 					{/* CTAs */}
 					<div className="w-full space-y-3">

@@ -10,3 +10,11 @@ export {
   type AddTimelineNoteRequest,
   type ShippingQuoteRequest as QuoteShippingRequest,
 } from "./callables/shipping";
+
+export {
+  getInstagramConnection,
+  startInstagramAuth,
+  getInstagramMedia,
+  generateProductsFromPosts,
+  disconnectInstagram,
+} from "./callables/instagram";
