@@ -131,12 +131,12 @@ export default function Footer() {
 								Labeld Events
 							</a>
 							<a
-								href="https://apps.apple.com/ng/app/labeld/id6748664223"
+								href="https://apps.apple.com/app/id6760316742"
 								target="_blank"
 								rel="noopener noreferrer"
 								className="block text-text-muted hover:text-cta transition-colors text-sm font-manrope"
 							>
-								Download iOS App
+								Download Labeld Studio
 							</a>
 							<a
 								href="https://labeld.app"
