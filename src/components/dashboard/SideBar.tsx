@@ -12,6 +12,7 @@ import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
 import DashboardContextSwitch from "@/components/dashboard/DashboardContextSwitch";
 import { Eye } from "lucide-react";
+import AppStoreBanner from "@/components/dashboard/AppStoreBanner";
 
 export default function Sidebar({
 	onItemClick,
@@ -228,6 +229,10 @@ export default function Sidebar({
 						</ul>
 					</div>
 				))}
+			</div>
+			
+			<div className="flex-shrink-0">
+				<AppStoreBanner role={sidebarMode} />
 			</div>
 
 			{/* Fixed Footer: Theme Toggle + Logout */}
