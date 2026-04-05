@@ -73,6 +73,7 @@ export default function AuthForm({
 					profileImageUrl: user.photoURL ?? null,
 					isBrand: false,
 					brandSpaceSetupComplete: false,
+					phoneNumber: null,
 				});
 				if (!cancelled) router.replace("/user/setup");
 				return;
@@ -137,6 +138,7 @@ export default function AuthForm({
 					profileImageUrl: u.photoURL ?? null,
 					isBrand: false,
 					brandSpaceSetupComplete: false,
+					phoneNumber: null,
 				});
 
 				toast({
@@ -238,6 +240,7 @@ export default function AuthForm({
 				profileImageUrl: u.photoURL ?? null,
 				isBrand: false,
 				brandSpaceSetupComplete: false,
+				phoneNumber: null,
 			});
 
 			toast({
@@ -305,6 +308,7 @@ export default function AuthForm({
 				profileImageUrl: u.photoURL ?? null,
 				isBrand: false,
 				brandSpaceSetupComplete: false,
+				phoneNumber: null,
 			});
 
 			toast({

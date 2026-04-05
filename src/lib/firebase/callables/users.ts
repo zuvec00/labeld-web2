@@ -26,6 +26,7 @@ export async function addUserCF(payload: {
   profileImageUrl?: string | null;
   isBrand?: boolean;
   brandSpaceSetupComplete?: boolean;
+  phoneNumber?: string | null;
 }) {
   const callable = httpsCallable(fx(), "addUser");
   const res = await callable({
@@ -36,6 +37,7 @@ export async function addUserCF(payload: {
     isBrand: payload.isBrand ?? false,
     brandSpaceSetupComplete: payload.brandSpaceSetupComplete ?? false,
     profileSetupComplete: false,
+    phoneNumber: payload.phoneNumber ?? null,
   });
   const { data } = res as { data: any };
   if (!isOk(data)) {
