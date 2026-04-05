@@ -122,6 +122,7 @@ const Pricing = () => {
 							domainPreview={{
 								highlight: "yourbrand",
 								suffix: ".labeld.app",
+								extraHint: "or connect yourbrand.com",
 							}}
 							features={[
 								...PRICING_CONTENT.brand.plans.pro.ownershipFeatures,
@@ -211,6 +212,7 @@ interface PlanCardProps {
 		prefix?: string;
 		highlight: string;
 		suffix?: string;
+		extraHint?: string;
 	};
 	features: string[];
 	buttonText: string;
@@ -319,19 +321,29 @@ const PlanCard = ({
 
 			{domainPreview && (
 				<div
-					className={`mt-4 ${themeColors.bgVeryLight} border ${themeColors.borderLight} rounded-lg px-3 py-2 flex items-center gap-2 font-mono text-xs overflow-hidden`}
+					className={`mt-4 ${themeColors.bgVeryLight} border ${themeColors.borderLight} rounded-lg px-3 py-2 flex flex-col gap-0.5 min-w-0 overflow-hidden text-xs font-mono`}
 				>
-					<Globe
-						className={`h-3.5 w-3.5 ${themeColors.text} shrink-0`}
-						strokeWidth={2}
-					/>
-					<span className="truncate text-foreground/80">
-						{domainPreview.prefix}
-						<span className={`${themeColors.text} font-bold`}>
-							{domainPreview.highlight}
+					<div className="flex items-center gap-2">
+						<Globe
+							className={`h-3.5 w-3.5 ${themeColors.text} shrink-0`}
+							strokeWidth={2}
+						/>
+						<span className="truncate text-foreground/80">
+							{domainPreview.prefix}
+							<span className={`${themeColors.text} font-bold`}>
+								{domainPreview.highlight}
+							</span>
+							{domainPreview.suffix}
 						</span>
-						{domainPreview.suffix}
-					</span>
+					</div>
+					{domainPreview.extraHint && (
+						<div className="flex items-center gap-1.5 pl-5.5 ml-[19px]">
+							<span className="w-1 h-1 rounded-full bg-muted-foreground/30 flex-shrink-0" />
+							<span className="text-[10px] text-muted-foreground/60 italic truncate">
+								{domainPreview.extraHint}
+							</span>
+						</div>
+					)}
 				</div>
 			)}
 

@@ -46,6 +46,7 @@ export const PRICING_CONTENT = {
 					"Your own branded storefront",
 					"0% fees on your personal storefront sales",
 					"Custom store profile URL (subdomain)",
+					"Connect your own domain (e.g. yourbrand.com)",
 					"Reduced / white-label Labeld branding",
 					"Optionally featured on Labeld socials",
 				],
@@ -74,6 +75,7 @@ export const PRICING_CONTENT = {
 			branding: [
 				{ label: "Basic Brand Profile", free: true, pro: true },
 				{ label: "Custom Store URL (Subdomain)", free: false, pro: true },
+				{ label: "Custom Domain Mapping", free: false, pro: true },
 			],
 			customization: [
 				{ label: 'Default "Clean" Theme', free: true, pro: true },

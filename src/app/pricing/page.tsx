@@ -696,15 +696,25 @@ export default function PublicPricingPage() {
 								{content.plans.pro.description}
 							</p>
 							<div
-								className={`bg-gradient-to-r ${pricingMode === "organizer" ? "from-events/5" : "from-accent/5"} to-transparent rounded-lg px-4 py-3 border ${accentBorder}/20 text-sm text-text flex items-center gap-2 font-mono`}
+								className={`bg-gradient-to-r ${pricingMode === "organizer" ? "from-events/5" : "from-accent/5"} to-transparent rounded-lg px-4 py-3 border ${accentBorder}/20 text-sm text-text flex items-center gap-3 font-mono`}
 							>
 								<Globe className={`w-4 h-4 ${accentText} flex-shrink-0`} />
-								<span className="truncate">
-									<span className={`${accentText} font-semibold`}>
-										{entityName}
+								<div className="flex flex-col gap-0.5 min-w-0">
+									<span className="truncate">
+										<span className={`${accentText} font-semibold`}>
+											{entityName}
+										</span>
+										.labeld.app
 									</span>
-									.labeld.app
-								</span>
+									{pricingMode === "brand" && (
+										<span className="text-[10px] text-text-muted/60 flex items-center gap-1.5 overflow-hidden">
+											<span className="w-1 h-1 rounded-full bg-text-muted/40 flex-shrink-0" />
+											<span className="truncate italic">
+												or connect {entityName}.com
+											</span>
+										</span>
+									)}
+								</div>
 							</div>
 						</div>
 

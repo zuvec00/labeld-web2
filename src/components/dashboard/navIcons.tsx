@@ -24,7 +24,9 @@ import {
 	Orbit,
 	Earth,
 	LayoutTemplate, // Added for Transactions
-	CalendarDays, // Added for Bookings
+	CalendarDays,
+	Link2,
+	Link, // Added for Bookings
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -78,6 +80,8 @@ export const getNavIcon = (iconName: string) => {
 			return <List {...iconProps} />;
 		case "Bookings":
 			return <CalendarDays {...iconProps} />;
+		case "Domains":
+			return <Link {...iconProps} />;
 		default:
 			return null;
 	}

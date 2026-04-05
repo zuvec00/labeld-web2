@@ -142,9 +142,17 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
 		],
 	},
 	{
-		title: "General",
+		title: "Settings",
 		items: [
 			{ label: "Settings", href: "/settings", icon: getNavIcon("Settings") },
+			{
+				label: "Domains",
+				href: "/domains",
+				feature: "brandspace",
+				icon: getNavIcon("Domains"),
+				badge: "PRO",
+				roles: ["brand"],
+			},
 		],
 	},
 ];

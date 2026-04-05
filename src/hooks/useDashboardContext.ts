@@ -26,6 +26,9 @@ interface RoleDetectionResult {
   brandUsername?: string;
   brandSlug?: string;
   brandLogoUrl?: string;
+  customDomain?: string;
+  useCustomDomain?: boolean;
+  customDomainStatus?: "pending" | "active" | "error";
   acquisitionSurvey?: {
     source: string;
     subSource?: string;
@@ -190,6 +193,9 @@ export function useDashboardContext(): UseDashboardContextReturn {
                brandSubscriptionStatus,
                brandBillingCycle,
                brandSubscriptionEndsAt,
+               customDomain: hasBrandProfile ? snap.data().customDomain : undefined,
+               useCustomDomain: hasBrandProfile ? snap.data().useCustomDomain : undefined,
+               customDomainStatus: hasBrandProfile ? snap.data().customDomainStatus : undefined,
            }));
        });
        

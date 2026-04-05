@@ -48,6 +48,11 @@ export interface BrandModel {
     respondedAt: Timestamp | Date;
   } | null;
 
+  // Custom Domains
+  customDomain?: string | null;
+  useCustomDomain?: boolean;
+  customDomainStatus?: "pending" | "verified" | "active" | "error" | null;
+
   createdAt: Timestamp | Date;
   updatedAt: Timestamp | Date;
 }
