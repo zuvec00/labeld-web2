@@ -18,6 +18,7 @@ const ALL_FIELDS: ExportField[] = [
 	"orderId",
 	"buyerEmail",
 	"buyerName",
+	"buyerPhone",
 	"items",
 	"status",
 	"subtotal",

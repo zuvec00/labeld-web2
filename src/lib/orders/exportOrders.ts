@@ -6,6 +6,7 @@ export type ExportField =
 	| "orderId"
 	| "buyerEmail"
 	| "buyerName"
+	| "buyerPhone"
 	| "items"
 	| "status"
 	| "subtotal"
@@ -17,6 +18,7 @@ export const EXPORT_FIELD_LABELS: Record<ExportField, string> = {
 	orderId: "Order ID",
 	buyerEmail: "Buyer Email",
 	buyerName: "Buyer Name",
+	buyerPhone: "Buyer Phone",
 	items: "Items",
 	status: "Payment Status",
 	subtotal: "Subtotal",
@@ -133,6 +135,9 @@ function buildOrderRow(
 						(order.deliverTo as any)?.fullName ||
 						""
 				);
+				break;
+			case "buyerPhone":
+				row.push(order.deliverTo?.phone || (order.deliverTo as any)?.phone || "");
 				break;
 			case "items":
 				row.push(formatLineItems(order.lineItems));
