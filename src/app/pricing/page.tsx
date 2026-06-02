@@ -480,7 +480,7 @@ export default function PublicPricingPage() {
 					</div>
 
 					{/* Promo Banner if Active */}
-					{promoStatus?.active ||
+					{/* {promoStatus?.active ||
 						(pricingMode != "organizer" && (
 							<div className="animate-in fade-in slide-in-from-top-4 duration-700 w-full flex justify-center">
 								<div
@@ -494,7 +494,7 @@ export default function PublicPricingPage() {
 									</span>
 								</div>
 							</div>
-						))}
+						))} */}
 
 					<h1 className="font-heading text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
 						{content.hero.title}
