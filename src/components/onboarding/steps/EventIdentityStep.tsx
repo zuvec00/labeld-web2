@@ -1,9 +1,11 @@
 "use client";
 
 import { useEventOrganizerOnboard } from "@/lib/stores/eventOrganizerStore";
-import { validateUsername } from "@/lib/validation/username";
-import { ArrowRight, Check, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { validateSlug } from "@/lib/validation/username";
+import { slugify } from "@/lib/utils";
+import { useUsernameAvailability } from "@/lib/hooks/useUsernameAvailability";
+import { ArrowRight, Check, X, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface EventIdentityStepProps {
 	onNext: () => void;
@@ -29,31 +31,56 @@ export default function EventIdentityStep({
 	const { data, setData } = useEventOrganizerOnboard();
 	const { organizerName, username, eventCategory } = data;
 
+	const userEditedHandle = useRef((username || "").length > 0);
+
 	const [usernameError, setUsernameError] = useState<string | null>(null);
 
+	const availabilityStatus = useUsernameAvailability(username || "", {
+		type: "slug",
+	});
+
+	// Auto-generate slug from organizer name if user hasn't typed a handle
 	useEffect(() => {
-		if (username) {
-			const { ok } = validateUsername(username);
-			if (!ok) {
-				let msg = "Invalid username";
-				if (username.length < 3) msg = "Too short (min 3 chars)";
-				else if (username.length > 15) msg = "Too long (max 15 chars)";
-				else if (/\s/.test(username)) msg = "No spaces allowed";
-				else msg = "Use letters, numbers, . or _ only";
-				setUsernameError(msg);
-			} else {
-				setUsernameError(null);
-			}
+		if (userEditedHandle.current) return;
+		if (!organizerName.trim()) return;
+		const generated = slugify(organizerName);
+		if (generated) setData({ username: generated });
+	}, [organizerName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Format validation
+	useEffect(() => {
+		if (!username) {
+			setUsernameError(null);
+			return;
+		}
+		const { ok } = validateSlug(username);
+		if (!ok) {
+			let msg = "Invalid handle";
+			if (username.length < 3) msg = "Too short (min 3 chars)";
+			else if (username.length > 30) msg = "Too long (max 30 chars)";
+			else if (/\s/.test(username)) msg = "No spaces allowed";
+			else msg = "Use lowercase letters, numbers, and hyphens only";
+			setUsernameError(msg);
 		} else {
 			setUsernameError(null);
 		}
 	}, [username]);
 
+	const isAvailable = availabilityStatus === "available";
+	const isTaken = availabilityStatus === "taken";
+	const isChecking = availabilityStatus === "checking";
+
 	const canProceed =
 		organizerName.trim().length > 0 &&
 		(username || "").trim().length > 0 &&
 		(eventCategory || "").length > 0 &&
-		!usernameError;
+		!usernameError &&
+		isAvailable;
+
+	const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		userEditedHandle.current = true;
+		setData({ username: e.target.value.toLowerCase().trim() });
+	};
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-500">
@@ -91,25 +118,26 @@ export default function EventIdentityStep({
 							<input
 								type="text"
 								value={username}
-								onChange={(e) =>
-									setData({
-										username: e.target.value.toLowerCase().trim(),
-									})
-								}
+								onChange={handleUsernameChange}
 								placeholder="boilerroom"
 								className={`w-full bg-transparent border-b-2 ${
-									usernameError
+									usernameError || isTaken
 										? "border-red-500/50 focus:border-red-500"
+										: isAvailable
+										? "border-green-500/50 focus:border-green-500"
 										: "border-stroke focus:border-accent"
 								} text-2xl font-medium py-2 pl-8 outline-none placeholder:text-subtle transition-colors`}
 							/>
 							<div className="absolute right-0 top-1/2 -translate-y-1/2">
-								{username && !usernameError && (
+								{isChecking && (
+									<Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+								)}
+								{isAvailable && !isChecking && (
 									<div className="text-green-500 animate-in zoom-in duration-200">
 										<Check className="w-5 h-5" />
 									</div>
 								)}
-								{usernameError && (
+								{(usernameError || isTaken) && !isChecking && (
 									<div className="text-red-500 animate-in zoom-in duration-200">
 										<X className="w-5 h-5" />
 									</div>
@@ -121,10 +149,26 @@ export default function EventIdentityStep({
 								{usernameError}
 							</p>
 						)}
+						{isTaken && !usernameError && (
+							<p className="text-sm text-red-500 animate-in slide-in-from-top-1">
+								This handle is already taken. Try another.
+							</p>
+						)}
+						{isAvailable && !usernameError && (
+							<p className="text-sm text-green-500 animate-in slide-in-from-top-1">
+								Handle available!
+							</p>
+						)}
+						{isChecking && (
+							<p className="text-sm text-text-muted animate-in slide-in-from-top-1">
+								Checking availability…
+							</p>
+						)}
 					</div>
 				</div>
+
 				{/* Event Category */}
-				<div className="space-y-2">
+				<div className="space-y-2 mt-6">
 					<label className="text-sm font-medium text-text-muted uppercase tracking-wider">
 						Primary Event Category <span className="text-accent">*</span>
 					</label>

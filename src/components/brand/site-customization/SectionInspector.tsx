@@ -21,6 +21,7 @@ import PreviewBrandStory from "./preview/PreviewBrandStory";
 import PreviewProductListing from "./preview/PreviewProductListing";
 import PreviewFeaturedDrops from "./preview/PreviewFeaturedDrops";
 import PreviewHero from "./preview/PreviewHero";
+import PreviewWaitlist from "./preview/PreviewWaitlist";
 import { getProductListForBrand } from "@/lib/firebase/queries/product";
 import { formatWithCommasDouble } from "@/lib/format";
 
@@ -467,6 +468,8 @@ export default function SectionInspector({
 				return <PreviewBrandStory section={previewSection as any} />;
 			case "socialProof":
 				return <PreviewSocialProof section={previewSection as any} />;
+			case "waitlist":
+				return <PreviewWaitlist section={previewSection as any} />;
 			case "footer":
 				return <PreviewFooter section={previewSection as any} />;
 			default:
@@ -1037,6 +1040,108 @@ export default function SectionInspector({
 								description="Choose 3-6 recent posts, customer photos, or campaign visuals."
 							/>
 						</ControlWrapper>
+					</div>
+				);
+
+			case "waitlist":
+				return (
+					<div className="space-y-6">
+						<ControlWrapper
+							label="Background Image (Optional)"
+							isCustom={isCustom("imageUrl")}
+							onReset={() => handleReset("imageUrl")}
+						>
+							<UploadImage
+								text="Waitlist Image"
+								value={null}
+								onChange={handleImageUpload}
+								onlineImage={
+									localOverrides.imageUrl ?? (defaults as any).imageUrl
+								}
+								singleImage={true}
+								backgroundColor="var(--color-bg)"
+								textColor="var(--color-text-muted)"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="Headline"
+							isCustom={isCustom("title")}
+							onReset={() => handleReset("title")}
+						>
+							<Input
+								value={localOverrides.title ?? (defaults as any).title ?? ""}
+								onChange={(e) => handleChange("title", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="Join the Waitlist"
+								className="bg-surface"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="Subheadline"
+							isCustom={isCustom("subtitle")}
+							onReset={() => handleReset("subtitle")}
+						>
+							<Textarea
+								value={
+									localOverrides.subtitle ?? (defaults as any).subtitle ?? ""
+								}
+								onChange={(e) => handleChange("subtitle", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="Be the first to know when we go live."
+								className="bg-surface min-h-[90px]"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="CTA Label"
+							isCustom={isCustom("ctaText")}
+							onReset={() => handleReset("ctaText")}
+						>
+							<Input
+								value={
+									localOverrides.ctaText ??
+									localOverrides.ctaLabel ??
+									(defaults as any).ctaText ??
+									""
+								}
+								onChange={(e) => handleChange("ctaText", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="Notify Me"
+								className="bg-surface"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="Tag"
+							isCustom={isCustom("tag")}
+							onReset={() => handleReset("tag")}
+						>
+							<Input
+								value={localOverrides.tag ?? (defaults as any).tag ?? "general"}
+								onChange={(e) => handleChange("tag", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="general"
+								className="bg-surface"
+							/>
+							<p className="text-[10px] text-text-muted pt-1">
+								Used to segment people in Audience → Waitlist.
+							</p>
+						</ControlWrapper>
+
+						<div className="flex items-center justify-between py-2">
+							<label className="text-xs font-medium text-text-muted uppercase tracking-wider">
+								Show on storefront closed page
+							</label>
+							<Switch
+								checked={localOverrides.showOnClosedPage ?? (defaults as any).showOnClosedPage ?? false}
+								onCheckedChange={(checked) => {
+									handleChange("showOnClosedPage", checked);
+									handleSave("showOnClosedPage", checked);
+								}}
+							/>
+						</div>
 					</div>
 				);
 

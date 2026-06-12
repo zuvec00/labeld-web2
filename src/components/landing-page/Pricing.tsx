@@ -42,33 +42,39 @@ const Pricing = () => {
 	const selectedPlan = BILLING_OPTIONS.find((p) => p.id === billing)!;
 
 	return (
-		<section id="pricing" className="py-32 px-6">
+		<section id="pricing" className="border-b border-border bg-bg px-6 py-20 md:py-28">
 			<div className="mx-auto max-w-7xl">
 				<motion.div
 					initial={{ opacity: 0, y: 30 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.7 }}
-					className="mb-12 text-center"
+					className="mb-10 grid gap-4 md:grid-cols-[0.9fr_1.1fr] md:items-end"
 				>
-					<p className="mb-4 font-body text-sm font-medium uppercase tracking-[0.3em] text-cta">
-						Pricing
+					<div>
+						<p className="mb-4 font-body text-[11px] font-bold uppercase tracking-[0.28em] text-cta">
+							Pricing
+						</p>
+						<h2 className="font-heading text-2xl font-semibold uppercase leading-[1.08] text-foreground sm:text-4xl">
+							Simple. Transparent. Fair.
+						</h2>
+					</div>
+					<p className="font-body text-sm leading-relaxed text-muted-foreground md:text-base">
+						Start free, then upgrade when you need deeper customization, stronger
+						analytics, and more control over your brand or event surface.
 					</p>
-					<h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
-						Simple. Transparent. Fair.
-					</h2>
 				</motion.div>
 
 				{/* Billing Toggle */}
-				<div className="mb-16 flex justify-center">
-					<div className="inline-flex items-center gap-1 rounded-lg border border-border bg-surface p-1">
+				<div className="mb-14 overflow-x-auto">
+					<div className="mx-auto inline-flex min-w-max items-center gap-1 border border-border bg-surface p-1 md:flex md:w-fit">
 						{BILLING_OPTIONS.map((option) => (
 							<button
 								key={option.id}
 								onClick={() => setBilling(option.id)}
-								className={`!font-sans rounded-md px-4 py-2 font-body text-xs font-medium transition-all ${
+								className={`!font-sans px-4 py-2 font-body text-xs font-bold uppercase tracking-[0.14em] transition-all ${
 									billing === option.id
-										? "bg-cta text-cta-foreground"
+										? "bg-cta text-white"
 										: "text-muted-foreground hover:text-foreground"
 								}`}
 							>
@@ -80,8 +86,8 @@ const Pricing = () => {
 
 				{/* Brands Section */}
 				<div className="mb-20">
-					<div className="mb-8 text-center md:text-left">
-						<h3 className="font-heading text-2xl font-bold text-foreground">
+					<div className="mb-6 flex flex-col justify-between gap-3 border-t border-border pt-6 md:flex-row md:items-end">
+						<h3 className="font-heading text-xl font-semibold uppercase text-foreground">
 							For Brands
 						</h3>
 						<p className="mt-2 text-muted-foreground max-w-2xl text-sm">
@@ -89,7 +95,7 @@ const Pricing = () => {
 						</p>
 					</div>
 
-					<div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto md:mx-0">
+					<div className="grid max-w-5xl gap-5 md:grid-cols-2">
 						{/* Brand Free Plan */}
 						<PlanCard
 							name={PRICING_CONTENT.brand.plans.free.title}
@@ -140,8 +146,8 @@ const Pricing = () => {
 
 				{/* Organizers Section */}
 				<div>
-					<div className="mb-8 text-center md:text-left">
-						<h3 className="font-heading text-2xl font-bold text-foreground">
+					<div className="mb-6 flex flex-col justify-between gap-3 border-t border-border pt-6 md:flex-row md:items-end">
+						<h3 className="font-heading text-xl font-semibold uppercase text-foreground">
 							For Organizers
 						</h3>
 						<p className="mt-2 text-muted-foreground max-w-2xl text-sm">
@@ -149,7 +155,7 @@ const Pricing = () => {
 						</p>
 					</div>
 
-					<div className="grid gap-6 md:grid-cols-2 max-w-4xl mx-auto md:mx-0">
+					<div className="grid max-w-5xl gap-5 md:grid-cols-2">
 						{/* Organizer Free Plan */}
 						<PlanCard
 							name={PRICING_CONTENT.organizer.plans.free.title}
@@ -275,7 +281,7 @@ const PlanCard = ({
 			whileInView={{ opacity: 1, y: 0 }}
 			viewport={{ once: true }}
 			transition={{ duration: 0.6, delay }}
-			className={`relative flex flex-col rounded-lg border p-8 ${
+			className={`relative flex flex-col border p-6 md:p-8 ${
 				popular
 					? `${themeColors.border} bg-surface`
 					: "border-border bg-surface"
@@ -283,17 +289,17 @@ const PlanCard = ({
 		>
 			{popular && badge && (
 				<div className="absolute -top-3 left-8">
-					<span className="rounded-full bg-secondary px-3 py-1 font-sans text-[10px] font-semibold uppercase tracking-wider text-secondary-foreground">
+					<span className="bg-bg px-3 py-1 font-sans text-[10px] font-bold uppercase tracking-[0.18em] text-foreground border border-border">
 						{badge}
 					</span>
 				</div>
 			)}
-			<h3 className="font-heading text-sm font-semibold text-foreground">
+			<h3 className="font-heading text-sm font-semibold uppercase text-foreground">
 				{name}
 			</h3>
 			<div className="mt-4 flex flex-col items-start gap-1">
 				<div className="flex items-baseline gap-1">
-					<span className="font-heading text-4xl font-bold text-foreground">
+					<span className="font-heading text-3xl font-semibold text-foreground md:text-4xl">
 						{price}
 					</span>
 					<span className="font-body text-sm text-muted-foreground">
@@ -321,7 +327,7 @@ const PlanCard = ({
 
 			{domainPreview && (
 				<div
-					className={`mt-4 ${themeColors.bgVeryLight} border ${themeColors.borderLight} rounded-lg px-3 py-2 flex flex-col gap-0.5 min-w-0 overflow-hidden text-xs font-mono`}
+					className={`mt-4 ${themeColors.bgVeryLight} border ${themeColors.borderLight} px-3 py-2 flex flex-col gap-0.5 min-w-0 overflow-hidden text-xs font-mono`}
 				>
 					<div className="flex items-center gap-2">
 						<Globe

@@ -15,7 +15,8 @@ import { validateUsername } from "@/lib/validation/username";
 import { updateUserCF } from "@/lib/firebase/callables/users";
 import { uploadProfileImageCloudinary } from "@/lib/storage/cloudinary";
 import { db } from "@/lib/firebase/firebaseConfig";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
+import { buildEventOrganizerRegistrationDoc } from "@/lib/onboarding/registrationDocs";
 
 interface ProfileFormData {
 	username: string;
@@ -284,6 +285,8 @@ export default function EventOrganizerOnboardingModal({
 					profileImageUrl,
 					isBrand: false, // Event organizers are not brands
 					brandSpaceSetupComplete: false,
+					isEventOrganizer: !skipEventSetup,
+					organizerSpaceSetupComplete: !skipEventSetup,
 					profileSetupComplete: true,
 				});
 			}
@@ -323,25 +326,13 @@ export default function EventOrganizerOnboardingModal({
 				// Create event organizer document directly in Firestore
 				setLoadingMessage("Finalizing organizer profile...");
 				const eventOrganizerRef = doc(db, "eventOrganizers", user.uid);
-				await setDoc(eventOrganizerRef, {
-					uid: user.uid,
-					organizerName: eventData.data.organizerName,
-					username: eventData.data.username,
-					bio: eventData.data.bio || null,
-					eventCategory: eventData.data.eventCategory || "others",
-					logoUrl,
-					coverImageUrl,
-					baseCity: eventData.data.baseCity || null,
-					activeSince: eventData.data.activeSince || null,
-					email: eventData.data.email || null,
-					phone: eventData.data.phone || null,
-					instagram: eventData.data.instagram || null,
-					tiktok: eventData.data.tiktok || null,
-					twitter: eventData.data.twitter || null,
-					website: eventData.data.website || null,
-					createdAt: serverTimestamp(),
-					updatedAt: serverTimestamp(),
-				});
+				await setDoc(
+					eventOrganizerRef,
+					buildEventOrganizerRegistrationDoc(user.uid, eventData.data, {
+						logoUrl,
+						coverImageUrl,
+					}),
+				);
 			}
 
 			setLoadingMessage("Done! Redirecting...");

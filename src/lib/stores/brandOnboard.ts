@@ -24,6 +24,8 @@ export type BrandOnboardState = {
   instagram: string;
   youtube: string;
   tiktok: string;
+  xHandle: string;
+  pinterest: string;
 
   // Step 3: Story & Location
   bio: string;
@@ -50,6 +52,8 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
   instagram: "",
   youtube: "",
   tiktok: "",
+  xHandle: "",
+  pinterest: "",
   bio: "",
   tags: [],
   country: null,
@@ -69,6 +73,8 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
       instagram: "",
       youtube: "",
       tiktok: "",
+      xHandle: "",
+      pinterest: "",
       bio: "",
       tags: [],
       country: null,
@@ -141,6 +147,8 @@ export function brandFromFirestore(map: any): BrandModel {
     instagram: map?.instagram ?? null,
     youtube: map?.youtube ?? null,
     tiktok: map?.tiktok ?? null,
+    xHandle: map?.xHandle ?? null,
+    pinterest: map?.pinterest ?? null,
     subscriptionTier: map?.subscriptionTier ?? "free", // Default to free if missing
     brandSlug: map?.brandSlug ?? undefined,
     
@@ -193,6 +201,8 @@ export function brandToFirestore(model: BrandModel) {
     instagram: model.instagram ?? null,
     youtube: model.youtube ?? null,
     tiktok: model.tiktok ?? null,
+    xHandle: model.xHandle ?? null,
+    pinterest: model.pinterest ?? null,
     
     // Subscription Fields
     subscriptionTier: model.subscriptionTier ?? "free",
@@ -234,6 +244,8 @@ export function buildNewBrandFromOnboard(
     instagram: s.instagram || null,
     youtube: s.youtube || null,
     tiktok: s.tiktok || null,
+    xHandle: s.xHandle || null,
+    pinterest: s.pinterest || null,
     subscriptionTier: "free",
   };
 }

@@ -27,6 +27,7 @@ export default function BrandSetupStep2() {
 		brandName,
 		brandUsername,
 		brandCategory,
+		phoneNumber,
 		logoFile,
 		coverFile,
 		bio,
@@ -119,6 +120,7 @@ export default function BrandSetupStep2() {
 			await addBrandCF({
 				brandName: brandName.trim(),
 				username: normalized,
+				phoneNumber: phoneNumber?.trim() || undefined,
 				bio: bio?.trim() || null,
 				category: brandCategory!,
 				brandTags: tags?.length ? tags : null,

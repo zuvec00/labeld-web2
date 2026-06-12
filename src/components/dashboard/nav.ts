@@ -59,6 +59,17 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
 		],
 	},
 	{
+		title: "Audience",
+		items: [
+			{
+				label: "Waitlist",
+				href: "/audience/waitlist",
+				icon: getNavIcon("Waitlist"),
+				roles: ["brand"],
+			},
+		],
+	},
+	{
 		title: "Event Organizer Space",
 		items: [
 			{
@@ -156,4 +167,3 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
 		],
 	},
 ];
-

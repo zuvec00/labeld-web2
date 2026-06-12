@@ -1,7 +1,7 @@
 "use client";
 
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import locationData from "@/data/countries_and_states.json";
 

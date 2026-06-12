@@ -1,94 +1,81 @@
 "use client";
 
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+import { Check, X } from "lucide-react";
+
+const scattered = [
+	"One link for products",
+	"Another tool for tickets",
+	"DMs for orders and questions",
+	"Templates that flatten your identity",
+];
+
+const unified = [
+	"Storefronts, drops, and tickets together",
+	"Orders and check-ins in one dashboard",
+	"Branded pages that still feel like you",
+	"Analytics that show what is actually moving",
+];
 
 const Problem = () => {
-	const ref = useRef<HTMLElement>(null);
-	const { scrollYProgress } = useScroll({
-		target: ref,
-		offset: ["start end", "end start"],
-	});
-	const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [1, 1, 1, 1]);
-	const scale = useTransform(
-		scrollYProgress,
-		[0, 0.2, 0.8, 1],
-		[0.8, 1, 1, 0.8],
-	);
-
 	return (
-		<section ref={ref} className="py-32 px-6 overflow-hidden">
-			<motion.div
-				style={{ opacity, scale }}
-				className="mx-auto max-w-3xl text-center"
-			>
-				<motion.h2
+		<section className="border-b border-border px-6 py-20 md:py-28">
+			<div className="mx-auto grid max-w-7xl gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+				<motion.div
 					initial={{ opacity: 0, y: 30 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.7 }}
-					className="font-heading text-3xl font-bold text-foreground sm:text-5xl"
 				>
-					<motion.span
-						initial={{ opacity: 0, x: -20 }}
-						whileInView={{ opacity: 1, x: 0 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.6, delay: 0.1 }}
-						className="block text-foreground"
-					>
-						Too Many Tools.
-					</motion.span>
-					<motion.span
-						initial={{ opacity: 0, x: 20 }}
-						whileInView={{ opacity: 1, x: 0 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.6, delay: 0.25 }}
-						className="block text-muted-foreground"
-					>
-						No Control.
-					</motion.span>
-				</motion.h2>
-
-				<div className="mx-auto mt-10 max-w-xl space-y-4">
-					<motion.p
-						initial={{ opacity: 0 }}
-						whileInView={{ opacity: 1 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.8, delay: 0.4 }}
-						className="font-body text-base leading-relaxed text-muted-foreground"
-					>
+					<p className="mb-4 font-body text-[11px] font-bold uppercase tracking-[0.28em] text-cta">
+						The problem
+					</p>
+					<h2 className="font-heading text-3xl font-semibold uppercase leading-[1.06] text-foreground sm:text-5xl">
+						<span className="block">Too Many Tools.</span>
+						<span className="block text-muted-foreground">No Control.</span>
+					</h2>
+					<p className="mt-6 max-w-md font-body text-base leading-relaxed text-muted-foreground">
 						Fragmented platforms. Generic templates that strip your brand.
 						Disconnected ticketing, payments, and storefronts that don't talk to
 						each other.
-					</motion.p>
-					<motion.p
-						initial={{ opacity: 0 }}
-						whileInView={{ opacity: 1 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.8, delay: 0.55 }}
-						className="font-body text-base leading-relaxed text-muted-foreground"
-					>
-						You end up managing five tools when one should be enough.
-					</motion.p>
-				</div>
+					</p>
+				</motion.div>
 
 				<motion.div
-					initial={{ opacity: 0, y: 20, scale: 0.95 }}
-					whileInView={{ opacity: 1, y: 0, scale: 1 }}
+					initial={{ opacity: 0, y: 24 }}
+					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
-					transition={{ duration: 0.6, delay: 0.7 }}
-					className="mt-12 inline-flex items-center gap-3 rounded-lg border border-border bg-surface px-6 py-3"
+					transition={{ duration: 0.7, delay: 0.1 }}
+					className="grid gap-px border border-border bg-border md:grid-cols-2"
 				>
-					<motion.div
-						animate={{ scale: [1, 1.3, 1] }}
-						transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-						className="h-2 w-2 rounded-full bg-accent"
-					/>
-					<span className="font-heading text-sm font-medium text-text">
-						Labeld Studio brings it together.
-					</span>
+					<div className="bg-bg p-6 md:p-8">
+						<p className="mb-5 font-heading text-sm font-semibold uppercase text-muted-foreground">
+							Scattered now
+						</p>
+						<ul className="space-y-4">
+							{scattered.map((item) => (
+								<li key={item} className="flex gap-3 font-body text-sm text-muted-foreground">
+									<X className="mt-0.5 h-4 w-4 shrink-0 text-cta" />
+									<span>{item}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+					<div className="bg-surface p-6 md:p-8">
+						<p className="mb-5 font-heading text-sm font-semibold uppercase text-foreground">
+							Studio brings it together
+						</p>
+						<ul className="space-y-4">
+							{unified.map((item) => (
+								<li key={item} className="flex gap-3 font-body text-sm text-foreground">
+									<Check className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+									<span>{item}</span>
+								</li>
+							))}
+						</ul>
+					</div>
 				</motion.div>
-			</motion.div>
+			</div>
 		</section>
 	);
 };

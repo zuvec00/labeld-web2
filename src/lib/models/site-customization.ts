@@ -4,6 +4,7 @@ export type StorefrontSectionType =
   | "productListing"
   | "brandStory"
   | "socialProof"
+  | "waitlist"
   | "footer";
 
 export interface BaseSection {
@@ -66,6 +67,16 @@ export interface SocialProofSection extends BaseSection {
   images?: string[]; // Content Override
 }
 
+export interface WaitlistSection extends BaseSection {
+  type: "waitlist";
+  title?: string;
+  subtitle?: string;
+  ctaText?: string;
+  tag?: string;
+  imageUrl?: string;
+  showOnClosedPage?: boolean;
+}
+
 export interface FooterSection extends BaseSection {
   type: "footer";
   enabled: true; // Always true
@@ -80,6 +91,7 @@ export type StorefrontSection =
   | ProductListingSection
   | BrandStorySection
   | SocialProofSection
+  | WaitlistSection
   | FooterSection;
 
 export interface Template {

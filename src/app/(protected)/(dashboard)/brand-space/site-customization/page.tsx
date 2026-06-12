@@ -20,12 +20,14 @@ import { AVAILABLE_TEMPLATES } from "@/lib/constants/templates";
 import SectionInspector from "@/components/brand/site-customization/SectionInspector";
 import Button from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
 
 export default function SiteCustomizationPage() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const { activeRole, roleDetection, user } = useDashboardContext();
+	const shouldOpenActiveTemplate = searchParams.get("open") === "active-template";
 
 	// State for templates
 	const [templates, setTemplates] = useState<Template[]>(AVAILABLE_TEMPLATES);
@@ -90,10 +92,9 @@ export default function SiteCustomizationPage() {
 					// Only auto-open editor if we aren't already editing something else
 					// OR if we want to force sync. Choosing to sync "Live" state mostly.
 					if (!editingTemplateId) {
-						// Don't auto-open editor on load, let user choose.
-						// Actually, prompting typical behavior: show gallery first?
-						// Or if they have a config, show the editor?
-						// Let's default to Gallery View so they can see "Active" badge.
+						if (shouldOpenActiveTemplate) {
+							setEditingTemplateId(config.templateId);
+						}
 					}
 
 					// Sync Identity
@@ -132,7 +133,7 @@ export default function SiteCustomizationPage() {
 		});
 
 		return () => unsubscribe();
-	}, [user?.uid, templates]);
+	}, [user?.uid, templates, shouldOpenActiveTemplate, editingTemplateId]);
 
 	// Handlers
 	const handleUpgrade = () => {

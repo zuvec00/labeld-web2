@@ -393,7 +393,7 @@ export default function BrandOnboardingFlow({
 				await addBrandCF({
 					brandName: brandData.brandName,
 					username: slugify(brandData.brandUsername),
-					// phoneNumber: brandData.phoneNumber, // New field
+					phoneNumber: brandData.phoneNumber?.trim() || undefined,
 					bio: brandData.bio || null,
 					category: brandData.brandCategory || "streetwear",
 					brandTags: brandData.tags.length ? brandData.tags : null,

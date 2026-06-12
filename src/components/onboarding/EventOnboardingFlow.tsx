@@ -11,8 +11,8 @@ import {
 	uploadBrandImageCloudinary,
 } from "@/lib/storage/cloudinary";
 import { db } from "@/lib/firebase/firebaseConfig";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { slugify } from "@/lib/utils";
+import { doc, setDoc } from "firebase/firestore";
+import { buildEventOrganizerRegistrationDoc } from "@/lib/onboarding/registrationDocs";
 
 import IntentStep from "./steps/IntentStep";
 import EventIdentityStep from "./steps/EventIdentityStep";
@@ -144,8 +144,10 @@ export default function EventOnboardingFlow() {
 				username: userUsername, // From BrandStore
 				displayName: userDisplayName, // From BrandStore
 				profileImageUrl: userProfileUrl || undefined,
-				isBrand: false, // Keeping false as this is Event Flow (or maybe true if organizers count as brands?)
-				brandSpaceSetupComplete: hasEventDetails,
+				isBrand: false,
+				brandSpaceSetupComplete: false,
+				isEventOrganizer: hasEventDetails,
+				organizerSpaceSetupComplete: hasEventDetails,
 				profileSetupComplete: true,
 			});
 
@@ -153,32 +155,22 @@ export default function EventOnboardingFlow() {
 				setLoadingMessage("Creating your event organizer space...");
 				// 3. Create Event Organizer Doc
 				const eventOrganizerRef = doc(db, "eventOrganizers", currentUser.uid);
-				await setDoc(eventOrganizerRef, {
-					uid: currentUser.uid,
-					organizerName: eventData.organizerName,
-					username: eventData.username,
-					bio: eventData.bio || null,
-					eventCategory: eventData.eventCategory || "others",
-					logoUrl,
-					coverImageUrl: coverUrl || null,
-					baseCity: eventData.baseCity || null,
-					activeSince: eventData.activeSince || null,
-					email: eventData.email || null,
-					phone: eventData.phone || null,
-					instagram: eventData.instagram || null,
-					tiktok: eventData.tiktok || null,
-					twitter: eventData.twitter || null,
-					website: eventData.website || null,
-					subscriptionTier: "free", // Default to free plan
-					slug: slugify(eventData.username), // Ensure slug is clean
-					createdAt: serverTimestamp(),
-					updatedAt: serverTimestamp(),
-				});
+				await setDoc(
+					eventOrganizerRef,
+					buildEventOrganizerRegistrationDoc(currentUser.uid, eventData, {
+						logoUrl,
+						coverImageUrl: coverUrl || null,
+					}),
+				);
 
 				// Register public slug for the event organizer (experience)
 				try {
 					const { reserveSlug } = await import("@/lib/firebase/slugs");
-					const initialSlug = slugify(eventData.username);
+					const initialSlug = buildEventOrganizerRegistrationDoc(
+						currentUser.uid,
+						eventData,
+						{ logoUrl, coverImageUrl: coverUrl || null },
+					).slug;
 					await reserveSlug(
 						initialSlug,
 						"experience", // "experience" as per user request (was "event")

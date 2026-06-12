@@ -26,6 +26,8 @@ export async function addUserCF(payload: {
   profileImageUrl?: string | null;
   isBrand?: boolean;
   brandSpaceSetupComplete?: boolean;
+  isEventOrganizer?: boolean;
+  organizerSpaceSetupComplete?: boolean;
   phoneNumber?: string | null;
 }) {
   const callable = httpsCallable(fx(), "addUser");
@@ -36,6 +38,8 @@ export async function addUserCF(payload: {
     profileImageUrl: payload.profileImageUrl ?? null,
     isBrand: payload.isBrand ?? false,
     brandSpaceSetupComplete: payload.brandSpaceSetupComplete ?? false,
+    isEventOrganizer: payload.isEventOrganizer ?? false,
+    organizerSpaceSetupComplete: payload.organizerSpaceSetupComplete ?? false,
     profileSetupComplete: false,
     phoneNumber: payload.phoneNumber ?? null,
   });
@@ -74,6 +78,8 @@ type UpdateUserArgs = {
   profileImageUrl?: string | null;
   isBrand?: boolean;
   brandSpaceSetupComplete?: boolean;
+  isEventOrganizer?: boolean;
+  organizerSpaceSetupComplete?: boolean;
   profileSetupComplete?: boolean;
 };
 

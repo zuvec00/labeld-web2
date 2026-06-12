@@ -138,6 +138,7 @@ export default function OnboardingFlow() {
 				await addBrandCF({
 					brandName: brandData.brandName,
 					username: brandData.brandUsername,
+					phoneNumber: brandData.phoneNumber?.trim() || undefined,
 					bio: brandData.bio || null,
 					category: brandData.brandCategory || "streetwear",
 					brandTags: brandData.tags,
@@ -148,6 +149,8 @@ export default function OnboardingFlow() {
 					instagram: brandData.instagram || null,
 					youtube: brandData.youtube || null,
 					tiktok: brandData.tiktok || null,
+					xHandle: brandData.xHandle || null,
+					pinterest: brandData.pinterest || null,
 				});
 
 				// Register public slug

@@ -28,6 +28,7 @@ import {
 	startProSubscription,
 	startOrganizerProSubscription,
 } from "@/lib/firebase/callables/subscriptions";
+import { shouldUseLiveSubscriptionPayments } from "@/lib/payment/subscriptionMode";
 import { PricingMode, PRICING_CONTENT } from "./pricingData";
 
 // --- Components ---
@@ -288,7 +289,7 @@ export default function PublicPricingPage() {
 				await startSubscription({
 					billingCycle: billing,
 					claimPromo: pricingMode === "brand" ? true : false,
-					isLive: true, // Set to false for testing as requested
+					isLive: shouldUseLiveSubscriptionPayments(),
 				});
 
 				alert(

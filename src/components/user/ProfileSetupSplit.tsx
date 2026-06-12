@@ -8,6 +8,7 @@ import ProfileForm, { ProfileFormData } from "./ProfileForm";
 import LaunchHero from "../brand/LaunchHero";
 
 import { validateUsername } from "@/lib/validation/username";
+import { useUsernameAvailability } from "@/lib/hooks/useUsernameAvailability";
 import {
 	checkUsernameUniqueCF,
 	updateUserCF,
@@ -35,7 +36,14 @@ export default function ProfileSetupSplit() {
 		return ok;
 	}, [data.username]);
 
-	const isValid = isValidUsername && data.displayName.trim().length > 0;
+	const availabilityStatus = useUsernameAvailability(data.username, {
+		type: "user",
+	});
+
+	const isValid =
+		isValidUsername &&
+		availabilityStatus === "available" &&
+		data.displayName.trim().length > 0;
 
 	const handleLaunch = async () => {
 		if (loading) return;
@@ -213,6 +221,7 @@ export default function ProfileSetupSplit() {
 						value={data}
 						onChange={setData}
 						isValidUsername={isValidUsername}
+					availabilityStatus={availabilityStatus}
 					/>
 					{usernameError && (
 						<p className="mt-2 text-sm text-cta whitespace-pre-line">

@@ -31,6 +31,8 @@ export interface BrandModel {
   instagram?: string | null;
   youtube?: string | null;
   tiktok?: string | null;
+  xHandle?: string | null;
+  pinterest?: string | null;
 
   isOpen?: boolean;            // store open/closed status
 

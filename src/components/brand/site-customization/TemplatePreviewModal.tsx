@@ -13,6 +13,7 @@ import PreviewProductListing from "./preview/PreviewProductListing";
 import PreviewBrandStory from "./preview/PreviewBrandStory";
 import PreviewSocialProof from "./preview/PreviewSocialProof";
 import PreviewFooter from "./preview/PreviewFooter";
+import PreviewWaitlist from "./preview/PreviewWaitlist";
 
 interface TemplatePreviewModalProps {
 	isOpen: boolean;
@@ -177,6 +178,8 @@ export default function TemplatePreviewModal({
 									return (
 										<PreviewSocialProof key={key} section={section as any} />
 									);
+								case "waitlist":
+									return <PreviewWaitlist key={key} section={section as any} />;
 								case "footer":
 									return <PreviewFooter key={key} section={section as any} />;
 								default:

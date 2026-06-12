@@ -23,6 +23,8 @@ type AddBrandArgs = {
   instagram?: string | null;
   youtube?: string | null;
   tiktok?: string | null;
+  xHandle?: string | null;
+  pinterest?: string | null;
 };
 
 export async function addBrandCF(args: AddBrandArgs): Promise<void> {

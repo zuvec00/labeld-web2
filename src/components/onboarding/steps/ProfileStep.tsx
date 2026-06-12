@@ -1,16 +1,15 @@
 "use client";
 
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
-import { ArrowLeft, ArrowRight, Camera, Upload } from "lucide-react";
+import { ArrowRight, Camera, Check, X, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useRef, useEffect } from "react";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { validateUsername } from "@/lib/validation/username"; // Assume this exists or create it
+import { validateUsername } from "@/lib/validation/username";
+import { useUsernameAvailability } from "@/lib/hooks/useUsernameAvailability";
 
 interface ProfileStepProps {
 	onNext: () => void;
-	// Step 0 so no back usually, unless we go back to Intent?
-	// But we are skipping intent.
 	onBack?: () => void;
 	onSkip?: () => void;
 }
@@ -24,15 +23,33 @@ export default function ProfileStep({
 		useBrandOnboard();
 	const { user } = useAuth();
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const userEditedUsername = useRef(userUsername.length > 0);
 
-	// Prefill if user is logged in
+	// Prefill display name from auth if not yet set
 	useEffect(() => {
 		if (user) {
 			if (!userDisplayName && user.displayName)
 				set("userDisplayName", user.displayName);
-			// We might not have username easily unless we fetch user doc, but assumption is this is new user flow mostly.
 		}
 	}, [user, userDisplayName, set]);
+
+	// Auto-generate username from display name (mirrors mobile: firstName + userCount)
+	// We skip the count lookup for simplicity — just slugify the display name.
+	useEffect(() => {
+		if (userEditedUsername.current) return;
+		if (!userDisplayName.trim()) return;
+		const base = userDisplayName
+			.trim()
+			.split(" ")[0]
+			.toLowerCase()
+			.replace(/[^a-z0-9]/g, "");
+		if (base.length >= 3) set("userUsername", base);
+	}, [userDisplayName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		userEditedUsername.current = true;
+		set("userUsername", e.target.value.toLowerCase().replace(/\s/g, ""));
+	};
 
 	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		if (e.target.files && e.target.files[0]) {
@@ -40,8 +57,25 @@ export default function ProfileStep({
 		}
 	};
 
-	const usernameValidation = validateUsername(userUsername);
-	const isValid = userDisplayName.trim().length > 0 && usernameValidation.ok;
+	const { ok: formatOk } = validateUsername(userUsername);
+	const availabilityStatus = useUsernameAvailability(userUsername, {
+		type: "user",
+	});
+
+	const isChecking = availabilityStatus === "checking";
+	const isAvailable = availabilityStatus === "available";
+	const isTaken = availabilityStatus === "taken";
+
+	const formatError =
+		userUsername && !formatOk
+			? "3–15 chars, letters/numbers/._  only, no consecutive special chars"
+			: null;
+
+	const isValid =
+		userDisplayName.trim().length > 0 &&
+		formatOk &&
+		isAvailable &&
+		!isChecking;
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-500">
@@ -53,34 +87,6 @@ export default function ProfileStep({
 				</p>
 
 				<div className="space-y-6">
-					{/* Username */}
-					<div className="space-y-2">
-						<label className="text-sm font-medium text-text-muted uppercase tracking-wider">
-							Username (@handle) <span className="text-accent">*</span>
-						</label>
-						<input
-							type="text"
-							value={userUsername}
-							onChange={(e) =>
-								set(
-									"userUsername",
-									e.target.value.toLowerCase().replace(/\s/g, ""),
-								)
-							}
-							placeholder="yourhandle"
-							className={`w-full bg-surface border rounded-xl p-4 outline-none transition-colors ${
-								userUsername && !usernameValidation.ok
-									? "border-red-500 focus:border-red-500"
-									: "border-stroke focus:border-accent"
-							}`}
-						/>
-						{userUsername && !usernameValidation.ok && (
-							<p className="text-xs text-red-500">
-								Username must be 3-15 characters, letters/numbers only
-							</p>
-						)}
-					</div>
-
 					{/* Display Name */}
 					<div className="space-y-2">
 						<label className="text-sm font-medium text-text-muted uppercase tracking-wider">
@@ -89,10 +95,58 @@ export default function ProfileStep({
 						<input
 							type="text"
 							value={userDisplayName}
+							autoFocus
 							onChange={(e) => set("userDisplayName", e.target.value)}
 							placeholder="Your Name"
 							className="w-full bg-surface border border-stroke rounded-xl p-4 outline-none focus:border-accent transition-colors"
 						/>
+					</div>
+
+					{/* Username */}
+					<div className="space-y-2">
+						<label className="text-sm font-medium text-text-muted uppercase tracking-wider">
+							Username (@handle) <span className="text-accent">*</span>
+						</label>
+						<div className="relative">
+							<input
+								type="text"
+								value={userUsername}
+								onChange={handleUsernameChange}
+								placeholder="yourhandle"
+								className={`w-full bg-surface border rounded-xl p-4 pr-10 outline-none transition-colors ${
+									formatError || isTaken
+										? "border-red-500 focus:border-red-500"
+										: isAvailable
+										? "border-green-500 focus:border-green-500"
+										: "border-stroke focus:border-accent"
+								}`}
+							/>
+							<div className="absolute right-3 top-1/2 -translate-y-1/2">
+								{isChecking && (
+									<Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+								)}
+								{isAvailable && !isChecking && (
+									<Check className="w-4 h-4 text-green-500" />
+								)}
+								{(formatError || isTaken) && !isChecking && userUsername && (
+									<X className="w-4 h-4 text-red-500" />
+								)}
+							</div>
+						</div>
+						{formatError && (
+							<p className="text-xs text-red-500">{formatError}</p>
+						)}
+						{isTaken && !formatError && (
+							<p className="text-xs text-red-500">
+								Username is already taken. Try another.
+							</p>
+						)}
+						{isAvailable && !formatError && (
+							<p className="text-xs text-green-500">Username available!</p>
+						)}
+						{isChecking && (
+							<p className="text-xs text-text-muted">Checking availability…</p>
+						)}
 					</div>
 
 					{/* Profile Photo */}
@@ -122,9 +176,7 @@ export default function ProfileStep({
 							)}
 
 							<p className="text-sm font-medium text-text-muted group-hover:text-text transition-colors">
-								{userProfileFile
-									? "Change photo"
-									: "This is the face of your drop."}
+								{userProfileFile ? "Change photo" : "This is the face of your drop."}
 							</p>
 							{!userProfileFile && (
 								<p className="text-xs text-text-muted/60 mt-1">
@@ -145,8 +197,7 @@ export default function ProfileStep({
 					{/* Brand Toggle (Fixed True) */}
 					<div className="flex items-center gap-2 opacity-50 cursor-not-allowed">
 						<div className="w-4 h-4 rounded bg-accent flex items-center justify-center">
-							<ArrowRight className="w-3 h-3 text-bg rotate-[-45deg]" />{" "}
-							{/* Checkmark-ish */}
+							<ArrowRight className="w-3 h-3 text-bg rotate-[-45deg]" />
 						</div>
 						<span className="text-sm text-text-muted">
 							Are you a brand? (Yes)

@@ -4,6 +4,7 @@ import { ButtonVite as Button } from "@/components/ui/buttonVite";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
+import { ArrowRight, Smartphone } from "lucide-react";
 
 const FinalCTA = () => {
 	const ref = useRef<HTMLElement>(null);
@@ -11,33 +12,35 @@ const FinalCTA = () => {
 	// Removed unused scroll logic from here
 
 	return (
-		<section ref={ref} className="py-32 px-6 overflow-hidden">
+		<section ref={ref} className="overflow-hidden bg-surface px-6 py-20 md:py-28">
 			<motion.div
-				// Removed style={{ scale, opacity }}
 				initial={{ opacity: 0, scale: 0.95 }}
 				whileInView={{ opacity: 1, scale: 1 }}
 				viewport={{ once: true }}
 				transition={{ duration: 0.8 }}
-				className="mx-auto max-w-3xl text-center"
+				className="mx-auto max-w-5xl border border-border bg-bg p-8 text-center md:p-14"
 			>
+				<p className="mb-5 font-body text-[11px] font-bold uppercase tracking-[0.28em] text-cta">
+					Start the control room
+				</p>
 				<motion.h2
 					initial={{ opacity: 0, y: 40 }}
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
-					className="font-heading text-4xl font-bold text-text sm:text-6xl"
+					className="font-heading text-3xl font-semibold uppercase leading-[1.05] text-text sm:text-5xl"
 				>
-					Culture Doesn't Wait.
+					Build the space. Sell the drop. Run the room.
 				</motion.h2>
 				<motion.p
 					initial={{ opacity: 0 }}
 					whileInView={{ opacity: 1 }}
 					viewport={{ once: true }}
 					transition={{ duration: 0.8, delay: 0.2 }}
-					className="mx-auto mt-6 max-w-md font-body text-base text-muted-foreground"
+					className="mx-auto mt-6 max-w-2xl font-body text-base leading-relaxed text-muted-foreground"
 				>
-					Your brand is ready. Your audience is waiting. Start building with
-					Labeld Studio today.
+					Your brand needs a real operating system. Studio gives you the
+					storefront, ticketing, orders, and analytics to move like one.
 				</motion.p>
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -49,25 +52,20 @@ const FinalCTA = () => {
 					<div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
 						<Button
 							size="lg"
-							className="bg-cta text-cta-foreground hover:bg-cta/90 font-heading text-sm tracking-wide px-10 h-12 transition-transform duration-200 hover:scale-[1.03]"
+							className="h-12 bg-cta px-8 font-heading text-xs uppercase tracking-[0.16em] text-white hover:bg-cta/90"
 							onClick={() => router.push("/login")}
 						>
 							Start Building
+							<ArrowRight className="h-4 w-4" />
 						</Button>
 						<Button
 							size="lg"
 							variant="outline"
-							className="border-border text-foreground hover:bg-surface font-heading text-sm tracking-wide px-10 h-12 transition-transform duration-200 hover:scale-[1.03] flex items-center gap-2"
+							className="flex h-12 items-center gap-2 border-border bg-surface px-8 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
 							onClick={() => window.open("https://apps.apple.com/app/id6760316742", "_blank")}
 						>
-							<svg
-								className="h-5 w-5"
-								fill="currentColor"
-								viewBox="0 0 24 24"
-							>
-								<path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.1 2.48-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17.05 2.5 11.45 4.3 8.3c.89-1.58 2.52-2.58 4.31-2.61 1.36-.02 2.65.92 3.48.92.84 0 2.41-1.12 4.05-.96.69.03 2.62.28 3.85 2.1-.1.06-2.3 1.35-2.28 4.01.02 3.19 2.77 4.3 2.8 4.31-.03.07-.44 1.5-.8 2.43zM14.28 5.7c-.73-.85-1.22-2.03-1.08-3.2.14-1.17.65-2.3 1.45-3.1.75-.85 1.95-1.4 3.1-1.3.15 1.23-.33 2.41-1.08 3.29-.75.89-1.99 1.48-3.12 1.44-.15-.05-.27-.05-.35-.13z" />
-							</svg>
-							App Store
+							<Smartphone className="h-4 w-4" />
+							Download Studio App
 						</Button>
 					</div>
 				</motion.div>

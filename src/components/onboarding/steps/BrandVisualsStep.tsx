@@ -14,7 +14,7 @@ export default function BrandVisualsStep({
 	onNext,
 	onBack,
 }: BrandVisualsStepProps) {
-	const { logoFile, coverFile, instagram, youtube, tiktok, set } =
+	const { logoFile, coverFile, instagram, youtube, tiktok, xHandle, pinterest, set } =
 		useBrandOnboard();
 
 	const logoInputRef = useRef<HTMLInputElement>(null);
@@ -132,21 +132,35 @@ export default function BrandVisualsStep({
 							type="text"
 							value={instagram || ""}
 							onChange={(e) => set("instagram", e.target.value)}
-							placeholder="Instagram Profile URL"
+							placeholder="Instagram handle e.g. @yourbrand"
 							className="w-full bg-surface border border-stroke rounded-xl p-3 outline-none focus:border-accent text-sm transition-colors"
 						/>
 						<input
 							type="text"
 							value={youtube || ""}
 							onChange={(e) => set("youtube", e.target.value)}
-							placeholder="YouTube Channel URL"
+							placeholder="YouTube handle e.g. @yourchannel"
 							className="w-full bg-surface border border-stroke rounded-xl p-3 outline-none focus:border-accent text-sm transition-colors"
 						/>
 						<input
 							type="text"
 							value={tiktok || ""}
 							onChange={(e) => set("tiktok", e.target.value)}
-							placeholder="TikTok Profile URL"
+							placeholder="TikTok handle e.g. @yourbrand"
+							className="w-full bg-surface border border-stroke rounded-xl p-3 outline-none focus:border-accent text-sm transition-colors"
+						/>
+						<input
+							type="text"
+							value={xHandle || ""}
+							onChange={(e) => set("xHandle", e.target.value)}
+							placeholder="X handle e.g. @yourbrand"
+							className="w-full bg-surface border border-stroke rounded-xl p-3 outline-none focus:border-accent text-sm transition-colors"
+						/>
+						<input
+							type="text"
+							value={pinterest || ""}
+							onChange={(e) => set("pinterest", e.target.value)}
+							placeholder="Pinterest handle e.g. @yourbrand"
 							className="w-full bg-surface border border-stroke rounded-xl p-3 outline-none focus:border-accent text-sm transition-colors"
 						/>
 					</div>

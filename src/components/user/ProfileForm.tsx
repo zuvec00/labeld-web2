@@ -4,6 +4,8 @@ import { useId } from "react";
 import TextLabel from "../ui/textlabel";
 import UploadImage from "../ui/upload-image";
 import { Input } from "../ui/input";
+import { Check, X, Loader2 } from "lucide-react";
+import type { AvailabilityStatus } from "@/lib/hooks/useUsernameAvailability";
 
 export type ProfileFormData = {
 	username: string;
@@ -16,19 +18,23 @@ export default function ProfileForm({
 	value,
 	onChange,
 	isValidUsername,
+	availabilityStatus,
 }: {
 	value: ProfileFormData;
 	onChange: (v: ProfileFormData) => void;
 	isValidUsername: boolean;
+	availabilityStatus?: AvailabilityStatus;
 }) {
 	const usernameId = useId();
 	const displayId = useId();
 
-	const usernameError = value.username
-		? isValidUsername
-			? undefined
-			: "Username can only contain letters, numbers, underscores, and periods.\nNo consecutive special chars. 3–15 chars."
+	const formatError = value.username && !isValidUsername
+		? "Letters, numbers, . or _ only — no consecutive special chars. 3–15 chars."
 		: undefined;
+
+	const isChecking = availabilityStatus === "checking";
+	const isAvailable = availabilityStatus === "available";
+	const isTaken = availabilityStatus === "taken";
 
 	return (
 		<div className="items-center">
@@ -47,17 +53,46 @@ export default function ProfileForm({
 				{/* Username */}
 				<div>
 					<TextLabel label="Username (@handle)" isRequired />
-					<Input
-						id={usernameId}
-						placeholder="e.g eko_boy"
-						value={value.username}
-						onChange={(e) => onChange({ ...value, username: e.target.value })}
-						aria-invalid={!!usernameError}
-					/>
-					{usernameError && (
-						<p className="mt-2 text-sm text-cta whitespace-pre-line">
-							{usernameError}
+					<div className="relative">
+						<Input
+							id={usernameId}
+							placeholder="e.g eko_boy"
+							value={value.username}
+							onChange={(e) => onChange({ ...value, username: e.target.value })}
+							aria-invalid={!!formatError || isTaken}
+							className={
+								isTaken || formatError
+									? "border-red-500/50 focus:border-red-500"
+									: isAvailable
+									? "border-green-500/50 focus:border-green-500"
+									: undefined
+							}
+						/>
+						<div className="absolute right-3 top-1/2 -translate-y-1/2">
+							{isChecking && (
+								<Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+							)}
+							{isAvailable && !isChecking && (
+								<Check className="w-4 h-4 text-green-500" />
+							)}
+							{(isTaken || formatError) && !isChecking && value.username && (
+								<X className="w-4 h-4 text-red-500" />
+							)}
+						</div>
+					</div>
+					{formatError && (
+						<p className="mt-1 text-sm text-red-500">{formatError}</p>
+					)}
+					{isTaken && !formatError && (
+						<p className="mt-1 text-sm text-red-500">
+							This username is already taken.
 						</p>
+					)}
+					{isAvailable && !formatError && (
+						<p className="mt-1 text-sm text-green-500">Username available!</p>
+					)}
+					{isChecking && (
+						<p className="mt-1 text-sm text-text-muted">Checking availability…</p>
 					)}
 				</div>
 

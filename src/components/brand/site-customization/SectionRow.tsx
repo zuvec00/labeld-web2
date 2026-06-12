@@ -44,6 +44,8 @@ export default function SectionRow({
 				return "Brand Story";
 			case "socialProof":
 				return "Social Proof";
+			case "waitlist":
+				return "Waitlist";
 			case "footer":
 				return "Footer";
 			default:
@@ -64,6 +66,8 @@ export default function SectionRow({
 				return "A section to tell your brand's narrative.";
 			case "socialProof":
 				return "Showcase instagram feed or testimonials.";
+			case "waitlist":
+				return "Capture leads before your next drop.";
 			case "footer":
 				return "Site navigation and copyright (Required).";
 			default:

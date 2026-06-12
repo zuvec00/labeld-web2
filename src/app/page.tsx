@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 	title:
 		"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 	description:
-		"Build your brand site, sell products, host ticketed events, and manage everything from one dashboard.",
+		"Build storefronts, launch drops, sell tickets, manage orders, and run your brand or event from one simple dashboard.",
 	alternates: {
 		canonical: "https://studio.labeld.app/",
 	},
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 		title:
 			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 		description:
-			"Build your brand site, sell drops/merch, host ticketed events, and manage everything from one dashboard.",
+			"Build storefronts, launch drops, sell tickets, manage orders, and run your brand or event from one simple dashboard.",
 		type: "website",
 		url: "https://studio.labeld.app/",
 		siteName: "Labeld Studio",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
 		title:
 			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
 		description:
-			"Launch your brand site, sell drops, host events, and manage orders — all in one dashboard.",
+			"Launch your brand site, sell drops, host events, and manage orders from one simple dashboard.",
 		images: ["/images/onboarding-hero.JPEG"],
 	},
 	keywords: [

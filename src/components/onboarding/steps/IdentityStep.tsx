@@ -1,9 +1,11 @@
 "use client";
 
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
-import { validateUsername } from "@/lib/validation/username";
-import { ArrowRight, Check, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { validateSlug } from "@/lib/validation/username";
+import { slugify } from "@/lib/utils";
+import { useUsernameAvailability } from "@/lib/hooks/useUsernameAvailability";
+import { ArrowRight, Check, X, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 
 interface IdentityStepProps {
 	onNext: () => void;
@@ -13,34 +15,57 @@ interface IdentityStepProps {
 export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 	const { brandName, brandUsername, brandCategory, set } = useBrandOnboard();
 
-	const [usernameError, setUsernameError] = useState<string | null>(null);
-	const [isValidating, setIsValidating] = useState(false);
+	// Track whether the user has manually edited the handle
+	const userEditedHandle = useRef(brandUsername.length > 0);
 
+	const [usernameError, setUsernameError] = useState<string | null>(null);
+
+	const availabilityStatus = useUsernameAvailability(brandUsername, {
+		type: "slug",
+	});
+
+	// Auto-generate slug from brand name if user hasn't typed a handle yet
 	useEffect(() => {
-		if (brandUsername) {
-			const { ok } = validateUsername(brandUsername);
-			if (!ok) {
-				let msg = "Invalid username";
-				if (brandUsername.length < 3) msg = "Too short (min 3 chars)";
-				else if (brandUsername.length > 15) msg = "Too long (max 15 chars)";
-				else if (/\s/.test(brandUsername)) msg = "No spaces allowed";
-				else
-					msg =
-						"Use letters, numbers, . or _ only (no consecutive special chars)";
-				setUsernameError(msg);
-			} else {
-				setUsernameError(null);
-			}
+		if (userEditedHandle.current) return;
+		if (!brandName.trim()) return;
+		const generated = slugify(brandName);
+		if (generated) set("brandUsername", generated);
+	}, [brandName]); // eslint-disable-line react-hooks/exhaustive-deps
+
+	// Format validation
+	useEffect(() => {
+		if (!brandUsername) {
+			setUsernameError(null);
+			return;
+		}
+		const { ok } = validateSlug(brandUsername);
+		if (!ok) {
+			let msg = "Invalid handle";
+			if (brandUsername.length < 3) msg = "Too short (min 3 chars)";
+			else if (brandUsername.length > 30) msg = "Too long (max 30 chars)";
+			else if (/\s/.test(brandUsername)) msg = "No spaces allowed";
+			else msg = "Use lowercase letters, numbers, and hyphens only";
+			setUsernameError(msg);
 		} else {
 			setUsernameError(null);
 		}
 	}, [brandUsername]);
 
+	const isAvailable = availabilityStatus === "available";
+	const isTaken = availabilityStatus === "taken";
+	const isChecking = availabilityStatus === "checking";
+
 	const canProceed =
 		brandName.trim().length > 0 &&
 		brandUsername.trim().length > 0 &&
 		brandCategory !== null &&
-		!usernameError;
+		!usernameError &&
+		isAvailable;
+
+	const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		userEditedHandle.current = true;
+		set("brandUsername", e.target.value.toLowerCase().trim());
+	};
 
 	return (
 		<div className="flex flex-col h-full animate-in fade-in slide-in-from-right-8 duration-500">
@@ -80,23 +105,26 @@ export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 							<input
 								type="text"
 								value={brandUsername}
-								onChange={(e) =>
-									set("brandUsername", e.target.value.toLowerCase().trim())
-								}
+								onChange={handleUsernameChange}
 								placeholder="brokenplanet"
 								className={`w-full bg-transparent border-b-2 ${
-									usernameError
+									usernameError || isTaken
 										? "border-red-500/50 focus:border-red-500"
+										: isAvailable
+										? "border-green-500/50 focus:border-green-500"
 										: "border-stroke focus:border-accent"
 								} text-2xl font-medium py-2 pl-8 outline-none placeholder:text-subtle transition-colors`}
 							/>
 							<div className="absolute right-0 top-1/2 -translate-y-1/2">
-								{brandUsername && !usernameError && (
+								{isChecking && (
+									<Loader2 className="w-4 h-4 text-text-muted animate-spin" />
+								)}
+								{isAvailable && !isChecking && (
 									<div className="text-green-500 animate-in zoom-in duration-200">
 										<Check className="w-5 h-5" />
 									</div>
 								)}
-								{usernameError && (
+								{(usernameError || isTaken) && !isChecking && (
 									<div className="text-red-500 animate-in zoom-in duration-200">
 										<X className="w-5 h-5" />
 									</div>
@@ -108,9 +136,26 @@ export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 								{usernameError}
 							</p>
 						)}
-						<p className="text-xs text-text-muted">
-							You can change this later, but it's good to secure it now.
-						</p>
+						{isTaken && !usernameError && (
+							<p className="text-sm text-red-500 animate-in slide-in-from-top-1">
+								This handle is already taken. Try another.
+							</p>
+						)}
+						{isAvailable && !usernameError && (
+							<p className="text-sm text-green-500 animate-in slide-in-from-top-1">
+								Handle available!
+							</p>
+						)}
+						{isChecking && (
+							<p className="text-sm text-text-muted animate-in slide-in-from-top-1">
+								Checking availability…
+							</p>
+						)}
+						{!isChecking && !isAvailable && !isTaken && !usernameError && brandUsername && (
+							<p className="text-xs text-text-muted">
+								You can change this later, but it's good to secure it now.
+							</p>
+						)}
 					</div>
 
 					{/* Brand Category */}

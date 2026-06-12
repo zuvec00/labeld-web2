@@ -27,6 +27,7 @@ import {
 	CalendarDays,
 	Link2,
 	Link, // Added for Bookings
+	Users,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -82,6 +83,8 @@ export const getNavIcon = (iconName: string) => {
 			return <CalendarDays {...iconProps} />;
 		case "Domains":
 			return <Link {...iconProps} />;
+		case "Waitlist":
+			return <Users {...iconProps} />;
 		default:
 			return null;
 	}

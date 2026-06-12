@@ -41,6 +41,15 @@ export default function DevTemplateSeeder({ onSeed }: DevTemplateSeederProps) {
 						columns: 4,
 					},
 					{
+						id: "waitlist-3",
+						type: "waitlist",
+						enabled: false,
+						title: "Join the Waitlist",
+						subtitle: "Be the first to know when we go live.",
+						ctaText: "Notify Me",
+						tag: "general",
+					},
+					{
 						id: "footer-3",
 						type: "footer", // REQUIRED
 						enabled: true,
@@ -84,6 +93,15 @@ export default function DevTemplateSeeder({ onSeed }: DevTemplateSeederProps) {
 						columns: 3,
 					},
 					{
+						id: "waitlist-1",
+						type: "waitlist",
+						enabled: false,
+						title: "Join the Waitlist",
+						subtitle: "Be the first to know when we go live.",
+						ctaText: "Notify Me",
+						tag: "general",
+					},
+					{
 						id: "footer-1",
 						type: "footer", // REQUIRED
 						enabled: true,
@@ -124,6 +142,15 @@ export default function DevTemplateSeeder({ onSeed }: DevTemplateSeederProps) {
 						isRequired: true,
 						layout: "grid",
 						columns: 4,
+					},
+					{
+						id: "waitlist-2",
+						type: "waitlist",
+						enabled: false,
+						title: "Early Access",
+						subtitle: "Skip the line and get notified before our next limited drop.",
+						ctaText: "Join Waitlist",
+						tag: "next_drop",
 					},
 					{
 						id: "social-proof-1",

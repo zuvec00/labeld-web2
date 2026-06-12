@@ -9,6 +9,7 @@ import {
 import Button from "@/components/ui/button";
 import { X, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { shouldUseLiveSubscriptionPayments } from "@/lib/payment/subscriptionMode";
 
 interface UpgradeConfirmModalProps {
 	isOpen: boolean;
@@ -40,12 +41,12 @@ export default function UpgradeConfirmModal({
 		setErrorMsg(null);
 		try {
 			console.log("Billing Cycle: ", billingCycle);
-			// Call the cloud function
-			// isLive true for production
+			const isLive = shouldUseLiveSubscriptionPayments();
+
 			if (mode === "organizer") {
-				await startOrganizerProSubscription({ billingCycle, isLive: true });
+				await startOrganizerProSubscription({ billingCycle, isLive });
 			} else {
-				await startProSubscription({ billingCycle, isLive: true });
+				await startProSubscription({ billingCycle, isLive });
 			}
 
 			setStatus("success");

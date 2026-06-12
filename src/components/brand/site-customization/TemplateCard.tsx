@@ -130,10 +130,10 @@ export default function TemplateCard({
 						/>
 					) : isActive ? (
 						<Button
-							text="Active"
-							variant="outline"
-							className="w-full text-xs h-9 opacity-50 cursor-default"
-							disabled
+							text="Customize"
+							variant="primary"
+							className="w-full text-xs h-9"
+							onClick={() => onActivate(template.id)}
 						/>
 					) : (
 						<Button
