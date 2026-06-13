@@ -5,6 +5,7 @@ import Audience from "./Audience";
 import Problem from "./Problem";
 import Features from "./Features";
 import VisualProof from "./VisualProof";
+import StudioBrands from "./StudioBrands";
 import Pricing from "./Pricing";
 import FAQ from "./FAQ";
 import FinalCTA from "./FinalCTA";
@@ -19,6 +20,7 @@ const LandingPage = () => {
 			<Problem />
 			<Features />
 			<VisualProof />
+			<StudioBrands />
 			<Pricing />
 			<FAQ />
 			<FinalCTA />
