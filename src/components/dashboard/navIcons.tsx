@@ -28,6 +28,7 @@ import {
 	Link2,
 	Link, // Added for Bookings
 	Users,
+	ShoppingCart,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -85,6 +86,8 @@ export const getNavIcon = (iconName: string) => {
 			return <Link {...iconProps} />;
 		case "Waitlist":
 			return <Users {...iconProps} />;
+		case "AbandonedCart":
+			return <ShoppingCart {...iconProps} />;
 		default:
 			return null;
 	}

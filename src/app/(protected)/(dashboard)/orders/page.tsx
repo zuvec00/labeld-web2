@@ -17,8 +17,10 @@ import OrdersTable from "@/components/orders/OrdersTable";
 import StoreOrdersTable from "@/components/orders/StoreOrdersTable";
 import OrderDetailDrawer from "@/components/orders/OrderDetailDrawer";
 import StoreOrderDetailDrawer from "@/components/orders/StoreOrderDetailDrawer";
+import RecordSaleDrawer from "@/components/orders/RecordSaleDrawer";
 import Card from "@/components/dashboard/Card";
 import QuickFilterPills from "@/components/orders/QuickFilterPills";
+import { PlusCircle } from "lucide-react";
 
 export default function OrdersPage() {
 	const [activeTab, setActiveTab] = useState<OrderTab>("store"); // Default to "store"
@@ -28,6 +30,7 @@ export default function OrdersPage() {
 		useState<StoreOrderWithVendorStatus | null>(null);
 	const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 	const [isStoreDrawerOpen, setIsStoreDrawerOpen] = useState(false);
+	const [isRecordSaleOpen, setIsRecordSaleOpen] = useState(false);
 	const [quickFilter, setQuickFilter] = useState<string>("");
 
 	const {
@@ -214,27 +217,38 @@ export default function OrdersPage() {
 						Manage and track your event orders and merchandise sales
 					</p>
 				</div>
-				<div className="flex bg-surface p-1 rounded-lg border border-stroke">
-					<button
-						onClick={() => setActiveTab("store")}
-						className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-							activeTab === "store"
-								? "bg-text text-bg shadow-sm"
-								: "text-text-muted hover:text-text"
-						}`}
-					>
-						Store Orders
-					</button>
-					<button
-						onClick={() => setActiveTab("event")}
-						className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
-							activeTab === "event"
-								? "bg-text text-bg shadow-sm"
-								: "text-text-muted hover:text-text"
-						}`}
-					>
-						Event Orders
-					</button>
+				<div className="flex items-center gap-3">
+					{activeTab === "store" && (
+						<button
+							onClick={() => setIsRecordSaleOpen(true)}
+							className="flex items-center gap-2 rounded-xl border border-stroke bg-surface px-4 py-2 text-sm font-medium text-text hover:border-text/40 transition-colors"
+						>
+							<PlusCircle className="h-4 w-4" />
+							Record Sale
+						</button>
+					)}
+					<div className="flex bg-surface p-1 rounded-lg border border-stroke">
+						<button
+							onClick={() => setActiveTab("store")}
+							className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+								activeTab === "store"
+									? "bg-text text-bg shadow-sm"
+									: "text-text-muted hover:text-text"
+							}`}
+						>
+							Store Orders
+						</button>
+						<button
+							onClick={() => setActiveTab("event")}
+							className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+								activeTab === "event"
+									? "bg-text text-bg shadow-sm"
+									: "text-text-muted hover:text-text"
+							}`}
+						>
+							Event Orders
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -293,6 +307,12 @@ export default function OrdersPage() {
 				isOpen={isStoreDrawerOpen}
 				onClose={handleCloseStoreDrawer}
 				onUpdate={storeRefresh}
+			/>
+
+			<RecordSaleDrawer
+				open={isRecordSaleOpen}
+				onClose={() => setIsRecordSaleOpen(false)}
+				onSuccess={storeRefresh}
 			/>
 		</div>
 	);

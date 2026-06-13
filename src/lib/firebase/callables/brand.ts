@@ -58,3 +58,10 @@ export async function addEventOrganizerCF(args: AddEventOrganizerArgs): Promise<
   const { data } = await callable(args);
   if (!(data as any)?.success) throw new Error("addEventOrganizer failed");
 }
+
+export async function testAbandonedCartEmailCF(): Promise<{ sentTo: string }> {
+  const functions = getFunctions(getApp());
+  const callable = httpsCallable(functions, "testAbandonedCartEmail");
+  const { data } = await callable({});
+  return data as { sentTo: string };
+}
