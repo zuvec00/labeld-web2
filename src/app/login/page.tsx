@@ -1,7 +1,10 @@
-// import OnboardingSplit from "@/components/marketing/OnboardingSplit";
-
+import { Suspense } from "react";
 import OnboardingSplit from "@/components/marketing/OnboardingHero";
 
 export default function Landing() {
-	return <OnboardingSplit />;
+	return (
+		<Suspense fallback={null}>
+			<OnboardingSplit />
+		</Suspense>
+	);
 }
