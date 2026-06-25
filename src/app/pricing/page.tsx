@@ -156,6 +156,8 @@ function usePromoStatus() {
 	return status;
 }
 
+import { toast } from "@/app/hooks/use-toast";
+
 // ... Main Page ...
 
 export default function PublicPricingPage() {
@@ -266,7 +268,11 @@ export default function PublicPricingPage() {
 
 	async function handleUpgradeClick() {
 		if (!user) {
-			router.push(`/`); // Or to login
+			toast({
+				title: "Log in to Upgrade",
+				description: "Please log in or sign up to upgrade your plan.",
+			});
+			router.push(`/login?redirect=${encodeURIComponent(`/pricing?mode=${pricingMode}`)}`);
 			return;
 		}
 

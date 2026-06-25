@@ -6,6 +6,8 @@ import { useState } from "react";
 import { ButtonVite } from "@/components/ui/buttonVite";
 import { PRICING_CONTENT } from "@/app/pricing/pricingData";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/auth/AuthContext";
+import { toast } from "@/app/hooks/use-toast";
 
 const BILLING_OPTIONS = [
 	{ id: "monthly", label: "Monthly", price: "₦5,000", period: "/ month" },
@@ -109,6 +111,7 @@ const Pricing = () => {
 							features={PRICING_CONTENT.brand.plans.free.features}
 							buttonText={PRICING_CONTENT.brand.hero.ctaFree}
 							delay={0.1}
+							pricingMode="brand"
 						/>
 
 						{/* Brand Pro Plan */}
@@ -140,6 +143,7 @@ const Pricing = () => {
 							badge={PRICING_CONTENT.brand.plans.pro.badge}
 							delay={0.2}
 							theme="accent"
+							pricingMode="brand"
 						/>
 					</div>
 				</div>
@@ -169,6 +173,7 @@ const Pricing = () => {
 							features={PRICING_CONTENT.organizer.plans.free.features}
 							buttonText={PRICING_CONTENT.organizer.hero.ctaFree}
 							delay={0.3}
+							pricingMode="organizer"
 						/>
 
 						{/* Organizer Pro Plan */}
@@ -199,6 +204,7 @@ const Pricing = () => {
 							badge={PRICING_CONTENT.organizer.plans.pro.badge}
 							delay={0.4}
 							theme="events"
+							pricingMode="organizer"
 						/>
 					</div>
 				</div>
@@ -226,6 +232,7 @@ interface PlanCardProps {
 	badge?: string;
 	delay: number;
 	theme?: "cta" | "accent" | "events"; // Added theme prop
+	pricingMode: "brand" | "organizer";
 }
 
 const PlanCard = ({
@@ -242,8 +249,11 @@ const PlanCard = ({
 	badge,
 	delay,
 	theme = "cta",
+	pricingMode,
 }: PlanCardProps) => {
 	const router = useRouter();
+	const { user } = useAuth();
+
 	// Theme color mapping
 	const themeColors = {
 		cta: {
@@ -274,6 +284,18 @@ const PlanCard = ({
 			borderLight: "border-events/20",
 		},
 	}[theme];
+
+	const handleUpgrade = () => {
+		if (!user) {
+			toast({
+				title: "Log in to Upgrade",
+				description: "Please log in or sign up to upgrade your plan.",
+			});
+			router.push(`/login?redirect=${encodeURIComponent(`/pricing?mode=${pricingMode}`)}`);
+		} else {
+			router.push(`/pricing?mode=${pricingMode}`);
+		}
+	};
 
 	return (
 		<motion.div
@@ -367,7 +389,7 @@ const PlanCard = ({
 				))}
 			</ul>
 			<ButtonVite
-				onClick={() => router.push("/login")}
+				onClick={handleUpgrade}
 				className={`mt-8 w-full font-heading text-xs tracking-wide ${
 					popular
 						? `${themeColors.bg} ${themeColors.buttonText} hover:opacity-90`

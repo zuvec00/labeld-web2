@@ -238,6 +238,7 @@ export default function OnboardingSplit() {
 
 	const router = useRouter();
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
 	const { user } = useAuth();
 
 	const handleLaunchBrand = () => {
@@ -463,7 +464,7 @@ export default function OnboardingSplit() {
 				}}
 				mode={mode}
 				onModeChange={setMode}
-				redirectPath={authRedirectPath}
+				redirectPath={searchParams?.get("redirect") || authRedirectPath}
 			/>
 
 			{/* Brand Onboarding Modal (Original) */}
