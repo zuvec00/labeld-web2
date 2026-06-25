@@ -29,6 +29,9 @@ import {
 	Link, // Added for Bookings
 	Users,
 	ShoppingCart,
+	UserRound,
+	UsersRound,
+	Megaphone,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -88,6 +91,12 @@ export const getNavIcon = (iconName: string) => {
 			return <Users {...iconProps} />;
 		case "AbandonedCart":
 			return <ShoppingCart {...iconProps} />;
+		case "Customers":
+			return <UserRound {...iconProps} />;
+		case "CustomerGroups":
+			return <UsersRound {...iconProps} />;
+		case "Campaigns":
+			return <Megaphone {...iconProps} />;
 		default:
 			return null;
 	}

@@ -35,6 +35,12 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
 		],
 	},
 	{
+		title: "Growth",
+		items: [
+			{ label: "Customers", href: "/customers", icon: getNavIcon("Customers"), roles: ["brand"] },
+		],
+	},
+	{
 		title: "Event Organizer Space",
 		items: [
 			{ label: "Organizer Space", href: "/organizer-space", feature: "events", icon: getNavIcon("EventProfile"), roles: ["eventOrganizer"] },
