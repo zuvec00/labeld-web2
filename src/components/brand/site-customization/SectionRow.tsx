@@ -46,6 +46,8 @@ export default function SectionRow({
 				return "Social Proof";
 			case "waitlist":
 				return "Waitlist";
+			case "newsletter":
+				return "Newsletter Popup";
 			case "footer":
 				return "Footer";
 			default:
@@ -68,6 +70,8 @@ export default function SectionRow({
 				return "Showcase instagram feed or testimonials.";
 			case "waitlist":
 				return "Capture leads before your next drop.";
+			case "newsletter":
+				return "Popup to collect newsletter subscribers.";
 			case "footer":
 				return "Site navigation and copyright (Required).";
 			default:

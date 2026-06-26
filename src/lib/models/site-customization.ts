@@ -5,6 +5,7 @@ export type StorefrontSectionType =
   | "brandStory"
   | "socialProof"
   | "waitlist"
+  | "newsletter"
   | "footer";
 
 export interface BaseSection {

@@ -1043,6 +1043,69 @@ export default function SectionInspector({
 					</div>
 				);
 
+			case "newsletter":
+				return (
+					<div className="space-y-6">
+						<ControlWrapper
+							label="Background Image (Optional)"
+							isCustom={isCustom("imageUrl") || isCustom("backgroundImageUrl")}
+							onReset={() => {
+								const resetState = { ...localOverrides, imageUrl: null, backgroundImageUrl: null };
+								setLocalOverrides(resetState);
+								onSave(section.id, resetState);
+							}}
+						>
+							<UploadImage
+								text="Background Image"
+								value={null}
+								onChange={handleImageUpload}
+								onlineImage={
+									localOverrides.imageUrl ??
+									localOverrides.backgroundImageUrl ??
+									(defaults as any).imageUrl ??
+									(defaults as any).backgroundImageUrl
+								}
+								singleImage={true}
+								backgroundColor="var(--color-bg)"
+								textColor="var(--color-text-muted)"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="Headline"
+							isCustom={isCustom("header")}
+							onReset={() => handleReset("header")}
+						>
+							<Input
+								value={localOverrides.header ?? (defaults as any).header ?? ""}
+								onChange={(e) => handleChange("header", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="e.g. Stay in the loop"
+								className="bg-surface"
+							/>
+						</ControlWrapper>
+
+						<ControlWrapper
+							label="Subheadline"
+							isCustom={isCustom("subheader")}
+							onReset={() => handleReset("subheader")}
+						>
+							<Textarea
+								value={
+									localOverrides.subheader ?? (defaults as any).subheader ?? ""
+								}
+								onChange={(e) => handleChange("subheader", e.target.value)}
+								onBlur={handleBlur}
+								placeholder="e.g. Get early access to new drops."
+								className="bg-surface min-h-[80px]"
+							/>
+							<p className="text-[10px] text-text-muted pt-1">
+								Name (optional) + Email fields appear below your headline automatically.
+							</p>
+						</ControlWrapper>
+					</div>
+				);
+
 			case "waitlist":
 				return (
 					<div className="space-y-6">

@@ -83,11 +83,7 @@ export default function SiteCustomizationPage() {
 					setLiveTemplateId(config.templateId);
 
 					// Sync Content Overrides
-					if (config.contentOverrides) {
-						setSectionOverrides(config.contentOverrides);
-					} else {
-						setSectionOverrides({});
-					}
+					let overrides = config.contentOverrides ? { ...config.contentOverrides } : {};
 
 					// Only auto-open editor if we aren't already editing something else
 					// OR if we want to force sync. Choosing to sync "Live" state mostly.
@@ -107,11 +103,25 @@ export default function SiteCustomizationPage() {
 						(t: any) => t.id === config.templateId,
 					);
 					if (template) {
+						// Merge legacy sectionSettings.newsletter-popup configuration if available
+						const newsletterSection = template.defaultSections.find((s: any) => s.type === "newsletter");
+						if (newsletterSection && config.sectionSettings?.["newsletter-popup"]) {
+							const legacySettings = config.sectionSettings["newsletter-popup"];
+							overrides[newsletterSection.id] = {
+								...overrides[newsletterSection.id],
+								...legacySettings,
+								imageUrl: legacySettings.backgroundImageUrl || overrides[newsletterSection.id]?.imageUrl,
+							};
+						}
+						setSectionOverrides(overrides);
+
 						let mergedSections = [...template.defaultSections];
 
 						// Reorder
 						if (config.sectionOrder?.length) {
 							mergedSections.sort((a, b) => {
+								if (a.type === "footer") return 1;
+								if (b.type === "footer") return -1;
 								const indexA = config.sectionOrder.indexOf(a.id);
 								const indexB = config.sectionOrder.indexOf(b.id);
 								if (indexA === -1) return 1;
@@ -385,6 +395,7 @@ export default function SiteCustomizationPage() {
 										initialIdentity={brandIdentity}
 									/>
 								</div>
+
 							</div>
 
 							{/* Right Column: Inspector (Sticky / Mobile Drawer) */}
