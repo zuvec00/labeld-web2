@@ -6,6 +6,10 @@ import { Calendar, Ticket, ExternalLink, Clock } from "lucide-react";
 import { EventDashboardData } from "@/hooks/useEventDashboard";
 import { EventModel } from "@/lib/models/event";
 import Link from "next/link";
+import {
+	getEventDisplayStart,
+	hasEventScheduleEnded,
+} from "@/lib/events/recurrence";
 
 interface PromotionSectionProps {
 	data: EventDashboardData | null;
@@ -169,10 +173,11 @@ export default function PromotionSection({
 	// Get upcoming events
 	const now = new Date();
 	const upcomingEvents = data.events
-		.filter((e) => {
-			const startAt =
-				e.startAt instanceof Date ? e.startAt : new Date(e.startAt);
-			return startAt > now && e.status === "published";
+		.filter((e) => e.status === "published" && !hasEventScheduleEnded(e, now))
+		.sort((a, b) => {
+			const aStart = getEventDisplayStart(a, now)?.getTime() ?? 0;
+			const bStart = getEventDisplayStart(b, now)?.getTime() ?? 0;
+			return aStart - bStart;
 		})
 		.slice(0, 3);
 

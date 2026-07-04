@@ -6,6 +6,10 @@ import { getStoreOrderCounts } from "@/lib/firebase/queries/storeOrders";
 import { getMultipleEventTicketStats, TicketStats } from "@/lib/firebase/queries/attendeeTickets";
 import { VendorScope } from "@/types/orders";
 import { getVendorScope } from "@/lib/firebase/queries/orders";
+import {
+    getEventDisplayStart,
+    hasEventScheduleEnded,
+} from "@/lib/events/recurrence";
 
 export interface StoreStats {
     awaiting_fulfillment: number;
@@ -71,12 +75,13 @@ export function useOrdersStats(): UseOrdersStatsReturn {
 
             eventsSnapshot.docs.forEach(doc => {
                 const data = doc.data();
-                const startAt = data.startAt?.toDate();
+                const event: any = { id: doc.id, ...data };
+                const startAt = getEventDisplayStart(event, now);
                 eventIds.push(doc.id);
 
-                if (startAt > now) {
+                if (!hasEventScheduleEnded(event, now) && startAt) {
                     upcomingCount++;
-                    if (!nextEventDate) {
+                    if (!nextEventDate || startAt < nextEventDate) {
                         nextEventDate = startAt;
                     }
                 }

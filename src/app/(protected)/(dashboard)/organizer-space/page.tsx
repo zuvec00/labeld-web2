@@ -40,6 +40,10 @@ import {
 	Users,
 	Clock,
 } from "lucide-react";
+import {
+	getEventDisplayStart,
+	hasEventScheduleEnded,
+} from "@/lib/events/recurrence";
 
 // Removed MOCK_EVENTS_SEED
 
@@ -104,23 +108,10 @@ export default function EventOrganizerProfilePage() {
 				// Filter Upcoming for Display
 				const now = new Date();
 				const upcoming = allEvents
-					.filter((e) => {
-						const start =
-							e.startAt instanceof Timestamp
-								? e.startAt.toDate()
-								: new Date(e.startAt);
-						return start > now;
-					})
+					.filter((e) => e.status === "published" && !hasEventScheduleEnded(e, now))
 					.sort((a, b) => {
-						// Sort upcoming by soonest first
-						const dateA =
-							a.startAt instanceof Timestamp
-								? a.startAt.toDate().getTime()
-								: new Date(a.startAt).getTime();
-						const dateB =
-							b.startAt instanceof Timestamp
-								? b.startAt.toDate().getTime()
-								: new Date(b.startAt).getTime();
+						const dateA = getEventDisplayStart(a, now)?.getTime() ?? 0;
+						const dateB = getEventDisplayStart(b, now)?.getTime() ?? 0;
 						return dateA - dateB;
 					})
 					.slice(0, 6); // Just take top 6 for preview
@@ -128,22 +119,15 @@ export default function EventOrganizerProfilePage() {
 				setUpcomingEvents(
 					upcoming.map((e) => ({
 						...e,
-						startAt:
-							e.startAt instanceof Timestamp
-								? e.startAt.toDate()
-								: new Date(e.startAt),
+						displayStart: getEventDisplayStart(e, now),
 					})),
 				);
 
 				// 3. Calculate Stats
 				// Upcoming count
-				const upcomingCount = allEvents.filter((e) => {
-					const start =
-						e.startAt instanceof Timestamp
-							? e.startAt.toDate()
-							: new Date(e.startAt);
-					return start > now;
-				}).length;
+				const upcomingCount = allEvents.filter(
+					(e) => e.status === "published" && !hasEventScheduleEnded(e, now),
+				).length;
 
 				// Events Hosted (Total Published)
 				const eventsHostedCount = allEvents.filter(
@@ -456,7 +440,7 @@ export default function EventOrganizerProfilePage() {
 										{event.title}
 									</h3>
 									<p className="text-sm text-text-muted mb-4">
-										{event.startAt.toLocaleDateString("en-US", {
+										{(event.displayStart || event.startAt).toLocaleDateString("en-US", {
 											weekday: "short",
 											month: "short",
 											day: "numeric",

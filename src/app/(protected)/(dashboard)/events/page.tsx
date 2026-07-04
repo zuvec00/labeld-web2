@@ -26,6 +26,10 @@ const TABS: { key: TabKey; label: string }[] = [
 
 import { deleteEvent } from "@/lib/firebase/queries/event";
 import { Copy, Trash2 } from "lucide-react";
+import {
+	getEventDisplayStart,
+	hasEventScheduleEnded,
+} from "@/lib/events/recurrence";
 
 export default function EventsIndexPage() {
 	const router = useRouter();
@@ -108,29 +112,12 @@ export default function EventsIndexPage() {
 		if (tab === "published") {
 			return events.filter((e) => {
 				if (e.status !== "published") return false;
-				try {
-					const endDate = e.endAt?.toDate
-						? e.endAt.toDate()
-						: new Date(e.endAt);
-					return endDate.getTime() > Date.now();
-				} catch {
-					return true;
-				}
+				return !hasEventScheduleEnded(e);
 			});
 		}
 		if (tab === "drafts") return events.filter((e) => e.status === "draft");
 		return events.filter((e) => {
-			if (e.status === "published") {
-				try {
-					const endDate = e.endAt?.toDate
-						? e.endAt.toDate()
-						: new Date(e.endAt);
-					return endDate.getTime() <= Date.now();
-				} catch {
-					return false;
-				}
-			}
-			return false;
+			return e.status === "published" && hasEventScheduleEnded(e);
 		});
 	}, [events, tab]);
 
@@ -252,7 +239,8 @@ function EventCard({
 }) {
 	const startedLabel = (() => {
 		try {
-			const d = ev.startAt?.toDate ? ev.startAt.toDate() : new Date(ev.startAt);
+			const d = getEventDisplayStart(ev);
+			if (!d) return "";
 			const now = new Date();
 			const diffMs = d.getTime() - now.getTime();
 			const isFuture = diffMs > 0;
@@ -262,9 +250,10 @@ function EventCard({
 			const days = Math.floor(absDiff / (36e5 * 24));
 
 			if (isFuture) {
-				if (days > 0) return `Starts in ${days}d`;
+				if (days > 0) return `${ev.isRecurring ? "Next date in" : "Starts in"} ${days}d`;
 				return `Starts in ${hours}h`;
 			} else {
+				if (ev.isRecurring) return "Recurring now";
 				if (days > 0) return `Started ${days}d ago`;
 				return `Started ${hours}h ago`;
 			}

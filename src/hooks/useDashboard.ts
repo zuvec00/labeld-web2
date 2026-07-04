@@ -15,6 +15,10 @@ import { OrderWithVendorStatus, StoreOrderWithVendorStatus, FulfillmentStatus, F
 import { WalletSummary } from "@/types/wallet";
 import { EventModel } from "@/lib/models/event";
 import { BrandModel } from "@/lib/models/brand";
+import {
+	getEventDisplayStart,
+	hasEventScheduleEnded,
+} from "@/lib/events/recurrence";
 
 export type DashboardScope = "all" | "events" | "merch";
 export type DashboardRange = "today" | "7days" | "30days" | "custom";
@@ -373,13 +377,11 @@ export function useDashboard(): UseDashboardReturn {
       .filter(event => {
         // Filter out events without IDs
         if (!event.id) return false;
-        
-        const startAt = event.startAt instanceof Date ? event.startAt : new Date(event.startAt);
-        return startAt > now && event.status === "published";
+        return event.status === "published" && !hasEventScheduleEnded(event, now);
       })
       .sort((a, b) => {
-        const aStart = a.startAt instanceof Date ? a.startAt : new Date(a.startAt);
-        const bStart = b.startAt instanceof Date ? b.startAt : new Date(b.startAt);
+        const aStart = getEventDisplayStart(a, now) || new Date(0);
+        const bStart = getEventDisplayStart(b, now) || new Date(0);
         return aStart.getTime() - bStart.getTime();
       })
       .slice(0, 3)
@@ -397,7 +399,7 @@ export function useDashboard(): UseDashboardReturn {
         return {
           id: event.id!,
           title: event.title,
-          startAt: event.startAt instanceof Date ? event.startAt : new Date(event.startAt),
+          startAt: getEventDisplayStart(event, now) || (event.startAt instanceof Date ? event.startAt : new Date(event.startAt)),
           ticketsSold,
           gmv: eventGMV,
           capacity: event.capacityMode === "limited" ? event.capacityTotal ?? undefined : undefined,

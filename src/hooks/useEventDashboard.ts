@@ -11,6 +11,7 @@ import { EventModel } from "@/lib/models/event";
 import { TopTicketType } from "@/hooks/useDashboard";
 import { getEventAnalytics, summarizeEventMetrics, getEventPerformanceMetrics } from "@/lib/firebase/queries/analytics";
 import { EventAnalyticsSummary } from "@/types/event-analytics";
+import { hasEventScheduleEnded } from "@/lib/events/recurrence";
 
 export interface EventDashboardKPIs {
   totalTicketsSold: number;
@@ -94,8 +95,8 @@ export function useEventDashboard(): UseEventDashboardReturn {
 
       // Split into upcoming and past events
       const now = new Date();
-      const upcomingEvents = events.filter(e => e.startAt > now);
-      const pastEvents = events.filter(e => e.startAt <= now);
+      const upcomingEvents = events.filter(e => !hasEventScheduleEnded(e, now));
+      const pastEvents = events.filter(e => hasEventScheduleEnded(e, now));
 
       // Get event IDs for filtering
       const eventIds = events.map(e => e.id!).filter(Boolean);

@@ -36,6 +36,7 @@ import {
 	getOrderStatsForEvent,
 	type OrderBasedTicketStats,
 } from "@/lib/firebase/queries/orders";
+import { getUpcomingOccurrence, toDate } from "@/lib/events/recurrence";
 
 // Decide where “Resume setup” should go based on data you have
 function nextSetupPath(ev: any, ticketCount: number) {
@@ -216,7 +217,7 @@ export default function EventDashboardPage() {
 								</div>
 								<div className="text-sm text-text-muted flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
 									<span>
-										{formatDateTimeRange(ev.startAt, ev.endAt, ev.timezone)}
+										{formatEventDateTime(ev)}
 									</span>
 									<span className="hidden sm:inline">•</span>
 									<span>{formatVenue(ev.venue)}</span>
@@ -533,6 +534,15 @@ function formatDateTimeRange(
 	} catch {
 		return "Date not set";
 	}
+}
+
+function formatEventDateTime(event: any) {
+	const occurrence = event?.isRecurring ? getUpcomingOccurrence(event) : null;
+	return formatDateTimeRange(
+		occurrence?.startAt || toDate(event?.startAt) || event?.startAt,
+		occurrence?.endAt || toDate(event?.endAt) || event?.endAt,
+		event?.timezone,
+	);
 }
 
 function formatVenue(v?: any) {
