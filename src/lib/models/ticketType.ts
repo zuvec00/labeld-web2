@@ -14,6 +14,9 @@ export type TicketTypeDoc = {
   isActive: boolean;
   sortOrder: number;
   perks?: string[];          // List of perks included with the ticket
+  requiresTicketTypeIds?: string[];
+  imageUrl?: string | null;
+  imageUrls?: string[];
   // Optional UI conveniences
   kind?: "single" | "group";
   groupSize?: number;

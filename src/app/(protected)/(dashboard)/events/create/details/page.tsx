@@ -365,12 +365,9 @@ export default function EventDetailsPage() {
 				slug: finalSlug,
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
-				// For recurring events, endAt should be undefined/null
-				endAt: v.isRecurring
-					? undefined
-					: v.endAt && typeof v.endAt === "string" && v.endAt.trim()
-						? new Date(v.endAt)
-						: undefined,
+				endAt: v.endAt && typeof v.endAt === "string" && v.endAt.trim()
+					? new Date(v.endAt)
+					: undefined,
 				isRecurring: v.isRecurring || false,
 				frequency: v.isRecurring ? v.frequency : undefined,
 				recurringEndMode: v.isRecurring ? v.recurringEndMode : undefined,

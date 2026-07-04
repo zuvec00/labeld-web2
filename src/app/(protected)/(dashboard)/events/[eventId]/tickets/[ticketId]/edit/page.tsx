@@ -11,6 +11,7 @@ import {
 	updateTicketType,
 } from "@/lib/firebase/queries/ticketTypes";
 import type { TicketTypeDoc } from "@/lib/models/ticketType";
+import { uploadContentImageWeb } from "@/lib/storage/upload";
 
 // type Tab = "free" | "paid" | "invite";
 type Tab = "free" | "paid"; // "invite" commented out
@@ -27,6 +28,7 @@ export default function EditTicketPage() {
 	const [loading, setLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
 	const [ticket, setTicket] = useState<TicketTypeDoc | null>(null);
+	const [allTickets, setAllTickets] = useState<TicketTypeDoc[]>([]);
 
 	// Helper to go back to tickets list
 	const goToTickets = () => {
@@ -40,6 +42,7 @@ export default function EditTicketPage() {
 				const tickets = await listTicketTypes(eventIdString);
 				const foundTicket = tickets.find((t) => t.id === ticketIdString);
 				if (mounted) {
+					setAllTickets(tickets);
 					if (foundTicket) {
 						setTicket(foundTicket);
 					} else {
@@ -102,6 +105,7 @@ export default function EditTicketPage() {
 			{/* Edit Form */}
 			<EditTicketForm
 				ticket={ticket}
+				tickets={allTickets}
 				onSave={async (updatedData) => {
 					setSaving(true);
 					try {
@@ -126,10 +130,12 @@ export default function EditTicketPage() {
 
 function EditTicketForm({
 	ticket,
+	tickets,
 	onSave,
 	saving,
 }: {
 	ticket: TicketTypeDoc;
+	tickets: TicketTypeDoc[];
 	onSave: (data: Partial<TicketTypeDoc>) => void;
 	saving: boolean;
 }) {
@@ -159,6 +165,13 @@ function EditTicketForm({
 	);
 	const [desc, setDesc] = useState(ticket.description || "");
 	const [perks, setPerks] = useState<string[]>(ticket.perks || []);
+	const [requiresTicketTypeIds, setRequiresTicketTypeIds] = useState<string[]>(
+		ticket.requiresTicketTypeIds || [],
+	);
+	const [imageUrls, setImageUrls] = useState<string[]>(
+		ticket.imageUrls?.length ? ticket.imageUrls : ticket.imageUrl ? [ticket.imageUrl] : [],
+	);
+	const [uploadingImage, setUploadingImage] = useState(false);
 	const [transferFee, setTransferFee] = useState(
 		ticket.transferFeesToGuest ?? true,
 	);
@@ -248,12 +261,52 @@ function EditTicketForm({
 		newPerks.splice(index, 1);
 		setPerks(newPerks);
 	};
+	const wouldCreateDependencyCycle = (candidateId: string) => {
+		const byId = new Map(tickets.map((option) => [option.id, option]));
+		const seen = new Set<string>();
+		const stack = [candidateId];
+		while (stack.length > 0) {
+			const currentId = stack.pop();
+			if (!currentId || seen.has(currentId)) continue;
+			if (currentId === ticket.id) return true;
+			seen.add(currentId);
+			const current = byId.get(currentId);
+			stack.push(...(current?.requiresTicketTypeIds || []));
+		}
+		return false;
+	};
+	const dependencyOptions = tickets.filter(
+		(option) => option.id !== ticket.id && !wouldCreateDependencyCycle(option.id),
+	);
+	const toggleRequirement = (ticketTypeId: string) => {
+		setRequiresTicketTypeIds((prev) =>
+			prev.includes(ticketTypeId)
+				? prev.filter((id) => id !== ticketTypeId)
+				: [...prev, ticketTypeId],
+		);
+	};
+	const handleImageUpload = async (files: FileList | null) => {
+		const selectedFiles = Array.from(files || []).slice(0, Math.max(0, 5 - imageUrls.length));
+		if (selectedFiles.length === 0) return;
+		setUploadingImage(true);
+		try {
+			const uploadedUrls = await Promise.all(
+				selectedFiles.map((file) => uploadContentImageWeb(file, `events/${eventIdString}/tickets`)),
+			);
+			setImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, 5));
+		} finally {
+			setUploadingImage(false);
+		}
+	};
 
 	const handleSave = () => {
 		const baseData = {
 			name,
 			description: desc || undefined,
 			perks: perks.filter((p) => p.trim() !== ""),
+			requiresTicketTypeIds,
+			imageUrls,
+			imageUrl: imageUrls[0] || null,
 			quantityTotal: qtyMode === "limited" ? parseInt(quantity) : null,
 			quantityRemaining:
 				qtyMode === "limited" ? parseInt(quantityRemaining) : null,
@@ -363,6 +416,72 @@ function EditTicketForm({
 								isGroupTicket ? "group " : ""
 							}ticket includes...`}
 						/>
+					</div>
+
+					<div className="grid gap-4 sm:grid-cols-2">
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Required ticket options
+							</label>
+							<div className="rounded-xl border border-stroke bg-surface p-3 space-y-2">
+								{dependencyOptions.length === 0 ? (
+									<p className="text-sm text-text-muted">No available tickets.</p>
+								) : (
+									dependencyOptions.map((option) => (
+										<label key={option.id} className="flex items-center gap-2 text-sm text-text">
+											<input
+												type="checkbox"
+												checked={requiresTicketTypeIds.includes(option.id)}
+												onChange={() => toggleRequirement(option.id)}
+											/>
+											<span>{option.name}</span>
+										</label>
+									))
+								)}
+							</div>
+							<p className="text-xs text-text-muted mt-1">
+								Customers must add at least one selected ticket before they can buy this ticket.
+							</p>
+						</div>
+						<div>
+							<label className="block text-sm text-text-muted mb-2">
+								Ticket images
+							</label>
+							<div className="space-y-3">
+								{imageUrls.length > 0 && (
+									<div className="flex flex-wrap gap-2">
+										{imageUrls.map((url, index) => (
+											<div key={`${url}-${index}`} className="relative">
+												<img
+													src={url}
+													alt={`Ticket image ${index + 1}`}
+													className="h-14 w-14 rounded-xl object-cover border border-stroke"
+												/>
+												<button
+													type="button"
+													className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-bg text-xs text-text border border-stroke"
+													onClick={() => setImageUrls((prev) => prev.filter((_, i) => i !== index))}
+												>
+													×
+												</button>
+											</div>
+										))}
+									</div>
+								)}
+								<label className="inline-flex cursor-pointer rounded-xl border border-stroke px-4 py-3 text-sm text-text-muted hover:text-text">
+									{uploadingImage ? "Uploading..." : imageUrls.length > 0 ? "Add images" : "Upload images"}
+									<input
+										type="file"
+										accept="image/*"
+										multiple
+										className="hidden"
+										disabled={uploadingImage || imageUrls.length >= 5}
+										onChange={(e) => handleImageUpload(e.target.files)}
+									/>
+								</label>
+								<p className="text-xs text-text-muted">{imageUrls.length}/5 images</p>
+							</div>
+						</div>
 					</div>
 
 					{/* Perks Section */}

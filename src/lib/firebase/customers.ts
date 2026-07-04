@@ -123,3 +123,22 @@ export async function updateCustomer(
   const res = data as { success: boolean };
   if (!res.success) throw new Error("Failed to update customer");
 }
+
+export async function deleteCustomer(args: { brandId: string; customerId: string }): Promise<void> {
+  const fn = getFunctions(app);
+  await httpsCallable(fn, "deleteCustomer")(args);
+}
+
+export async function sendCustomerCampaign(args: {
+  brandId: string;
+  subject: string;
+  message: string;
+  segment?: string;
+  customerIds?: string[];
+  ctaText?: string;
+  ctaLink?: string;
+  heroImage?: string;
+}): Promise<void> {
+  const fn = getFunctions(app);
+  await httpsCallable(fn, "sendCustomerCampaign")(args);
+}

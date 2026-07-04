@@ -6,11 +6,12 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Button from "@/components/ui/button";
-import { Plus, Ticket as TicketIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Ticket as TicketIcon } from "lucide-react";
 import {
 	listTicketTypes,
 	createTicketType,
 	deleteTicketType,
+	reorderTicketTypes,
 } from "@/lib/firebase/queries/ticketTypes";
 import type { TicketTypeDoc } from "@/lib/models/ticketType";
 import { Spinner } from "@/components/ui/spinner";
@@ -23,6 +24,7 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 
 	const [tickets, setTickets] = useState<TicketTypeDoc[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [reordering, setReordering] = useState(false);
 	const [openKind, setOpenKind] = useState<null | "single" | "group">(null);
 
 	useEffect(() => {
@@ -50,6 +52,38 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 
 	const hasTickets = tickets.length > 0;
 
+	const moveTicket = async (index: number, direction: -1 | 1) => {
+		const nextIndex = index + direction;
+		if (nextIndex < 0 || nextIndex >= tickets.length || reordering) return;
+
+		const previousTickets = tickets;
+		const nextTickets = [...tickets];
+		[nextTickets[index], nextTickets[nextIndex]] = [
+			nextTickets[nextIndex],
+			nextTickets[index],
+		];
+		const normalizedTickets = nextTickets.map((ticket, orderIndex) => ({
+			...ticket,
+			sortOrder: (orderIndex + 1) * 10,
+		}));
+
+		setTickets(normalizedTickets);
+		setReordering(true);
+		try {
+			await reorderTicketTypes(
+				eventIdString,
+				normalizedTickets.map((ticket) => ticket.id)
+			);
+		} catch (error) {
+			setTickets(previousTickets);
+			window.alert(
+				error instanceof Error ? error.message : "Could not reorder tickets."
+			);
+		} finally {
+			setReordering(false);
+		}
+	};
+
 	return (
 		<div className="py-6 max-w-3xl mx-auto">
 			<div className="flex items-center justify-between mb-6">
@@ -72,16 +106,29 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 			<div>
 				{hasTickets ? (
 					<div className="grid gap-4">
-						{tickets.map((t) => (
+						{tickets.map((t, index) => (
 							<TicketRow
 								key={t.id}
 								t={t}
 								eventId={eventIdString}
 								router={router}
+								canMoveUp={index > 0}
+								canMoveDown={index < tickets.length - 1}
+								reordering={reordering}
+								onMoveUp={() => moveTicket(index, -1)}
+								onMoveDown={() => moveTicket(index, 1)}
 								onDelete={async () => {
 									if (!confirm("Delete this ticket type?")) return;
-									await deleteTicketType(eventIdString, t.id);
-									setTickets((prev) => prev.filter((x) => x.id !== t.id));
+									try {
+										await deleteTicketType(eventIdString, t.id);
+										setTickets((prev) => prev.filter((x) => x.id !== t.id));
+									} catch (error) {
+										window.alert(
+											error instanceof Error
+												? error.message
+												: "Could not delete ticket."
+										);
+									}
 								}}
 							/>
 						))}
@@ -196,11 +243,21 @@ export default function EventTicketsTab({ eventId }: { eventId: string }) {
 function TicketRow({
 	t,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
+	reordering,
 	eventId,
 	router,
 }: {
 	t: TicketTypeDoc;
 	onDelete: () => void;
+	onMoveUp: () => void;
+	onMoveDown: () => void;
+	canMoveUp: boolean;
+	canMoveDown: boolean;
+	reordering: boolean;
 	eventId: string | undefined;
 	router: any;
 }) {
@@ -237,6 +294,26 @@ function TicketRow({
 					</div>
 				</div>
 				<div className="flex gap-2">
+					<button
+						type="button"
+						className="h-10 w-10 rounded-lg border border-stroke text-text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed grid place-items-center"
+						onClick={onMoveUp}
+						disabled={!canMoveUp || reordering}
+						aria-label={`Move ${t.name} up`}
+						title="Move up"
+					>
+						<ArrowUp className="w-4 h-4" />
+					</button>
+					<button
+						type="button"
+						className="h-10 w-10 rounded-lg border border-stroke text-text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed grid place-items-center"
+						onClick={onMoveDown}
+						disabled={!canMoveDown || reordering}
+						aria-label={`Move ${t.name} down`}
+						title="Move down"
+					>
+						<ArrowDown className="w-4 h-4" />
+					</button>
 					<Button
 						variant="outline"
 						text="Edit"

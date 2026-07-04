@@ -20,14 +20,13 @@ import {
 	ChevronLeft,
 	ChevronRight,
 	Star,
-	Instagram,
-	Sparkles,
+	FileSpreadsheet,
+	History,
 } from "lucide-react";
+import CsvImportModal from "./import/CsvImportModal";
+import ImportHistoryDrawer from "./import/ImportHistoryDrawer";
+import { subscribeImportHistory } from "@/lib/firebase/queries/importHistory";
 import PiecesListView from "./PiecesListView";
-import InstagramConnectModal from "@/components/brand/instagram/InstagramConnectModal";
-import { useInstagram } from "@/hooks/useInstagram";
-import InstagramImportModal from "../../instagram/InstagramImportModal";
-// import InstagramImportModal from "@/components/brand/instagram/InstagramImportModal";
 
 const ITEMS_PER_PAGE = 25;
 
@@ -42,11 +41,29 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 	const [currentPage, setCurrentPage] = useState(1);
 	const router = useRouter();
 	const { orders, loading: loadingOrders } = useStoreOrders();
-	const { connection } = useInstagram();
-
 	const [isFabMenuOpen, setIsFabMenuOpen] = useState(false);
-	const [isConnectModalOpen, setIsConnectModalOpen] = useState(false);
-	const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+	const [isCsvImportOpen, setIsCsvImportOpen] = useState(false);
+	const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+	const [pendingImportCount, setPendingImportCount] = useState(0);
+
+	// Track active imports for badge.
+	// The isActive guard prevents React StrictMode's double-invoke from
+	// creating two simultaneous listeners that crash the Firestore SDK.
+	useEffect(() => {
+		let isActive = true;
+		let unsub: (() => void) | null = null;
+		unsub = subscribeImportHistory(brandId, (list) => {
+			if (!isActive) return;
+			const active = list.filter(
+				(i) => i.status === "pending" || i.status === "processing"
+			).length;
+			setPendingImportCount(active);
+		});
+		return () => {
+			isActive = false;
+			unsub?.();
+		};
+	}, [brandId]);
 
 	// Load view preference on mount
 	useEffect(() => {
@@ -175,19 +192,68 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 				<p className="text-text-muted">
 					Add your pieces so people can see and shop your products.
 				</p>
-				<button
-					onClick={() => {
-						if (brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2") {
-							setIsFabMenuOpen(!isFabMenuOpen);
-						} else {
-							router.push("/pieces/new");
-						}
-					}}
-					className="fixed bottom-8 right-6 z-50 h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center hover:scale-105 transition-transform"
-					title="Drop a Product"
-				>
-					<Plus className="w-6 h-6" />
-				</button>
+				<div className="flex items-center justify-center gap-3 mt-5 flex-wrap">
+					<button
+						onClick={() => router.push("/pieces/new")}
+						className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-stroke bg-surface text-sm font-semibold text-text hover:bg-bg transition-colors"
+					>
+						<Plus className="w-4 h-4" />
+						Add manually
+					</button>
+					<button
+						onClick={() => setIsCsvImportOpen(true)}
+						className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-accent text-bg text-sm font-semibold hover:opacity-90 transition-opacity"
+					>
+						<FileSpreadsheet className="w-4 h-4" />
+						Import from CSV
+					</button>
+				</div>
+				<div className="fixed bottom-8 right-6 z-50 flex flex-col items-end gap-3">
+					{isFabMenuOpen && (
+						<div className="flex flex-col items-end gap-3 mb-2 animate-in slide-in-from-bottom-4 duration-200">
+							<button
+								onClick={() => { setIsFabMenuOpen(false); router.push("/pieces/new"); }}
+								className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-stroke rounded-xl shadow-xl hover:bg-bg transition-colors"
+							>
+								<span className="text-sm font-semibold">Manual Entry</span>
+								<div className="w-10 h-10 rounded-full bg-surface border border-stroke flex items-center justify-center">
+									<Plus className="w-5 h-5" />
+								</div>
+							</button>
+							<button
+								onClick={() => { setIsFabMenuOpen(false); setIsCsvImportOpen(true); }}
+								className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-stroke rounded-xl shadow-xl hover:bg-bg transition-colors"
+							>
+								<div className="flex flex-col items-end">
+									<span className="text-sm font-semibold">CSV Import</span>
+									<span className="text-[10px] text-text-muted">Bumpa, Shopify or any CSV</span>
+								</div>
+								<div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+									<FileSpreadsheet className="w-5 h-5 text-accent" />
+								</div>
+							</button>
+						</div>
+					)}
+					<button
+						onClick={() => setIsFabMenuOpen(!isFabMenuOpen)}
+						className={`h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center transition-all duration-300 ${isFabMenuOpen ? 'rotate-45 scale-90 bg-surface border border-stroke text-text' : 'hover:scale-105'}`}
+						title="Drop a Product"
+					>
+						<Plus className="w-6 h-6" />
+					</button>
+				</div>
+
+				<CsvImportModal
+					isOpen={isCsvImportOpen}
+					onClose={() => setIsCsvImportOpen(false)}
+					brandId={brandId}
+					onViewHistory={() => setIsHistoryOpen(true)}
+				/>
+				<ImportHistoryDrawer
+					isOpen={isHistoryOpen}
+					onClose={() => setIsHistoryOpen(false)}
+					brandId={brandId}
+				/>
 			</div>
 		);
 	}
@@ -232,6 +298,20 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 					{pieces.length} Creative Assets
 				</div>
 				<div className="flex items-center gap-3 self-end sm:self-auto">
+					{/* Import History */}
+					<button
+						onClick={() => setIsHistoryOpen(true)}
+						className="relative p-1.5 rounded-lg border border-stroke hover:bg-surface text-text-muted hover:text-text transition-colors"
+						title="Import History"
+					>
+						<History className="w-4 h-4" />
+						{pendingImportCount > 0 && (
+							<span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-cta text-bg text-[8px] font-bold flex items-center justify-center">
+								{pendingImportCount}
+							</span>
+						)}
+					</button>
+
 					{/* Sort Control */}
 					<button
 						onClick={cycleSort}
@@ -322,7 +402,22 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 
 			{/* FAB Menu */}
 			<div className="fixed bottom-8 right-6 z-50 flex flex-col items-end gap-3">
-				{isFabMenuOpen && brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2" && (
+				{/* History button — shown when there are active imports */}
+				{pendingImportCount > 0 && !isFabMenuOpen && (
+					<button
+						onClick={() => setIsHistoryOpen(true)}
+						className="flex items-center gap-2 px-3 py-2 bg-surface border border-stroke rounded-xl shadow-lg text-sm font-semibold text-text hover:bg-bg transition-all animate-in slide-in-from-bottom-2 duration-200"
+					>
+						<div className="relative">
+							<History className="w-4 h-4" />
+							<span className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full bg-cta text-bg text-[8px] font-bold flex items-center justify-center">
+								{pendingImportCount}
+							</span>
+						</div>
+						Importing…
+					</button>
+				)}
+				{isFabMenuOpen && (
 					<div className="flex flex-col items-end gap-3 mb-2 animate-in slide-in-from-bottom-4 duration-200">
 						<button
 							onClick={() => {
@@ -340,36 +435,25 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 						<button
 							onClick={() => {
 								setIsFabMenuOpen(false);
-								if (connection?.isConnected) {
-									setIsImportModalOpen(true);
-								} else {
-									setIsConnectModalOpen(true);
-								}
+								setIsCsvImportOpen(true);
 							}}
 							className="flex items-center gap-3 px-4 py-2.5 bg-surface border border-stroke rounded-xl shadow-xl hover:bg-surface-neutral transition-colors group"
 						>
 							<div className="flex flex-col items-end">
-								<span className="text-sm font-semibold flex items-center gap-1.5">
-									Instagram <Sparkles className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
-								</span>
-								<span className="text-[10px] text-text-muted">Generate from posts</span>
+								<span className="text-sm font-semibold">CSV Import</span>
+								<span className="text-[10px] text-text-muted">Bumpa, Shopify or any CSV</span>
 							</div>
-							<div className="w-10 h-10 rounded-full bg-gradient-to-tr from-yellow-400 via-red-500 to-purple-600 flex items-center justify-center text-white">
-								<Instagram className="w-5 h-5" />
+							<div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center">
+								<FileSpreadsheet className="w-5 h-5 text-accent" />
 							</div>
 						</button>
+
 					</div>
 				)}
 
 				<button
 					data-tour="create-product"
-					onClick={() => {
-						if (brandId === "gYU1Zmtg6AWVlql8E1XA3CYTjJF2") {
-							setIsFabMenuOpen(!isFabMenuOpen);
-						} else {
-							router.push("/pieces/new");
-						}
-					}}
+					onClick={() => setIsFabMenuOpen(!isFabMenuOpen)}
 					className={`h-14 w-14 rounded-full bg-cta text-bg shadow-lg flex items-center justify-center transition-all duration-300 ${isFabMenuOpen ? 'rotate-45 scale-90 bg-surface border border-stroke text-text' : 'hover:scale-105'}`}
 					title="Drop a Product"
 				>
@@ -377,18 +461,16 @@ export default function PiecesTab({ brandId }: { brandId: string }) {
 				</button>
 			</div>
 
-			<InstagramConnectModal 
-				isOpen={isConnectModalOpen}
-				onClose={() => setIsConnectModalOpen(false)}
-				onSuccess={() => {
-					setIsConnectModalOpen(false);
-					setIsImportModalOpen(true);
-				}}
+			<CsvImportModal
+				isOpen={isCsvImportOpen}
+				onClose={() => setIsCsvImportOpen(false)}
+				brandId={brandId}
+				onViewHistory={() => setIsHistoryOpen(true)}
 			/>
 
-			<InstagramImportModal 
-				isOpen={isImportModalOpen}
-				onClose={() => setIsImportModalOpen(false)}
+			<ImportHistoryDrawer
+				isOpen={isHistoryOpen}
+				onClose={() => setIsHistoryOpen(false)}
 				brandId={brandId}
 			/>
 		</div>
