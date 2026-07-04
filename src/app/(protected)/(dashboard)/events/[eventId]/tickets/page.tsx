@@ -5,14 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Stepper from "@/components/ticketing/Stepper";
 import Button from "@/components/ui/button";
-import { Plus, Ticket as TicketIcon } from "lucide-react";
+import { ArrowDown, ArrowUp, Plus, Ticket as TicketIcon } from "lucide-react";
 import {
 	listTicketTypes,
 	createTicketType,
 	deleteTicketType,
+	reorderTicketTypes,
 } from "@/lib/firebase/queries/ticketTypes";
 import type { TicketTypeDoc } from "@/lib/models/ticketType";
 import { Spinner } from "@/components/ui/spinner";
+import { uploadContentImageWeb } from "@/lib/storage/upload";
 
 type Tab = "free" | "paid"; // "invite" commented out for MVP
 
@@ -32,6 +34,7 @@ export default function TicketsStepPage() {
 
 	const [tickets, setTickets] = useState<TicketTypeDoc[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [reordering, setReordering] = useState(false);
 	const [openKind, setOpenKind] = useState<null | "single" | "group">(null);
 
 	useEffect(() => {
@@ -60,6 +63,38 @@ export default function TicketsStepPage() {
 	const hasTickets = tickets.length > 0;
 	const hasActiveTickets = tickets.some((t) => t.isActive);
 
+	const moveTicket = async (index: number, direction: -1 | 1) => {
+		const nextIndex = index + direction;
+		if (nextIndex < 0 || nextIndex >= tickets.length || reordering) return;
+
+		const previousTickets = tickets;
+		const nextTickets = [...tickets];
+		[nextTickets[index], nextTickets[nextIndex]] = [
+			nextTickets[nextIndex],
+			nextTickets[index],
+		];
+		const normalizedTickets = nextTickets.map((ticket, orderIndex) => ({
+			...ticket,
+			sortOrder: (orderIndex + 1) * 10,
+		}));
+
+		setTickets(normalizedTickets);
+		setReordering(true);
+		try {
+			await reorderTicketTypes(
+				eventIdString,
+				normalizedTickets.map((ticket) => ticket.id),
+			);
+		} catch (error) {
+			setTickets(previousTickets);
+			window.alert(
+				error instanceof Error ? error.message : "Could not reorder tickets.",
+			);
+		} finally {
+			setReordering(false);
+		}
+	};
+
 	return (
 		<div className="min-h-dvh px-4 sm:px-6 py-8 max-w-3xl mx-auto">
 			<Stepper steps={STEPS} activeKey="tickets" eventId={eventIdString} />
@@ -85,16 +120,26 @@ export default function TicketsStepPage() {
 			<div className="mt-6">
 				{hasTickets ? (
 					<div className="grid gap-4">
-						{tickets.map((t) => (
+						{tickets.map((t, index) => (
 							<TicketRow
 								key={t.id}
 								t={t}
+								tickets={tickets}
 								eventId={eventIdString}
 								router={router}
+								canMoveUp={index > 0}
+								canMoveDown={index < tickets.length - 1}
+								reordering={reordering}
+								onMoveUp={() => moveTicket(index, -1)}
+								onMoveDown={() => moveTicket(index, 1)}
 								onDelete={async () => {
 									if (!confirm("Delete this ticket type?")) return;
-									await deleteTicketType(eventIdString, t.id);
-									setTickets((prev) => prev.filter((x) => x.id !== t.id));
+									try {
+										await deleteTicketType(eventIdString, t.id);
+										setTickets((prev) => prev.filter((x) => x.id !== t.id));
+									} catch (error) {
+										window.alert(error instanceof Error ? error.message : "Could not delete ticket.");
+									}
 								}}
 							/>
 						))}
@@ -135,6 +180,8 @@ export default function TicketsStepPage() {
 			{/* Dialogs */}
 			{openKind === "single" && (
 				<CreateSingleDialog
+					eventId={eventIdString}
+					existingTickets={tickets}
 					onClose={() => setOpenKind(null)}
 					onSwitchToGroup={() => setOpenKind("group")}
 					onCreate={async (t, setSaving) => {
@@ -169,6 +216,8 @@ export default function TicketsStepPage() {
 			)}
 			{openKind === "group" && (
 				<CreateGroupDialog
+					eventId={eventIdString}
+					existingTickets={tickets}
 					onClose={() => setOpenKind(null)}
 					onSwitchToSingle={() => setOpenKind("single")}
 					onCreate={async (t, setSaving) => {
@@ -209,12 +258,24 @@ export default function TicketsStepPage() {
 
 function TicketRow({
 	t,
+	tickets,
 	onDelete,
+	onMoveUp,
+	onMoveDown,
+	canMoveUp,
+	canMoveDown,
+	reordering,
 	eventId,
 	router,
 }: {
 	t: TicketTypeDoc;
+	tickets: TicketTypeDoc[];
 	onDelete: () => void;
+	onMoveUp: () => void;
+	onMoveDown: () => void;
+	canMoveUp: boolean;
+	canMoveDown: boolean;
+	reordering: boolean;
 	eventId: string | undefined;
 	router: any;
 }) {
@@ -230,11 +291,24 @@ function TicketRow({
 		t.price != null
 			? `${t.currency ?? "NGN"} ${(t.price / 100).toLocaleString()}`
 			: "Free";
+	const requiredNames =
+		t.requiresTicketTypeIds
+			?.map((id) => tickets.find((ticket) => ticket.id === id)?.name)
+			.filter(Boolean) ?? [];
+	const previewImage = t.imageUrls?.[0] || t.imageUrl;
 
 	return (
 		<div className="rounded-2xl bg-surface border border-stroke p-4">
 			<div className="flex items-center justify-between gap-4">
-				<div>
+				<div className="flex items-center gap-3 min-w-0">
+					{previewImage && (
+						<img
+							src={previewImage}
+							alt={t.name}
+							className="h-14 w-14 rounded-xl object-cover border border-stroke"
+						/>
+					)}
+					<div className="min-w-0">
 					<div className="text-sm text-text-muted">{kind}</div>
 					<div className="font-medium">{t.name}</div>
 					{t.description && (
@@ -249,8 +323,34 @@ function TicketRow({
 							<span>Limit: {t.limits.perUserMax}/user</span>
 						) : null}
 					</div>
+					{requiredNames.length > 0 && (
+						<div className="text-xs text-cta mt-1">
+							Requires {requiredNames.join(" or ")}
+						</div>
+					)}
+					</div>
 				</div>
 				<div className="flex gap-2">
+					<button
+						type="button"
+						className="h-10 w-10 rounded-lg border border-stroke text-text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed grid place-items-center"
+						onClick={onMoveUp}
+						disabled={!canMoveUp || reordering}
+						aria-label={`Move ${t.name} up`}
+						title="Move up"
+					>
+						<ArrowUp className="w-4 h-4" />
+					</button>
+					<button
+						type="button"
+						className="h-10 w-10 rounded-lg border border-stroke text-text-muted hover:text-text disabled:opacity-40 disabled:cursor-not-allowed grid place-items-center"
+						onClick={onMoveDown}
+						disabled={!canMoveDown || reordering}
+						aria-label={`Move ${t.name} down`}
+						title="Move down"
+					>
+						<ArrowDown className="w-4 h-4" />
+					</button>
 					<Button
 						variant="outline"
 						text="Edit"
@@ -268,10 +368,14 @@ function TicketRow({
 /* ---------- Create Single Ticket Dialog ---------- */
 
 function CreateSingleDialog({
+	eventId,
+	existingTickets,
 	onClose,
 	onSwitchToGroup,
 	onCreate,
 }: {
+	eventId: string;
+	existingTickets: TicketTypeDoc[];
 	onClose: () => void;
 	onSwitchToGroup: () => void;
 	onCreate: (
@@ -290,6 +394,9 @@ function CreateSingleDialog({
 	const [perUserMax, setPerUserMax] = useState<number>(5);
 	const [desc, setDesc] = useState("");
 	const [perks, setPerks] = useState<string[]>([]);
+	const [requiresTicketTypeIds, setRequiresTicketTypeIds] = useState<string[]>([]);
+	const [imageUrls, setImageUrls] = useState<string[]>([]);
+	const [uploadingImage, setUploadingImage] = useState(false);
 	const [transferFee, setTransferFee] = useState(true);
 	const [salesStart, setSalesStart] = useState<string>("");
 	const [salesEnd, setSalesEnd] = useState<string>("");
@@ -328,6 +435,19 @@ function CreateSingleDialog({
 		const newPerks = [...perks];
 		newPerks.splice(index, 1);
 		setPerks(newPerks);
+	};
+	const handleImageUpload = async (files: FileList | null) => {
+		const selectedFiles = Array.from(files || []).slice(0, Math.max(0, 5 - imageUrls.length));
+		if (selectedFiles.length === 0) return;
+		setUploadingImage(true);
+		try {
+			const uploadedUrls = await Promise.all(
+				selectedFiles.map((file) => uploadContentImageWeb(file, `events/${eventId}/tickets`)),
+			);
+			setImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, 5));
+		} finally {
+			setUploadingImage(false);
+		}
 	};
 
 	return (
@@ -381,6 +501,16 @@ function CreateSingleDialog({
 							placeholder="Describe what this ticket includes..."
 						/>
 					</div>
+
+					<TicketDependencyAndImageFields
+						tickets={existingTickets}
+						requiresTicketTypeIds={requiresTicketTypeIds}
+						onRequiresTicketTypeIdsChange={setRequiresTicketTypeIds}
+						imageUrls={imageUrls}
+						onImageUrlsChange={setImageUrls}
+						onImagesChange={handleImageUpload}
+						uploadingImage={uploadingImage}
+					/>
 
 					{/* Perks Section */}
 					<div>
@@ -564,6 +694,9 @@ function CreateSingleDialog({
 									name,
 									description: desc || undefined,
 									perks: perks.filter((p) => p.trim() !== ""),
+									requiresTicketTypeIds,
+									imageUrls,
+									imageUrl: imageUrls[0] || null,
 									quantityTotal:
 										qtyMode === "limited"
 											? Math.max(1, parseInt(quantity || "0", 10))
@@ -593,10 +726,14 @@ function CreateSingleDialog({
 /* ---------- Create Group Ticket Dialog ---------- */
 
 function CreateGroupDialog({
+	eventId,
+	existingTickets,
 	onClose,
 	onSwitchToSingle,
 	onCreate,
 }: {
+	eventId: string;
+	existingTickets: TicketTypeDoc[];
 	onClose: () => void;
 	onSwitchToSingle: () => void;
 	onCreate: (
@@ -615,6 +752,9 @@ function CreateGroupDialog({
 	const [groupPrice, setGroupPrice] = useState<string>("6000");
 	const [desc, setDesc] = useState("");
 	const [perks, setPerks] = useState<string[]>([]);
+	const [requiresTicketTypeIds, setRequiresTicketTypeIds] = useState<string[]>([]);
+	const [imageUrls, setImageUrls] = useState<string[]>([]);
+	const [uploadingImage, setUploadingImage] = useState(false);
 	const [transferFee, setTransferFee] = useState(true);
 	const [salesStart, setSalesStart] = useState<string>("");
 	const [salesEnd, setSalesEnd] = useState<string>("");
@@ -659,6 +799,19 @@ function CreateGroupDialog({
 		const newPerks = [...perks];
 		newPerks.splice(index, 1);
 		setPerks(newPerks);
+	};
+	const handleImageUpload = async (files: FileList | null) => {
+		const selectedFiles = Array.from(files || []).slice(0, Math.max(0, 5 - imageUrls.length));
+		if (selectedFiles.length === 0) return;
+		setUploadingImage(true);
+		try {
+			const uploadedUrls = await Promise.all(
+				selectedFiles.map((file) => uploadContentImageWeb(file, `events/${eventId}/tickets`)),
+			);
+			setImageUrls((prev) => [...prev, ...uploadedUrls].slice(0, 5));
+		} finally {
+			setUploadingImage(false);
+		}
 	};
 
 	return (
@@ -728,6 +881,16 @@ function CreateGroupDialog({
 							placeholder="Describe what this group ticket includes..."
 						/>
 					</div>
+
+					<TicketDependencyAndImageFields
+						tickets={existingTickets}
+						requiresTicketTypeIds={requiresTicketTypeIds}
+						onRequiresTicketTypeIdsChange={setRequiresTicketTypeIds}
+						imageUrls={imageUrls}
+						onImageUrlsChange={setImageUrls}
+						onImagesChange={handleImageUpload}
+						uploadingImage={uploadingImage}
+					/>
 
 					{/* Perks Section */}
 					<div>
@@ -910,6 +1073,9 @@ function CreateGroupDialog({
 									name,
 									description: desc || undefined,
 									perks: perks.filter((p) => p.trim() !== ""),
+									requiresTicketTypeIds,
+									imageUrls,
+									imageUrl: imageUrls[0] || null,
 									quantityTotal:
 										qtyMode === "limited"
 											? Math.max(1, parseInt(quantity || "0", 10))
@@ -933,6 +1099,100 @@ function CreateGroupDialog({
 				</div>
 			</div>
 		</DialogFrame>
+	);
+}
+
+function TicketDependencyAndImageFields({
+	tickets,
+	requiresTicketTypeIds,
+	onRequiresTicketTypeIdsChange,
+	imageUrls,
+	onImageUrlsChange,
+	onImagesChange,
+	uploadingImage,
+}: {
+	tickets: TicketTypeDoc[];
+	requiresTicketTypeIds: string[];
+	onRequiresTicketTypeIdsChange: (ids: string[]) => void;
+	imageUrls: string[];
+	onImageUrlsChange: (urls: string[]) => void;
+	onImagesChange: (files: FileList | null) => void;
+	uploadingImage: boolean;
+}) {
+	const toggleRequirement = (ticketId: string) => {
+		onRequiresTicketTypeIdsChange(
+			requiresTicketTypeIds.includes(ticketId)
+				? requiresTicketTypeIds.filter((id) => id !== ticketId)
+				: [...requiresTicketTypeIds, ticketId],
+		);
+	};
+
+	return (
+		<div className="grid gap-4 sm:grid-cols-2">
+			<div>
+				<label className="block text-sm text-text-muted mb-2">
+					Required ticket options
+				</label>
+				<div className="rounded-xl border border-stroke bg-surface p-3 space-y-2">
+					{tickets.length === 0 ? (
+						<p className="text-sm text-text-muted">No other tickets yet.</p>
+					) : (
+						tickets.map((ticket) => (
+							<label key={ticket.id} className="flex items-center gap-2 text-sm text-text">
+								<input
+									type="checkbox"
+									checked={requiresTicketTypeIds.includes(ticket.id)}
+									onChange={() => toggleRequirement(ticket.id)}
+								/>
+								<span>{ticket.name}</span>
+							</label>
+						))
+					)}
+				</div>
+				<p className="text-xs text-text-muted mt-1">
+					Customers must add at least one selected ticket before they can buy this ticket.
+				</p>
+			</div>
+			<div>
+				<label className="block text-sm text-text-muted mb-2">
+					Ticket images
+				</label>
+				<div className="space-y-3">
+					{imageUrls.length > 0 && (
+						<div className="flex flex-wrap gap-2">
+							{imageUrls.map((url, index) => (
+								<div key={`${url}-${index}`} className="relative">
+									<img
+										src={url}
+										alt={`Ticket image ${index + 1}`}
+										className="h-14 w-14 rounded-xl object-cover border border-stroke"
+									/>
+									<button
+										type="button"
+										className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-bg text-xs text-text border border-stroke"
+										onClick={() => onImageUrlsChange(imageUrls.filter((_, i) => i !== index))}
+									>
+										×
+									</button>
+								</div>
+							))}
+						</div>
+					)}
+					<label className="inline-flex cursor-pointer rounded-xl border border-stroke px-4 py-3 text-sm text-text-muted hover:text-text">
+						{uploadingImage ? "Uploading..." : imageUrls.length > 0 ? "Add images" : "Upload images"}
+						<input
+							type="file"
+							accept="image/*"
+							multiple
+							className="hidden"
+							disabled={uploadingImage || imageUrls.length >= 5}
+							onChange={(e) => onImagesChange(e.target.files)}
+						/>
+					</label>
+					<p className="text-xs text-text-muted">{imageUrls.length}/5 images</p>
+				</div>
+			</div>
+		</div>
 	);
 }
 

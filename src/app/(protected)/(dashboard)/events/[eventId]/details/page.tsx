@@ -383,12 +383,9 @@ export default function EditEventDetailsPage() {
 				startAt: v.startAt
 					? convertLocalToTimezone(v.startAt as string)
 					: undefined,
-				// For recurring events, endAt should be undefined/null
-				endAt: v.isRecurring
-					? undefined
-					: v.endAt
-						? convertLocalToTimezone(v.endAt as string)
-						: undefined,
+				endAt: v.endAt
+					? convertLocalToTimezone(v.endAt as string)
+					: undefined,
 				recurringEndDate:
 					v.isRecurring && v.recurringEndMode === "date" && v.recurringEndDate
 						? new Date(v.recurringEndDate + "T00:00:00")
@@ -507,12 +504,9 @@ export default function EditEventDetailsPage() {
 				...v,
 				slug: finalSlug,
 				startAt: convertLocalToTimezone(v.startAt as string),
-				// For recurring events, endAt should be undefined/null
-				endAt: v.isRecurring
-					? undefined
-					: v.endAt
-						? convertLocalToTimezone(v.endAt as string)
-						: undefined,
+				endAt: v.endAt
+					? convertLocalToTimezone(v.endAt as string)
+					: undefined,
 				capacityTotal,
 				coverImageURL: finalCoverImageURL,
 				isRecurring: v.isRecurring || false,

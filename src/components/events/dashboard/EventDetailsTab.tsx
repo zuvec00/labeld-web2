@@ -382,10 +382,7 @@ export default function EventDetailsTab({ eventId }: { eventId: string }) {
 				startAt: v.startAt
 					? convertLocalToTimezone(v.startAt as string)
 					: undefined,
-				// For recurring events, endAt should be undefined/null
-				endAt: v.isRecurring
-					? undefined
-					: v.endAt
+				endAt: v.endAt
 					? convertLocalToTimezone(v.endAt as string)
 					: undefined,
 				recurringEndDate:
@@ -498,9 +495,7 @@ export default function EventDetailsTab({ eventId }: { eventId: string }) {
 				...v,
 				slug: finalSlug,
 				startAt: convertLocalToTimezone(v.startAt as string),
-				endAt: v.isRecurring
-					? undefined
-					: v.endAt
+				endAt: v.endAt
 					? convertLocalToTimezone(v.endAt as string)
 					: undefined,
 				capacityTotal,
