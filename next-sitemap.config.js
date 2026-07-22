@@ -3,6 +3,28 @@ module.exports = {
 	siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://studio.labeld.app',
 	generateRobotsTxt: true,
 	generateIndexSitemap: false,
+	outDir: './public',
+	// Studio is primarily an authenticated product. Keep the sitemap allowlisted so
+	// dashboards, setup flows, scanners, admin tools, and transactional pages never
+	// leak into search discovery.
+	transform: async (config, path) => {
+		const publicPaths = new Set([
+			'/',
+			'/pricing',
+			'/marketing',
+			'/integrations',
+			'/event-landing-page',
+		]);
+
+		if (!publicPaths.has(path)) return null;
+
+		return {
+			loc: path,
+			changefreq: path === '/' ? 'weekly' : 'monthly',
+			priority: path === '/' ? 1.0 : path === '/pricing' ? 0.8 : 0.6,
+			lastmod: new Date().toISOString(),
+		};
+	},
 	
 	// Exclude protected and internal routes
 	exclude: [
@@ -43,10 +65,19 @@ module.exports = {
 				userAgent: '*',
 				allow: '/',
 				disallow: [
+					'/api/',
+					'/admin/',
 					'/dashboard',
 					'/dashboard/*',
+					'/analytics/',
+					'/login',
+					'/onboarding',
 					'/events/create',
 					'/events/create/*',
+					'/organizer-space/',
+					'/organizer-space/*',
+					'/customers/',
+					'/customers/*',
 					'/brand/setup',
 					'/brand/setup/*',
 					'/user/setup',
@@ -82,30 +113,6 @@ module.exports = {
 	
 	// Additional paths to include
 	additionalPaths: async (config) => {
-		const result = [];
-		
-		// Add high-priority static pages
-		result.push({
-			loc: '/',
-			changefreq: 'daily',
-			priority: 1.0,
-			lastmod: new Date().toISOString(),
-		});
-		
-		result.push({
-			loc: '/event-landing-page',
-			changefreq: 'weekly',
-			priority: 0.8,
-			lastmod: new Date().toISOString(),
-		});
-		
-		result.push({
-			loc: '/marketing',
-			changefreq: 'weekly',
-			priority: 0.8,
-			lastmod: new Date().toISOString(),
-		});
-		
 		// TODO: Add dynamic routes from Firestore
 		// You can fetch from Firestore here and add dynamic brand/event pages
 		// Example:
@@ -119,7 +126,6 @@ module.exports = {
 		//   });
 		// });
 		
-		return result;
+		return [];
 	},
 };
-

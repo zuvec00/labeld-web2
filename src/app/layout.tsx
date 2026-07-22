@@ -1,4 +1,4 @@
-import type {} from "next";
+import type { Metadata, Viewport } from "next";
 import {
 	Bebas_Neue,
 	Cormorant_Garamond,
@@ -95,7 +95,8 @@ const dmSans = DM_Sans({
 	display: "swap",
 });
 
-export const metadata = {
+export const metadata: Metadata = {
+	metadataBase: new URL("https://studio.labeld.app"),
 	title: {
 		default: "Labeld Studio — Brand & Event Management Platform by Labeld",
 		template: "%s | Labeld Studio",
@@ -116,9 +117,6 @@ export const metadata = {
 	creator: "Labeld",
 	publisher: "Labeld",
 	manifest: "/manifest.webmanifest",
-	themeColor: "#FF5E2E",
-	viewport:
-		"width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover",
 	appleWebApp: {
 		capable: true,
 		statusBarStyle: "black-translucent",
@@ -170,6 +168,15 @@ export const metadata = {
 			"max-snippet": -1,
 		},
 	},
+};
+
+export const viewport: Viewport = {
+	width: "device-width",
+	initialScale: 1,
+	maximumScale: 1,
+	userScalable: false,
+	viewportFit: "cover",
+	themeColor: "#FF5E2E",
 };
 
 export default function RootLayout({
