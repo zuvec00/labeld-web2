@@ -396,10 +396,10 @@ export async function executeCleanup(
     deleteStoreOrders: boolean;
     deleteWalletLedger: boolean;
     resetWallet: boolean;
+    eventIds?: string[];
   }
 ) {
-  const events = await fetchUserEvents(userId);
-  const eventIds = events.map((e) => e.id);
+  const eventIds = options.eventIds ?? (await fetchUserEvents(userId)).map((e) => e.id);
 
   const results = {
     attendeeTicketsDeleted: 0,

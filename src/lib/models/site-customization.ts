@@ -113,6 +113,9 @@ export interface BrandIdentity {
 	faviconUrl?: string;
 	useLogoInFooter?: boolean;
 	themeMode?: "light" | "dark"; // Default: 'light'
+	typographyPresetId?: string;
+	headingFontFamily?: string;
+	bodyFontFamily?: string;
 }
 
 export interface BrandStorefrontConfig {

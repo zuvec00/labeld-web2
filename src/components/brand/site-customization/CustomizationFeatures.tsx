@@ -18,14 +18,14 @@ export default function CustomizationFeatures({
 	isPro,
 }: CustomizationFeaturesProps) {
 	const badges = {
+		included: (
+			<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-accent/10 text-accent border border-accent/20">
+				Included
+			</span>
+		),
 		proOnly: (
 			<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-stroke text-text-muted border border-stroke/50">
 				Pro Only
-			</span>
-		),
-		comingSoon: (
-			<span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-accent/10 text-accent border border-accent/20">
-				Coming Soon
 			</span>
 		),
 	};
@@ -35,31 +35,31 @@ export default function CustomizationFeatures({
 			icon: <Palette className="w-4 h-4" />,
 			title: "Brand Colors",
 			desc: "Apply your exact brand hex codes to buttons, accents, and highlights.",
-			comingSoon: false,
+			freeIncluded: true,
 		},
 		{
 			icon: <Layout className="w-4 h-4" />,
 			title: "Section Order",
 			desc: "Drag and drop homepage sections to tell your specific story.",
-			comingSoon: false,
+			freeIncluded: true,
 		},
 		{
 			icon: <ToggleLeft className="w-4 h-4" />,
 			title: "Section Visibility",
 			desc: "Toggle hero sections, featured drops, and collection lists on or off.",
-			comingSoon: false,
+			freeIncluded: true,
 		},
 		{
 			icon: <Type className="w-4 h-4" />,
 			title: "Typography",
-			desc: "Choose from curated font pairings to give your brand a distinct voice.",
-			comingSoon: true,
+			desc: "Use Studio typography for free; Pro unlocks the full font library.",
+			freeIncluded: true,
 		},
 		{
 			icon: <MousePointer className="w-4 h-4" />,
 			title: "Navigation Style",
-			desc: "Control header links and footer menus to guide customer journeys.",
-			comingSoon: false,
+			desc: "Control footer links, policies, waitlists, and advanced customer journeys.",
+			freeIncluded: false,
 		},
 	];
 
@@ -89,9 +89,9 @@ export default function CustomizationFeatures({
 								<h4 className="font-medium text-text text-sm">{item.title}</h4>
 								{/* Gating Logic: If Free, show "Pro Only". If Pro, show "Coming Soon" only if strictly not ready. */}
 								{!isPro
-									? badges.proOnly
-									: item.comingSoon
-									? badges.comingSoon
+									? item.freeIncluded
+										? badges.included
+										: badges.proOnly
 									: null}
 							</div>
 							<p className="text-xs text-text-muted leading-relaxed">

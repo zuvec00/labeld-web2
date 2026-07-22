@@ -71,7 +71,7 @@ export default function SectionControlsList({
 				</h3>
 				{!isPro && (
 					<span className="text-xs text-text-muted italic">
-						Unlock Pro to reorder sections
+						Basic sections included. Pro unlocks waitlists and policies.
 					</span>
 				)}
 			</div>

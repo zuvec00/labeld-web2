@@ -19,14 +19,8 @@ export default function StorefrontStatus({
 	const { isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
 
-	// Construct URLs based on plan
-	const shopUrl = isPro
-		? `https://${username}.labeld.app`
-		: `https://shop.labeld.app/${username}`;
-
-	const displayUrl = isPro
-		? `${username}.labeld.app`
-		: `shop.labeld.app/${username}`;
+	const shopUrl = `https://${username}.labeld.app`;
+	const displayUrl = `${username}.labeld.app`;
 
 	const handleVisitStore = () => {
 		if (isComplete) {
@@ -60,7 +54,7 @@ export default function StorefrontStatus({
 							</div>
 							<div>
 								<h2 className="font-heading font-semibold text-lg">
-									{isPro ? "Brand Storefront" : "Marketplace Storefront"}
+									Brand Storefront
 								</h2>
 								<div className="flex items-center gap-2 text-sm text-text-muted">
 									<span
@@ -84,7 +78,7 @@ export default function StorefrontStatus({
 							<div className="flex items-center gap-2 text-sm">
 								<CheckCircle className="w-4 h-4 text-accent" />
 								<span className="text-text-muted">
-									{isPro ? "White-label branding" : "Labeld branding visible"}
+									{isPro ? "Unlimited storefront products" : "12 storefront products"}
 								</span>
 							</div>
 							<div className="flex items-center gap-2 text-sm">

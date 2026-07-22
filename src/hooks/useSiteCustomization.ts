@@ -37,12 +37,14 @@ export function useSiteCustomization(brandId?: string) {
 			return true;
 		} catch (error: any) {
 			console.error(`${actionName} Error:`, error);
-			// Parse error message (e.g., PRO_REQUIRED)
+			// Parse error message (e.g., PRO_REQUIRED / UPGRADE_REQUIRED)
 			const message = error.message || "Something went wrong.";
+			const requiresUpgrade =
+				message.includes("PRO_REQUIRED") || message.includes("UPGRADE_REQUIRED");
 			
 			toast({
 				title: "Action Failed",
-				description: message.includes("PRO_REQUIRED") 
+				description: requiresUpgrade
 					? "Verify your subscription plan." 
 					: message,
 				variant: "destructive",

@@ -32,7 +32,7 @@ const faqs = [
 	{
 		question: "Are there transaction fees?",
 		answer:
-			"On the Free plan, we take a small percentage per sale. On the Pro plan, we charge 0% platform fees on your personal storefront sales (standard payment gateway charges still apply).",
+			"Free brand storefronts have a standard 5% Labeld fee on sales. Pro removes Labeld storefront fees entirely, while payment gateway charges still apply.",
 	},
 	{
 		question: "How do I scan tickets at my event?",
@@ -47,7 +47,7 @@ const faqs = [
 	{
 		question: "Can I use my own domain?",
 		answer:
-			"You can customize your unique Labeld link (e.g., yourbrand.labeld.app) to match your identity. While we don't support external custom domains (like .com) just yet, your Labeld subdomain is yours to own and share.",
+			"Every brand gets a Labeld subdomain like yourbrand.labeld.app. Custom external domains like yourbrand.com are available on Pro.",
 	},
 ];
 

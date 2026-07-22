@@ -49,11 +49,13 @@ function toProduct(id: string, d: DocumentData): Product {
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
     stockMode: d.stockMode ?? "global",
     variantStock: d.variantStock ?? null,
+    variantPriceAdjustmentsMinor: d.variantPriceAdjustmentsMinor ?? null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
     feeSettings: d.feeSettings ? {
       absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
     } : null,
     costPrice: d.costPrice !== undefined && d.costPrice !== null ? Number(d.costPrice) : null,
+    fulfillment: d.fulfillment ?? null,
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,
@@ -100,14 +102,17 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     stockRemaining: d.stockRemaining !== undefined && d.stockRemaining !== null ? Number(d.stockRemaining) : null,
     stockMode: d.stockMode ?? "global",
     variantStock: d.variantStock ?? null,
+    variantPriceAdjustmentsMinor: d.variantPriceAdjustmentsMinor ?? null,
     discountPercent: d.discountPercent !== undefined && d.discountPercent !== null ? Number(d.discountPercent) : null,
     feeSettings: d.feeSettings ? {
       absorbTransactionFee: !!d.feeSettings.absorbTransactionFee
     } : null,
+    costPrice: d.costPrice !== undefined && d.costPrice !== null ? Number(d.costPrice) : null,
     brandName: d.brandName ?? null,
     brandUsername: d.brandUsername ?? null,
     brandLogoUrl: d.brandLogoUrl ?? null,
     reviewSummary: d.reviewSummary ?? null,
+    fulfillment: d.fulfillment ?? null,
   };
 }
 
@@ -142,4 +147,3 @@ export async function deleteDropProduct(productId: string, _brandId?: string) {
   await deleteDoc(doc(db, "dropProducts", productId));
   // If you cache by brandId, refresh here.
 }
-

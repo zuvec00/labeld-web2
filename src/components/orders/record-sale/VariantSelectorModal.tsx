@@ -4,6 +4,10 @@ import { useMemo, useState } from "react";
 import { X, Minus, Plus, ImageIcon } from "lucide-react";
 import Image from "next/image";
 import type { Product, ProductColor } from "@/lib/models/product";
+import {
+  getProductFulfillment,
+  resolveVariantUnitPriceMinor,
+} from "@/lib/models/product";
 import { formatCurrency } from "@/lib/wallet/mock";
 import type { ManualSaleItem } from "@/lib/firebase/manual-sale";
 
@@ -63,25 +67,36 @@ export default function VariantSelectorModal({ product, onClose, onAdd }: Props)
 
   const clampedQty = quantity > maxQty ? (maxQty > 0 ? maxQty : 1) : quantity;
   const outOfStock = maxQty <= 0;
+  const selectedVariantKey = buildVariantKey(size, color?.label);
+  const unitPriceMinor = resolveVariantUnitPriceMinor(
+    product,
+    product.stockMode === "variants" ? selectedVariantKey : null,
+    size,
+    color?.label,
+  );
+  const baseUnitPriceMinor = Math.round(product.price * 100);
+  const variantPriceAdjustmentMinor = Math.max(0, unitPriceMinor - baseUnitPriceMinor);
 
   function handleConfirm() {
     if (outOfStock) return;
     const variantKey =
       product.stockMode === "variants"
-        ? buildVariantKey(size, color?.label)
+        ? selectedVariantKey
         : null;
-    const unitPriceMinor = Math.round(product.price * 100);
     onAdd({
       productId: product.id,
       name: product.dropName,
       mainVisualUrl: product.mainVisualUrl,
       unitPriceMinor,
+      baseUnitPriceMinor,
+      variantPriceAdjustmentMinor,
       quantity: clampedQty,
       size: size ?? null,
       color: color?.label ?? null,
       variantKey,
       subtotalMinor: unitPriceMinor * clampedQty,
       stockMode: (product.stockMode ?? "unlimited") as ManualSaleItem["stockMode"],
+      fulfillment: getProductFulfillment(product),
     });
     onClose();
   }
@@ -115,7 +130,7 @@ export default function VariantSelectorModal({ product, onClose, onAdd }: Props)
           <div className="min-w-0">
             <p className="truncate text-sm font-medium text-text">{product.dropName}</p>
             <p className="text-xs text-text-muted">
-              {formatCurrency(product.price * 100)}
+              {formatCurrency(unitPriceMinor)}
             </p>
           </div>
         </div>

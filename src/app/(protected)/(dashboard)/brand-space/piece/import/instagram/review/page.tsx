@@ -118,6 +118,11 @@ export default function InstagramReviewPage() {
           sizeGuideUrl: finalSizeGuideUrl,
           brandId: brandId,
           userId: brandId,
+          feeSettings: p.feeSettings ?? { absorbTransactionFee: true },
+          fulfillment: p.fulfillment ?? {
+            method: "ready_to_ship",
+            unit: "business_days",
+          },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           isActive: true,

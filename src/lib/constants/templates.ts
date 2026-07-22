@@ -6,7 +6,7 @@ export const AVAILABLE_TEMPLATES: Template[] = [
 		name: "Essential",
 		description:
 			"A clean, familiar storefront layout focused on simplicity and ease of shopping.",
-		isProOnly: true,
+		isProOnly: false,
 		tags: ["Minimal", "Standard"],
 		templateRole: "essential",
 		defaultSections: [

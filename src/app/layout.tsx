@@ -1,5 +1,18 @@
 import type {} from "next";
-import { Manrope, Unbounded } from "next/font/google";
+import {
+	Bebas_Neue,
+	Cormorant_Garamond,
+	DM_Sans,
+	DM_Serif_Display,
+	Instrument_Serif,
+	Inter,
+	Jost,
+	Manrope,
+	Outfit,
+	Plus_Jakarta_Sans,
+	Space_Grotesk,
+	Unbounded,
+} from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -16,6 +29,69 @@ const unbounded = Unbounded({
 const manrope = Manrope({
 	subsets: ["latin"],
 	variable: "--font-manrope",
+	display: "swap",
+});
+
+const instrumentSerif = Instrument_Serif({
+	subsets: ["latin"],
+	weight: "400",
+	variable: "--font-instrument-serif",
+	display: "swap",
+});
+
+const spaceGrotesk = Space_Grotesk({
+	subsets: ["latin"],
+	variable: "--font-space-grotesk",
+	display: "swap",
+});
+
+const inter = Inter({
+	subsets: ["latin"],
+	variable: "--font-inter",
+	display: "swap",
+});
+
+const outfit = Outfit({
+	subsets: ["latin"],
+	variable: "--font-outfit",
+	display: "swap",
+});
+
+const jost = Jost({
+	subsets: ["latin"],
+	variable: "--font-jost",
+	display: "swap",
+});
+
+const cormorantGaramond = Cormorant_Garamond({
+	subsets: ["latin"],
+	variable: "--font-cormorant-garamond",
+	display: "swap",
+});
+
+const bebasNeue = Bebas_Neue({
+	subsets: ["latin"],
+	weight: "400",
+	variable: "--font-bebas-neue",
+	display: "swap",
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+	subsets: ["latin"],
+	variable: "--font-plus-jakarta-sans",
+	display: "swap",
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+	subsets: ["latin"],
+	weight: "400",
+	variable: "--font-dm-serif-display",
+	display: "swap",
+});
+
+const dmSans = DM_Sans({
+	subsets: ["latin"],
+	variable: "--font-dm-sans",
 	display: "swap",
 });
 
@@ -141,7 +217,9 @@ export default function RootLayout({
 					}}
 				/>
 			</head>
-			<body className={`${unbounded.variable} ${manrope.variable} antialiased`}>
+			<body
+				className={`${unbounded.variable} ${manrope.variable} ${instrumentSerif.variable} ${spaceGrotesk.variable} ${inter.variable} ${outfit.variable} ${jost.variable} ${cormorantGaramond.variable} ${bebasNeue.variable} ${plusJakartaSans.variable} ${dmSerifDisplay.variable} ${dmSans.variable} antialiased`}
+			>
 				<RegisterSW />
 				{/* <InstallPrompt /> */}
 				<ThemeProvider>

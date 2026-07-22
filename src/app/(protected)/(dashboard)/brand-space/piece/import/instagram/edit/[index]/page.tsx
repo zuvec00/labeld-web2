@@ -13,6 +13,7 @@ import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
 import { useUploadStore } from "@/lib/stores/upload";
 import { useInstagramImportStore } from "@/lib/stores/instagram-import";
+import { type ProductFulfillmentMethod } from "@/lib/models/product";
 
 /* ----------------------------- Currency source ---------------------------- */
 
@@ -26,6 +27,35 @@ const currencyList: Array<{
 	{ symbol: "£", abbreviation: "GBP", name: "Pound Sterling (GBP)" },
 	{ symbol: "€", abbreviation: "EUR", name: "Euro (EUR)" },
 ];
+
+type ProductVariantRow = {
+	key: string;
+	name: string;
+	colorHex?: string;
+};
+
+function buildVariantRows(
+	sizes: string[],
+	colors: Array<{ label: string; hex: string }>,
+): ProductVariantRow[] {
+	const sizeOpts = sizes.length ? sizes : [""];
+	const colorOpts = colors.length ? colors : [{ label: "", hex: "" }];
+	const rows: ProductVariantRow[] = [];
+
+	sizeOpts.forEach((s) => {
+		colorOpts.forEach((c) => {
+			const key = `${s}-${c.label}`;
+			let name = "";
+			if (s && c.label) name = `${s} / ${c.label}`;
+			else if (s) name = s;
+			else if (c.label) name = c.label;
+			else name = "General";
+			rows.push({ key, name, colorHex: c.hex });
+		});
+	});
+
+	return rows;
+}
 
 /* --------------------------------- Utils --------------------------------- */
 
@@ -205,13 +235,23 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 	const [stockQuantity, setStockQuantity] = useState("");
 	const [stockMode, setStockMode] = useState<"global" | "variants">("global");
 	const [variantStock, setVariantStock] = useState<Record<string, string>>({});
+	const [variantPriceAdjustments, setVariantPriceAdjustments] = useState<
+		Record<string, string>
+	>({});
+
+	// Order processing
+	const [fulfillmentMethod, setFulfillmentMethod] =
+		useState<ProductFulfillmentMethod>("ready_to_ship");
+	const [productionMinDays, setProductionMinDays] = useState("");
+	const [productionMaxDays, setProductionMaxDays] = useState("");
+	const [fulfillmentNote, setFulfillmentNote] = useState("");
 
 	// Discount
 	const [hasDiscount, setHasDiscount] = useState(false);
 	const [discountPercent, setDiscountPercent] = useState("");
 
 	// Fee Settings
-	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(false);
+	const [absorbTransactionFee, setAbsorbTransactionFee] = useState(true);
 
 	// load
 	useEffect(() => {
@@ -291,6 +331,35 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 				setTags(p.styleTags ?? []);
 				setSizes(p.sizeOptions ?? []);
 				setSelectedColors(p.colors ?? []);
+				const loadedAdjustments: Record<string, string> = {};
+				Object.entries((p as any).variantPriceAdjustmentsMinor ?? {}).forEach(
+					([k, v]) => {
+						const minor = Number(v);
+						if (Number.isFinite(minor) && minor > 0) {
+							loadedAdjustments[k] = String(minor / 100);
+						}
+					},
+				);
+				setVariantPriceAdjustments(loadedAdjustments);
+
+				const fulfillment = (p as any).fulfillment ?? {};
+				const method =
+					fulfillment.method === "made_to_order" ||
+					fulfillment.method === "custom_production"
+						? fulfillment.method
+						: "ready_to_ship";
+				setFulfillmentMethod(method);
+				setProductionMinDays(
+					fulfillment.productionMinDays != null
+						? String(fulfillment.productionMinDays)
+						: "",
+				);
+				setProductionMaxDays(
+					fulfillment.productionMaxDays != null
+						? String(fulfillment.productionMaxDays)
+						: "",
+				);
+				setFulfillmentNote(fulfillment.note ?? "");
 
 				// Stock management
 				const stockRem = (p as any).stockRemaining;
@@ -351,6 +420,7 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 
 	// validation
 	const parsedPrice = Number.isFinite(Number(price)) ? Number(price) : NaN;
+	const variantRows = buildVariantRows(sizes, selectedColors);
 
 	async function onSave() {
 		if (!product) return;
@@ -361,6 +431,25 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 		if (!selectedCurrency) missing.push("Currency");
 		if (!mainImage) missing.push("Main Image");
 		if (!availableNow && !launchDate) missing.push("Launch Date");
+
+		if (fulfillmentMethod !== "ready_to_ship") {
+			const minDays = Number(productionMinDays);
+			const maxDays = Number(productionMaxDays);
+			if (!Number.isFinite(minDays) || minDays <= 0) {
+				missing.push("Production minimum days");
+			}
+			if (!Number.isFinite(maxDays) || maxDays <= 0) {
+				missing.push("Production maximum days");
+			}
+			if (
+				Number.isFinite(minDays) &&
+				Number.isFinite(maxDays) &&
+				maxDays < minDays
+			) {
+				setErr("Production maximum days must be greater than or equal to minimum days.");
+				return;
+			}
+		}
 
 		if (missing.length > 0) {
 			setErr(`Please complete: ${missing.join(", ")}`);
@@ -389,6 +478,30 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 			
 			const finalPrice = parseFloat(price.replace(/[^0-9.]/g, ""));
 			const finalCost = costPrice ? parseFloat(costPrice.replace(/[^0-9.]/g, "")) : null;
+			const variantPriceAdjustmentsMinor = Object.entries(
+				variantPriceAdjustments,
+			).reduce(
+				(acc, [key, val]) => {
+					const major = Number(val);
+					if (val && Number.isFinite(major) && major > 0) {
+						acc[key] = Math.round(major * 100);
+					}
+					return acc;
+				},
+				{} as Record<string, number>,
+			);
+			const fulfillment =
+				fulfillmentMethod === "ready_to_ship"
+					? { method: "ready_to_ship", unit: "business_days" }
+					: {
+							method: fulfillmentMethod,
+							productionMinDays: Number(productionMinDays),
+							productionMaxDays: Number(productionMaxDays),
+							unit: "business_days",
+							...(fulfillmentNote.trim()
+								? { note: fulfillmentNote.trim() }
+								: {}),
+						};
 
 			const updatedData: Record<string, any> = {
 				...product,
@@ -422,6 +535,10 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 								{} as Record<string, number>,
 							)
 						: null,
+				variantPriceAdjustmentsMinor:
+					Object.keys(variantPriceAdjustmentsMinor).length > 0
+						? variantPriceAdjustmentsMinor
+						: null,
 				mainVisualUrl: mainImage?.uploadedUrl || mainImage?.previewUrl,
                 localFile: mainImage?.file || null,
 				galleryImages: galleryImages.length 
@@ -441,6 +558,7 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 				feeSettings: {
 					absorbTransactionFee: absorbTransactionFee,
 				},
+				fulfillment,
 			};
 
 			updateDraftProduct(idx, updatedData as any);
@@ -733,10 +851,200 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 								</div>
 							)}
 						</div>
+
+						<FieldDivider />
+
+						<div className="space-y-3">
+							<Label text="Variant Pricing" />
+							<Hint text="Optional. Add an extra amount for variants that cost more than the base product price." />
+							{!sizes.length && !selectedColors.length ? (
+								<div className="p-4 bg-surface-neutral/50 rounded-xl text-center text-sm text-text-muted">
+									Add size or color options above to configure variant pricing.
+								</div>
+							) : (
+								<div className="border border-stroke rounded-xl overflow-hidden">
+									<div className="grid grid-cols-[1fr_110px_110px] gap-3 bg-surface-neutral/30 px-4 py-3 border-b border-stroke text-xs font-semibold uppercase text-text-muted tracking-wider">
+										<span>Variant</span>
+										<span>Extra</span>
+										<span>Final</span>
+									</div>
+									<div className="divide-y divide-stroke/50 max-h-[360px] overflow-y-auto">
+										{variantRows.map((v) => {
+											const extraMajor = Number(
+												variantPriceAdjustments[v.key] || 0,
+											);
+											const finalMajor =
+												(Number.isFinite(parsedPrice) ? parsedPrice : 0) +
+												(Number.isFinite(extraMajor) ? extraMajor : 0);
+
+											return (
+												<div
+													key={v.key}
+													className="grid grid-cols-[1fr_110px_110px] gap-3 items-center p-4 bg-surface"
+												>
+													<div className="flex items-center gap-3 min-w-0">
+														{v.colorHex && (
+															<div
+																className="w-4 h-4 rounded-full border border-stroke/20 shadow-sm"
+																style={{ backgroundColor: v.colorHex }}
+															/>
+														)}
+														<span className="font-medium text-text text-sm truncate">
+															{v.name}
+														</span>
+													</div>
+													<input
+														type="number"
+														min="0"
+														placeholder="0"
+														className="w-full text-sm px-3 py-1.5 rounded-lg border border-stroke bg-bg outline-none focus:border-accent text-right"
+														value={variantPriceAdjustments[v.key] ?? ""}
+														onChange={(e) =>
+															setVariantPriceAdjustments((prev) => ({
+																...prev,
+																[v.key]: e.target.value,
+															}))
+														}
+													/>
+													<span className="text-right text-sm font-medium text-text">
+														₦{formatWithCommasDouble(finalMajor)}
+													</span>
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							)}
+						</div>
+
+						<FieldDivider />
+
+						<div className="space-y-3">
+							<Label text="Labeld transaction fee" />
+							<Hint text="Free storefront sales include a Labeld fee. Choose whether to absorb it from your payout or pass it to the customer at checkout. Pro storefront sales have 0% Labeld fees." />
+							<div className="grid gap-3 md:grid-cols-2">
+								{[
+									{
+										value: true,
+										title: "Brand absorbs",
+										body: "Storefront prices stay exactly as listed. The fee is deducted from your payout.",
+									},
+									{
+										value: false,
+										title: "Customer pays at checkout",
+										body: "The customer covers the Labeld fee, so checkout can be higher than the listed price.",
+									},
+								].map((option) => (
+									<button
+										key={option.title}
+										type="button"
+										onClick={() => setAbsorbTransactionFee(option.value)}
+										className={`text-left rounded-xl border p-4 transition-all ${
+											absorbTransactionFee === option.value
+												? "border-text bg-text text-bg"
+												: "border-stroke bg-surface text-text hover:border-text/40"
+										}`}
+									>
+										<p className="text-sm font-semibold">{option.title}</p>
+										<p
+											className={`mt-1 text-xs ${
+												absorbTransactionFee === option.value
+													? "text-bg/70"
+													: "text-text-muted"
+											}`}
+										>
+											{option.body}
+										</p>
+									</button>
+								))}
+							</div>
+						</div>
 					</div>
 				</Group>
 
-				{/* 4. Drop Timing */}
+				{/* 4. Order Processing */}
+				<Group>
+					<Label text="Order Processing" />
+					<Hint text="This tells customers what happens after they order. It stays separate from drop timing." />
+					<div className="grid gap-3 md:grid-cols-3">
+						{[
+							{
+								id: "ready_to_ship",
+								title: "Ready to ship",
+								body: "Ships from available stock.",
+							},
+							{
+								id: "made_to_order",
+								title: "Made to order",
+								body: "Produced after every order.",
+							},
+							{
+								id: "custom_production",
+								title: "Custom production",
+								body: "Made with a custom process or details.",
+							},
+						].map((option) => (
+							<button
+								key={option.id}
+								type="button"
+								onClick={() =>
+									setFulfillmentMethod(option.id as ProductFulfillmentMethod)
+								}
+								className={`text-left rounded-xl border p-4 transition-all ${
+									fulfillmentMethod === option.id
+										? "border-text bg-text text-bg"
+										: "border-stroke bg-surface text-text hover:border-text/40"
+								}`}
+							>
+								<p className="text-sm font-semibold">{option.title}</p>
+								<p
+									className={`mt-1 text-xs ${
+										fulfillmentMethod === option.id
+											? "text-bg/70"
+											: "text-text-muted"
+									}`}
+								>
+									{option.body}
+								</p>
+							</button>
+						))}
+					</div>
+					{fulfillmentMethod !== "ready_to_ship" && (
+						<div className="mt-5 space-y-4">
+							<div className="grid gap-3 sm:grid-cols-2">
+								<div>
+									<Label text="Minimum production days" required />
+									<Input
+										type="number"
+										value={productionMinDays}
+										onChange={setProductionMinDays}
+										placeholder="7"
+									/>
+								</div>
+								<div>
+									<Label text="Maximum production days" required />
+									<Input
+										type="number"
+										value={productionMaxDays}
+										onChange={setProductionMaxDays}
+										placeholder="14"
+									/>
+								</div>
+							</div>
+							<div>
+								<Label text="Customer note (optional)" />
+								<textarea
+									className={`${baseFieldClasses()} min-h-[96px] resize-y`}
+									value={fulfillmentNote}
+									onChange={(e) => setFulfillmentNote(e.target.value)}
+									placeholder="We will contact you after your order to confirm measurements."
+								/>
+							</div>
+						</div>
+					)}
+				</Group>
+
+				{/* 5. Drop Timing */}
 				<Group>
 					<Label text="Drop Timing" required />
 					<DateTimePicker value={launchDate} onChange={setLaunchDate} />
@@ -894,6 +1202,10 @@ function Label({ text, required }: { text: string; required?: boolean }) {
 
 function Hint({ text }: { text: string }) {
 	return <div className="text-text-muted text-sm mt-1">{text}</div>;
+}
+
+function FieldDivider() {
+	return <hr className="my-6 border-t border-edit/20" />;
 }
 
 function baseFieldClasses() {

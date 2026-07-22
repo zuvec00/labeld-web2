@@ -8,6 +8,10 @@ import Button from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { fetchProductById, Product } from "@/lib/firebase/queries/product";
+import {
+	formatFulfillmentSummary,
+	getVariantPriceRangeMinor,
+} from "@/lib/models/product";
 
 export default function PieceDetailsPage({
 	params,
@@ -71,6 +75,12 @@ export default function PieceDetailsPage({
 	}
 
 	const currency = getCurrencyFromMap(piece.currency);
+	const priceRange = getVariantPriceRangeMinor(piece);
+	const priceLabel =
+		priceRange.min === priceRange.max
+			? formatWithCommasDouble(priceRange.min / 100)
+			: `${formatWithCommasDouble(priceRange.min / 100)} - ${formatWithCommasDouble(priceRange.max / 100)}`;
+	const fulfillmentLabel = formatFulfillmentSummary(piece.fulfillment);
 
 	return (
 		<div className="pb-10">
@@ -142,8 +152,11 @@ export default function PieceDetailsPage({
 						</h1>
 						<div className="mt-1 font-semibold">
 							{currency ? `${currency} ` : ""}
-							{formatWithCommasDouble(piece.price)}
+							{priceLabel}
 						</div>
+						{fulfillmentLabel && (
+							<p className="mt-1 text-sm text-text-muted">{fulfillmentLabel}</p>
+						)}
 					</div>
 					{/* Dashboard view: omit "Lock Me In"/"Cop Now" logic */}
 				</div>

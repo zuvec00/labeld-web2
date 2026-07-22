@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import Button from "@/components/ui/button";
+import { isSectionLockedForPlan } from "@/lib/plans/free-storefront";
 import { StorefrontSection } from "@/lib/models/site-customization";
 import { Lock, RotateCcw, AlertCircle, Search, Check } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -608,14 +609,14 @@ export default function SectionInspector({
 		);
 	}
 
-	if (!isPro) {
+	if (isSectionLockedForPlan(section, isPro)) {
 		return (
 			<div className="h-full flex flex-col items-center justify-center p-8 text-center border-l border-stroke bg-surface/50 relative overflow-hidden">
 				<div className="absolute inset-0 bg-gradient-to-br from-transparent to-black/5 pointer-events-none" />
 				<Lock className="w-8 h-8 text-text-muted mb-4 opacity-50" />
 				<h3 className="text-text font-semibold mb-2">Pro Feature</h3>
 				<p className="text-text-muted text-sm mb-6 max-w-[240px]">
-					Content customization is available on the Pro plan.
+					This section is available on the Pro plan.
 				</p>
 				<Button text="Upgrade to Customize" onClick={onLockedAction} />
 			</div>

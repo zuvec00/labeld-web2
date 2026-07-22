@@ -69,6 +69,7 @@ function parseStoreOrder(doc: QueryDocumentSnapshot<DocumentData>): StoreOrderDo
     updatedAt: data.updatedAt,
     paidAt: data.paidAt,
     cancelledAt: data.cancelledAt,
+    profit: data.profit || undefined,
   };
 }
 
@@ -576,4 +577,3 @@ export async function getAllStoreOrders(
     return [];
   }
 }
-

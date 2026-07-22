@@ -5,6 +5,7 @@ import { GripVertical, Lock } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { StorefrontSection } from "@/lib/models/site-customization";
 import { cn } from "@/lib/utils";
+import { isSectionLockedForPlan } from "@/lib/plans/free-storefront";
 
 interface SectionRowProps {
 	section: StorefrontSection;
@@ -76,12 +77,13 @@ export default function SectionRow({
 	};
 
 	const isRequired = section.isRequired;
-	const isDraggable = isPro && !section.isLocked;
+	const isLockedForPlan = isSectionLockedForPlan(section, isPro);
+	const isDraggable = !section.isLocked && !isLockedForPlan;
 	// Footer is usually locked at bottom, but for this V1 lets assume standard sections are reorderable
 	// EXCEPT if explicitly isLocked is set.
 
 	const handleInteraction = (e: React.MouseEvent) => {
-		if (!isPro && onLockedClick) {
+		if (isLockedForPlan && onLockedClick) {
 			e.preventDefault();
 			e.stopPropagation();
 			onLockedClick();
@@ -99,7 +101,7 @@ export default function SectionRow({
 				// Base styles
 				!section.enabled && "opacity-60 bg-surface/50",
 				isDraggable ? "cursor-move" : "cursor-pointer", // It's pointer if selectable
-				!isPro && "opacity-75",
+				isLockedForPlan && "opacity-75",
 
 				// Selection State
 				isSelected
@@ -113,7 +115,7 @@ export default function SectionRow({
 		>
 			{/* Drag Handle or Lock */}
 			<div className="text-text-muted/40">
-				{!isPro ? (
+				{isLockedForPlan ? (
 					<Lock className="w-4 h-4" />
 				) : (
 					<GripVertical
@@ -155,7 +157,7 @@ export default function SectionRow({
 				<Switch
 					className="data-[state=checked]:bg-cta border-transparent"
 					checked={isRequired ? true : section.enabled}
-					disabled={!isPro || isRequired}
+					disabled={isLockedForPlan || isRequired}
 					onCheckedChange={(checked) =>
 						!isRequired && onToggle(section.id, checked)
 					}
