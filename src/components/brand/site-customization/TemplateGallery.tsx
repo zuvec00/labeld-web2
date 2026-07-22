@@ -49,8 +49,8 @@ export default function TemplateGallery({
 						Storefront Templates
 					</h3>
 					<p className="text-text-muted text-sm max-w-xl leading-relaxed">
-						Choose how your brand is presented to the world. Pro members can
-						switch between curated, high-performance layouts instantly.
+						Launch with Essential for free. Pro unlocks more curated,
+						high-performance layouts as your brand grows.
 					</p>
 				</div>
 				<div className="text-xs font-medium text-text-muted bg-surface border border-stroke px-3 py-1.5 rounded-full self-start md:self-auto">
@@ -84,7 +84,7 @@ export default function TemplateGallery({
 				onClose={() => setPreviewTemplate(null)}
 				template={previewTemplate!}
 				isPro={isPro}
-				isActive={isPro && previewTemplate?.id === activeTemplateId}
+				isActive={previewTemplate?.id === activeTemplateId}
 				onApply={(id) => {
 					onApply(id);
 					setPreviewTemplate(null);

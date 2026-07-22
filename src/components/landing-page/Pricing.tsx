@@ -62,8 +62,8 @@ const Pricing = () => {
 						</h2>
 					</div>
 					<p className="font-body text-sm leading-relaxed text-muted-foreground md:text-base">
-						Start free, then upgrade when you need deeper customization, stronger
-						analytics, and more control over your brand or event surface.
+						Start with the storefront, then upgrade when your brand needs more
+						products, richer customization, analytics, and 0% Labeld storefront fees.
 					</p>
 				</motion.div>
 
@@ -105,8 +105,8 @@ const Pricing = () => {
 							period="/ month"
 							description={PRICING_CONTENT.brand.plans.free.description}
 							domainPreview={{
-								prefix: "shop.labeld.app/",
 								highlight: "yourbrand",
+								suffix: ".labeld.app",
 							}}
 							features={PRICING_CONTENT.brand.plans.free.features}
 							buttonText={PRICING_CONTENT.brand.hero.ctaFree}

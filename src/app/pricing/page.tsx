@@ -565,10 +565,21 @@ export default function PublicPricingPage() {
 							<div className="bg-bg rounded-lg px-4 py-3 border border-stroke text-sm text-text-muted flex items-center gap-2 font-mono">
 								<Globe className="w-4 h-4 opacity-50 flex-shrink-0" />
 								<span className="truncate">
-									{content.plans.free.domainPrefix}.labeld.app/
-									<span className="text-text-muted/70">
-										{content.plans.free.domainSuffix}
-									</span>
+									{pricingMode === "brand" ? (
+										<>
+											<span className="text-text-muted/70">
+												{content.plans.free.domainPrefix}
+											</span>
+											.labeld.app
+										</>
+									) : (
+										<>
+											{content.plans.free.domainPrefix}.labeld.app/
+											<span className="text-text-muted/70">
+												{content.plans.free.domainSuffix}
+											</span>
+										</>
+									)}
 								</span>
 							</div>
 						</div>

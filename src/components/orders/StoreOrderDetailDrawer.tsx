@@ -14,6 +14,7 @@ import {
 	getStoreFulfillmentLines,
 } from "@/lib/firebase/callables/shipping";
 import { AlertCircle } from "lucide-react";
+import { formatFulfillmentSummary } from "@/lib/models/product";
 
 interface StoreOrderDetailDrawerProps {
 	order: StoreOrderWithVendorStatus | null;
@@ -33,6 +34,15 @@ export default function StoreOrderDetailDrawer({
 	const [fulfillmentLines, setFulfillmentLines] = useState<any[]>([]);
 	const [updatingLines, setUpdatingLines] = useState<Set<string>>(new Set());
 	const { toast } = useToast();
+	const brandAbsorbedFeeMinor =
+		order?.fees?.labeldAbsorbedFeesMinor ??
+		order?.fees?.brandTransactionFeesMinor ??
+		0;
+	const buyerFeeMinor =
+		order?.fees?.labeldBuyerFeesMinor ??
+		order?.fees?.consumerServiceFeesMinor ??
+		order?.amount.feesMinor ??
+		0;
 
 	const loadTimelineEvents = useCallback(async () => {
 		if (!order) return;
@@ -346,6 +356,17 @@ export default function StoreOrderDetailDrawer({
 													</span>
 												)}
 											</div>
+											{formatFulfillmentSummary(item.fulfillment) && (
+												<p className="mt-1 text-sm text-text-muted">
+													{formatFulfillmentSummary(item.fulfillment)}
+												</p>
+											)}
+											{(item.variantPriceAdjustmentMinor ?? 0) > 0 && (
+												<p className="mt-1 text-xs text-text-muted">
+													Includes variant adjustment{" "}
+													{formatCurrency(item.variantPriceAdjustmentMinor ?? 0)}
+												</p>
+											)}
 										</div>
 										<div className="text-right">
 											<p className="font-medium text-text">
@@ -472,15 +493,45 @@ export default function StoreOrderDetailDrawer({
 											: "Free"}
 									</span>
 								</div>
+								{buyerFeeMinor > 0 && (
+									<div className="flex justify-between">
+										<span className="text-text-muted">Customer fees</span>
+										<span className="font-medium text-text">
+											{formatCurrency(buyerFeeMinor)}
+										</span>
+									</div>
+								)}
+								{brandAbsorbedFeeMinor > 0 && (
+									<div className="flex justify-between">
+										<span className="text-text-muted">
+											Labeld fee deducted from payout
+										</span>
+										<span className="font-medium text-alert">
+											-{formatCurrency(brandAbsorbedFeeMinor)}
+										</span>
+									</div>
+								)}
 								<div className="flex justify-between text-lg font-semibold border-t border-stroke pt-2">
 									<span>Total</span>
 									<span className="text-accent">
-										{formatCurrency(
-											order.amount.itemsSubtotalMinor +
-												(order.amount.shippingMinor ?? 0),
-										)}
+										{formatCurrency(order.amount.totalMinor)}
 									</span>
 								</div>
+								{brandAbsorbedFeeMinor > 0 && (
+									<div className="flex justify-between text-sm">
+										<span className="text-text-muted">Estimated brand payout</span>
+										<span className="font-medium text-green-600">
+											{formatCurrency(
+												Math.max(
+													0,
+													order.amount.totalMinor -
+														buyerFeeMinor -
+														brandAbsorbedFeeMinor,
+												),
+											)}
+										</span>
+									</div>
+								)}
 							</div>
 						</div>
 

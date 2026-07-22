@@ -5,6 +5,10 @@ import { useState } from "react";
 import { Product } from "@/lib/firebase/queries/product";
 import { formatWithCommasDouble, getCurrencyFromMap } from "@/lib/format";
 import { Edit2, Trash2, MoreVertical, Star } from "lucide-react";
+import {
+	formatFulfillmentSummary,
+	getVariantPriceRangeMinor,
+} from "@/lib/models/product";
 
 interface PiecesListViewProps {
 	pieces: Product[];
@@ -38,6 +42,12 @@ export default function PiecesListView({
 				const isLowStock =
 					(piece.stockRemaining ?? 0) > 0 && (piece.stockRemaining ?? 0) < 5;
 				const avgRating = piece.reviewSummary?.avgRating;
+				const priceRange = getVariantPriceRangeMinor(piece);
+				const priceLabel =
+					priceRange.min === priceRange.max
+						? formatWithCommasDouble(priceRange.min / 100)
+						: `${formatWithCommasDouble(priceRange.min / 100)} - ${formatWithCommasDouble(priceRange.max / 100)}`;
+				const fulfillmentLabel = formatFulfillmentSummary(piece.fulfillment);
 				console.log("Reviews ", piece.reviewSummary);
 
 				return (
@@ -68,6 +78,11 @@ export default function PiecesListView({
 										: `${piece.stockRemaining} in stock`}
 								</span>
 							</div>
+							{fulfillmentLabel && (
+								<div className="text-xs text-text-muted">
+									{fulfillmentLabel}
+								</div>
+							)}
 
 							<div className="flex items-center gap-2 mt-0.5">
 								{isSoldOut ? (
@@ -107,7 +122,7 @@ export default function PiecesListView({
 						<div className="flex flex-col items-end justify-between h-full py-1 gap-1">
 							<div className="text-sm font-bold text-text">
 								{currency ? `${currency} ` : ""}
-								{formatWithCommasDouble(piece.price)}
+								{priceLabel}
 							</div>
 
 							<div className="relative">

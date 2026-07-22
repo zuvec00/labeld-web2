@@ -15,9 +15,9 @@ export const PRICING_CONTENT = {
 			),
 			subtext: (
 				<>
-					Free lets you participate in the marketplace.
+					Start with a real storefront, not a placeholder.
 					<br className="hidden sm:block" />
-					Pro gives you the tools to build a destination.
+					Upgrade when you need more products, more control, and fewer fees.
 				</>
 			),
 			ctaPro: "Upgrade to Pro",
@@ -27,36 +27,38 @@ export const PRICING_CONTENT = {
 			free: {
 				title: "Free",
 				price: "₦0",
-				description: "Sell inside the Labeld marketplace.",
+				description: "Launch your storefront and start taking orders.",
 				features: [
-					"List products & drops",
+					"Your own yourbrand.labeld.app storefront",
+					"Show up to 12 storefront products",
+					"Essential storefront template",
+					"Studio typography, colors, and theme mode",
 					"Accept orders & payouts",
-					"Appear in the Labeld marketplace",
-					"Basic brand profile (logo, bio)",
-					"Standard analytics (sales & revenue)",
+					"Standard 5% Labeld fee on storefront sales",
 				],
-				domainPrefix: "shop",
+				domainPrefix: "yourbrand",
 				domainSuffix: "yourbrand",
 			},
 			pro: {
 				title: "Pro",
 				badge: "Growing Brands",
-				description: "Your own Labeld-powered store.",
+				description: "The growth layer for brands ready to scale.",
 				ownershipFeatures: [
-					"Your own branded storefront",
-					"0% fees on your personal storefront sales",
-					"Custom store profile URL (subdomain)",
+					"Unlimited storefront products",
+					"0% Labeld fees on your personal storefront sales",
 					"Connect your own domain (e.g. yourbrand.com)",
 					"Reduced / white-label Labeld branding",
 					"Optionally featured on Labeld socials",
 				],
 				customizationFeatures: [
-					"Custom templates & layouts",
-					"Section ordering & visibility",
-					"Dark / light mode toggle",
+					"All storefront templates",
+					"Full typography library",
+					"Advanced sections, policies, and store access",
+					"Newsletter, waitlist, discounts, and campaigns",
 				],
 				analyticsFeatures: [
-					"Performance trends over time",
+					"Storefront analytics",
+					"Expenses, profit visibility, and monthly reports",
 					"Traffic source breakdown",
 					"Actionable brand insights",
 				],
@@ -68,25 +70,28 @@ export const PRICING_CONTENT = {
 				{ label: "Secure checkout & payouts", free: true, pro: true },
 				{
 					label: "0% Labeld fees on storefront sales",
-					free: "Standard fees",
+					free: "5% standard fee",
 					pro: true,
 				},
 			],
 			branding: [
 				{ label: "Basic Brand Profile", free: true, pro: true },
-				{ label: "Custom Store URL (Subdomain)", free: false, pro: true },
+				{ label: "Labeld Subdomain", free: true, pro: true },
 				{ label: "Custom Domain Mapping", free: false, pro: true },
 			],
 			customization: [
-				{ label: 'Default "Clean" Theme', free: true, pro: true },
-				{ label: "Multiple Theme Layouts", free: false, pro: true },
-				{ label: "Section Ordering & Visibility", free: false, pro: true },
-				{ label: "Dark / Light Mode Toggle", free: false, pro: true },
-				{ label: "Custom Hero & Banner Content", free: false, pro: true },
+				{ label: "Essential Storefront Template", free: true, pro: true },
+				{ label: "12 Public Storefront Products", free: true, pro: "Unlimited" },
+				{ label: "Basic Section Editing", free: true, pro: true },
+				{ label: "Brand Colors & Theme Mode", free: true, pro: true },
+				{ label: "Full Typography Library", free: false, pro: true },
+				{ label: "Advanced Store Sections & Policies", free: false, pro: true },
 			],
 			analytics: [
 				{ label: "Total Sales & Revenue", free: true, pro: true },
 				{ label: "Basic Order History", free: true, pro: true },
+				{ label: "Expenses & Profit Visibility", free: false, pro: true },
+				{ label: "Monthly Reports", free: false, pro: true },
 				{ label: "Conversion Rate & Trends", free: false, pro: true },
 				{ label: "Traffic Source Breakdown", free: false, pro: true },
 				{ label: '"Plain English" Business Insights', free: false, pro: true },

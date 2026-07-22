@@ -3,11 +3,11 @@ import type { Metadata } from "next";
 export const metadata: Metadata = {
 	title: "Pricing - Labeld Studio",
 	description:
-		"Choose the right plan for your brand. Start for free or upgrade to Pro for custom storefronts, advanced analytics, and full brand ownership.",
+		"Start with a free Labeld storefront, then upgrade to Pro for unlimited products, deeper customization, analytics, reports, and 0% Labeld storefront fees.",
 	openGraph: {
 		title: "Pricing - Labeld Studio",
 		description:
-			"Choose the right plan for your brand. Start for free or upgrade to Pro for custom storefronts, advanced analytics, and full brand ownership.",
+			"Start with a free Labeld storefront, then upgrade to Pro for unlimited products, deeper customization, analytics, reports, and 0% Labeld storefront fees.",
 		url: "https://studio.labeld.app/pricing",
 		siteName: "Labeld Studio",
 		locale: "en_US",

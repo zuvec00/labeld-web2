@@ -1,4 +1,6 @@
 // types/orders.ts
+import type { ProductFulfillment } from "@/lib/models/product";
+
 export type Currency = "NGN";
 export type AdmitType = "general" | "vip" | "backstage";
 export type OrderStatus = "pending" | "paid" | "failed" | "refunded" | "cancelled" | "completed";
@@ -37,12 +39,15 @@ export interface ProductLineItem {
   productId: string;
   name: string;
   unitPriceMinor: number;
+  baseUnitPriceMinor?: number;
+  variantPriceAdjustmentMinor?: number;
   currency: Currency;
   qty: number;
   size: string | null;
   color: string | { label: string; hex: string } | null;
   subtotalMinor: number;
   absorbTransactionFee: boolean;
+  fulfillment?: ProductFulfillment | null;
 }
 
 export type LineItem = TicketLineItem | MerchLineItem | ProductLineItem;

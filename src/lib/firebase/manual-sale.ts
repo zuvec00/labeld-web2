@@ -11,6 +11,7 @@ import {
 } from "firebase/firestore";
 import { getFunctions, httpsCallable } from "firebase/functions";
 import { app } from "./firebaseConfig";
+import type { ProductFulfillment } from "@/lib/models/product";
 
 export type SaleChannel =
   | "physical_store"
@@ -28,12 +29,15 @@ export interface ManualSaleItem {
   name: string;
   mainVisualUrl?: string | null;
   unitPriceMinor: number;
+  baseUnitPriceMinor?: number;
+  variantPriceAdjustmentMinor?: number;
   quantity: number;
   size?: string | null;
   color?: string | null;
   variantKey?: string | null;
   subtotalMinor: number;
   stockMode: "global" | "variants" | "unlimited";
+  fulfillment?: ProductFulfillment | null;
 }
 
 export interface ManualSaleInput {
@@ -157,12 +161,15 @@ export async function logManualSale(sale: ManualSaleInput): Promise<string> {
         productId: item.productId,
         name: item.name,
         unitPriceMinor: item.unitPriceMinor,
+        ...(item.baseUnitPriceMinor != null ? { baseUnitPriceMinor: item.baseUnitPriceMinor } : {}),
+        ...(item.variantPriceAdjustmentMinor != null ? { variantPriceAdjustmentMinor: item.variantPriceAdjustmentMinor } : {}),
         currency: "NGN",
         qty: item.quantity,
         ...(item.size ? { size: item.size } : {}),
         ...(item.color ? { color: item.color } : {}),
         subtotalMinor: item.subtotalMinor,
         absorbTransactionFee: false,
+        ...(item.fulfillment ? { fulfillment: item.fulfillment } : {}),
       })),
       amount: {
         currency: "NGN",

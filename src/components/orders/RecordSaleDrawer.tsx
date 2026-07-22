@@ -24,6 +24,12 @@ import {
 } from "@/lib/firebase/manual-sale";
 import { customerFullName, type CustomerDetails } from "@/lib/firebase/customers";
 import type { Product } from "@/lib/models/product";
+import {
+  formatFulfillmentSummary,
+  getVariantPriceRangeMinor,
+  getProductFulfillment,
+  resolveVariantUnitPriceMinor,
+} from "@/lib/models/product";
 import { formatCurrency } from "@/lib/wallet/mock";
 import VariantSelectorModal from "./record-sale/VariantSelectorModal";
 import CustomerSheet from "./record-sale/CustomerSheet";
@@ -138,6 +144,11 @@ function CartCard({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-text">{item.name}</p>
         {variantText && <p className="mt-0.5 text-xs text-text-muted">{variantText}</p>}
+        {formatFulfillmentSummary(item.fulfillment) && (
+          <p className="mt-0.5 text-xs text-text-muted">
+            {formatFulfillmentSummary(item.fulfillment)}
+          </p>
+        )}
         <p className="mt-1 text-sm font-semibold text-text">
           {formatCurrency(item.unitPriceMinor)}
         </p>
@@ -229,6 +240,12 @@ function ProductPickerSheet({
                 const selectedItems = cart.filter((c) => c.productId === p.id);
                 const isSelected = selectedItems.length > 0;
                 const isVariant = p.stockMode === "variants";
+                const priceRange = getVariantPriceRangeMinor(p);
+                const priceLabel =
+                  priceRange.min === priceRange.max
+                    ? formatCurrency(priceRange.min)
+                    : `${formatCurrency(priceRange.min)} - ${formatCurrency(priceRange.max)}`;
+                const fulfillmentLabel = formatFulfillmentSummary(p.fulfillment);
                 return (
                   <div
                     key={p.id}
@@ -262,8 +279,13 @@ function ProductPickerSheet({
                         ) : null}
                       </div>
                       <p className="mt-0.5 text-xs text-text-muted">
-                        {formatCurrency(p.price * 100)}
+                        {priceLabel}
                       </p>
+                      {fulfillmentLabel && (
+                        <p className="mt-0.5 text-xs text-text-muted">
+                          {fulfillmentLabel}
+                        </p>
+                      )}
                       {isSelected && isVariant && (
                         <div className="mt-1.5 flex flex-wrap gap-1">
                           {selectedItems.map((it) => (
@@ -370,7 +392,8 @@ export default function RecordSaleDrawer({ open, onClose, onSuccess }: Props) {
       setCart((prev) => prev.filter((c) => !(c.productId === p.id && !c.variantKey)));
       return;
     }
-    const unitPriceMinor = Math.round(p.price * 100);
+    const unitPriceMinor = resolveVariantUnitPriceMinor(p);
+    const baseUnitPriceMinor = Math.round(p.price * 100);
     setCart((prev) => [
       ...prev,
       {
@@ -378,12 +401,15 @@ export default function RecordSaleDrawer({ open, onClose, onSuccess }: Props) {
         name: p.dropName,
         mainVisualUrl: p.mainVisualUrl,
         unitPriceMinor,
+        baseUnitPriceMinor,
+        variantPriceAdjustmentMinor: Math.max(0, unitPriceMinor - baseUnitPriceMinor),
         quantity: 1,
         size: null,
         color: null,
         variantKey: null,
         subtotalMinor: unitPriceMinor,
         stockMode: (p.stockMode ?? "unlimited") as ManualSaleItem["stockMode"],
+        fulfillment: getProductFulfillment(p),
       },
     ]);
   }

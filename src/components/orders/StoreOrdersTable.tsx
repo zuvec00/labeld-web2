@@ -246,6 +246,10 @@ export default function StoreOrdersTable({
 								(order.fulfillmentAggregateStatus === "unfulfilled" ||
 									order.fulfillmentAggregateStatus === "partial" ||
 									!order.fulfillmentAggregateStatus);
+							const brandAbsorbedFeeMinor =
+								order.fees?.labeldAbsorbedFeesMinor ??
+								order.fees?.brandTransactionFeesMinor ??
+								0;
 
 							return (
 								<tr
@@ -283,6 +287,11 @@ export default function StoreOrdersTable({
 										<div className="text-sm font-medium text-text">
 											{formatCurrency(order.amount.itemsSubtotalMinor)}
 										</div>
+										{brandAbsorbedFeeMinor > 0 && (
+											<div className="text-xs text-alert">
+												{formatCurrency(brandAbsorbedFeeMinor)} deducted
+											</div>
+										)}
 										<div className="text-xs text-text-muted">
 											{order.lineItems.length} item
 											{order.lineItems.length !== 1 ? "s" : ""}

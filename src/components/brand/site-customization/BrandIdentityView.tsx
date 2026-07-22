@@ -12,10 +12,15 @@ import {
 	X,
 	Globe,
 	UserCircle,
+	Lock,
 } from "lucide-react";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
 import { useToast } from "@/app/hooks/use-toast";
+import {
+	DEFAULT_FREE_TYPOGRAPHY_PRESET_ID,
+	STOREFRONT_TYPOGRAPHY_PRESETS,
+} from "@/lib/plans/free-storefront";
 
 interface BrandIdentityViewProps {
 	isPro: boolean;
@@ -60,6 +65,26 @@ export default function BrandIdentityView({
 	const handleChange = (key: keyof BrandIdentity, value: any) => {
 		const newIdentity = { ...identity, [key]: value };
 		setIdentity(newIdentity);
+	};
+
+	const selectedTypographyId =
+		identity.typographyPresetId || DEFAULT_FREE_TYPOGRAPHY_PRESET_ID;
+
+	const handleTypographySelect = (presetId: string) => {
+		const preset = STOREFRONT_TYPOGRAPHY_PRESETS.find((p) => p.id === presetId);
+		if (!preset) return;
+
+		if (!isPro && preset.id !== DEFAULT_FREE_TYPOGRAPHY_PRESET_ID) {
+			onLockedAction();
+			return;
+		}
+
+		setIdentity((current) => ({
+			...current,
+			typographyPresetId: preset.id,
+			headingFontFamily: preset.headingFontFamily,
+			bodyFontFamily: preset.bodyFontFamily,
+		}));
 	};
 
 	const handleUseProfileLogo = () => {
@@ -215,7 +240,7 @@ export default function BrandIdentityView({
 						description="Used for main actions, buttons, and key highlights. Pick a color that contrasts well with white."
 						value={identity.primaryColor}
 						onChange={(val) => handleChange("primaryColor", val)}
-						isPro={isPro}
+						isPro={true}
 						onLockedClick={onLockedAction}
 						isRequired
 					/>
@@ -436,43 +461,76 @@ export default function BrandIdentityView({
 
 			<hr className="border-stroke/50" />
 
-			{/* Section 4: Typography (Locked) */}
-			<div className="space-y-4 opacity-60 pointer-events-none select-none grayscale">
+			{/* Section 4: Typography */}
+			<div className="space-y-4">
 				<div className="flex items-center justify-between">
 					<h3 className="text-xs font-bold uppercase tracking-wider text-text-muted/60 flex items-center gap-2">
 						Typography
-						<span className="normal-case font-normal text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded">
-							Coming Soon
-						</span>
+						{!isPro && (
+							<span className="normal-case font-normal text-[10px] bg-stroke text-text-muted px-1.5 py-0.5 rounded">
+								Studio included
+							</span>
+						)}
 					</h3>
 				</div>
-				<div className="p-6 bg-surface border border-stroke rounded-xl flex flex-col md:flex-row items-center gap-6">
-					<div className="w-12 h-12 rounded-full bg-stroke/20 flex items-center justify-center">
-						<Type className="w-5 h-5 text-text-muted" />
-					</div>
-					<div>
-						<h4 className="text-2xl font-heading font-bold text-text">
-							Unbounded
-						</h4>
-						<p className="text-sm text-text-muted">Primary Heading Font</p>
-					</div>
-					<div className="w-full h-px md:w-px md:h-8 bg-stroke" />
-					<div>
-						<p className="text-xl font-sans text-text">Manrope</p>
-						<p className="text-sm text-text-muted">Body Text Font</p>
-					</div>
+				<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+					{STOREFRONT_TYPOGRAPHY_PRESETS.map((preset) => {
+						const isSelected = selectedTypographyId === preset.id;
+						const isLocked = !isPro && preset.id !== DEFAULT_FREE_TYPOGRAPHY_PRESET_ID;
+
+						return (
+							<button
+								key={preset.id}
+								type="button"
+								onClick={() => handleTypographySelect(preset.id)}
+								className={`relative text-left p-4 rounded-xl border transition-all bg-surface ${
+									isSelected
+										? "border-text shadow-sm"
+										: "border-stroke hover:border-text/30"
+								} ${isLocked ? "opacity-70" : ""}`}
+							>
+								<div className="flex items-start justify-between gap-3">
+									<div>
+										<div className="flex items-center gap-2">
+											<Type className="w-4 h-4 text-text-muted" />
+											<h4 className="font-medium text-text text-sm">
+												{preset.name}
+											</h4>
+										</div>
+										<p className="text-xs text-text-muted mt-2 leading-relaxed">
+											{preset.description}
+										</p>
+									</div>
+									{isLocked && <Lock className="w-4 h-4 text-text-muted" />}
+								</div>
+								<div className="mt-4 flex items-baseline gap-3">
+									<span
+										className="text-lg font-semibold text-text"
+										style={{ fontFamily: preset.headingCssVariable }}
+									>
+										{preset.headingFontFamily}
+									</span>
+									<span
+										className="text-sm text-text-muted"
+										style={{ fontFamily: preset.bodyCssVariable }}
+									>
+										{preset.bodyFontFamily}
+									</span>
+								</div>
+							</button>
+						);
+					})}
 				</div>
 				<p className="text-xs text-text-muted italic max-w-md">
-					Detailed typography controls are coming soon. Currently, your
-					storefront uses a curated system designed for optimal readability and
-					performance.
+					Free storefronts use Studio typography. Pro unlocks the full
+					typography library for stronger brand expression.
 				</p>
 			</div>
 			{/* Save Action */}
 			<div className="pt-4 flex justify-end">
 				<Button
 					text={isSaving ? "Saving..." : "Save Changes"}
-					disabled={!isPro || isSaving}
+					disabled={isSaving}
 					onClick={() => onUpdate(identity)} // onUpdate now means "Save this identity"
 					className="w-full sm:w-auto"
 				/>

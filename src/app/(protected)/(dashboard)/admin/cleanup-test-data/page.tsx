@@ -23,12 +23,13 @@ export default function CleanupTestDataPage() {
 	const { user } = useAuth();
 	const [step, setStep] = useState<CleanupStep>("idle");
 	const [summary, setSummary] = useState<CleanupSummary | null>(null);
+	const [selectedEventIds, setSelectedEventIds] = useState<string[]>([]);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmText, setConfirmText] = useState("");
 
 	// Cleanup options
 	const [options, setOptions] = useState({
-		deleteAttendeeTickets: true,
+		deleteAttendeeTickets: false,
 		deleteOrders: true,
 		deleteStoreOrders: true,
 		deleteWalletLedger: true,
@@ -53,6 +54,7 @@ export default function CleanupTestDataPage() {
 		try {
 			const data = await fetchCleanupSummary(user.uid);
 			setSummary(data);
+			setSelectedEventIds(data.events.map((e) => e.id));
 			setStep("preview");
 		} catch (err: any) {
 			setError(err.message || "Failed to fetch cleanup data");
@@ -71,7 +73,10 @@ export default function CleanupTestDataPage() {
 		setError(null);
 
 		try {
-			const cleanupResults = await executeCleanup(user.uid, options);
+			const cleanupResults = await executeCleanup(user.uid, {
+				...options,
+				eventIds: selectedEventIds,
+			});
 			setResults(cleanupResults);
 			setStep("complete");
 			setConfirmText("");
@@ -84,6 +89,17 @@ export default function CleanupTestDataPage() {
 	function formatCurrency(minor: number) {
 		return `₦${(minor / 100).toLocaleString()}`;
 	}
+
+	// Filtered data based on selected events
+	const filteredTickets = summary
+		? summary.attendeeTickets.filter((t) => selectedEventIds.includes(t.eventId))
+		: [];
+	const filteredOrders = summary
+		? summary.orders.filter((o) => selectedEventIds.includes(o.eventId))
+		: [];
+	const filteredOrdersTotal = filteredOrders.reduce((sum, o) => sum + o.totalMinor, 0);
+	const selectedActionsCount = Object.values(options).filter(Boolean).length;
+	const canRunCleanup = selectedActionsCount > 0;
 
 	if (!user) {
 		return (
@@ -121,6 +137,16 @@ export default function CleanupTestDataPage() {
 						<span className="text-text font-mono text-xs">{user.uid}</span>
 					</div>
 				</div>
+			</div>
+
+			{/* Safety Banner */}
+			<div className="bg-cta/10 border border-cta/20 rounded-xl p-4 mb-6">
+				<p className="text-cta font-semibold flex items-center gap-2">
+					🛡️ Safety Guarantee
+				</p>
+				<p className="text-cta/90 text-sm mt-1">
+					Events, ticket types/setups, moments, merch items, and event content are <strong>never</strong> deleted by this tool. Attendee tickets are also preserved by default unless you explicitly select that option.
+				</p>
 			</div>
 
 			{/* Error Display */}
@@ -167,57 +193,55 @@ export default function CleanupTestDataPage() {
 					{/* Data Summary */}
 					<div className="bg-surface border border-stroke rounded-2xl p-6">
 						<h2 className="font-heading font-semibold text-lg mb-4 flex items-center gap-2">
-							📊 Data Summary
+							📊 Selected Cleanup Summary
 						</h2>
 
 						<div className="space-y-4">
 							{/* Events */}
 							<div className="flex justify-between items-center py-3 border-b border-stroke">
 								<div>
-									<p className="font-medium">Events Found</p>
+									<p className="font-medium">Selected Events</p>
 									<p className="text-xs text-text-muted mt-1">
-										Events you created (will NOT be deleted)
+										Only data for these events will be affected
 									</p>
 								</div>
 								<span className="text-2xl font-bold text-accent">
-									{summary.events.length}
+									{selectedEventIds.length} / {summary.events.length}
 								</span>
 							</div>
 
 							{/* Attendee Tickets */}
 							<div className="flex justify-between items-center py-3 border-b border-stroke">
 								<div>
-									<p className="font-medium">Attendee Tickets</p>
+									<p className="font-medium font-semibold text-text-muted">Attendee Tickets Available</p>
 									<p className="text-xs text-text-muted mt-1">
-										Tickets linked to your events
+										Preserved unless you select “Delete attendee tickets”
 									</p>
 								</div>
-								<span className="text-2xl font-bold text-cta">
-									{summary.attendeeTickets.length}
+								<span className="text-2xl font-bold text-text-muted">
+									{filteredTickets.length}
 								</span>
 							</div>
 
 							{/* Orders */}
 							<div className="flex justify-between items-center py-3 border-b border-stroke">
 								<div>
-									<p className="font-medium">Orders</p>
+									<p className="font-medium font-semibold text-cta">Event Orders Selected</p>
 									<p className="text-xs text-text-muted mt-1">
-										Total value:{" "}
-										{formatCurrency(
-											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0),
-										)}
+										{options.deleteOrders ? "Will be deleted" : "Currently preserved"} • Total value: {formatCurrency(filteredOrdersTotal)}
 									</p>
 								</div>
 								<span className="text-2xl font-bold text-cta">
-									{summary.orders.length}
+									{filteredOrders.length}
 								</span>
 							</div>
 
 							{/* Store Orders */}
 							<div className="flex justify-between items-center py-3 border-b border-stroke">
 								<div>
-									<p className="font-medium">Store Orders</p>
+									<p className="font-medium">Store Orders Available (Account-wide)</p>
 									<p className="text-xs text-text-muted mt-1">
+										{options.deleteStoreOrders ? "Will be deleted" : "Currently preserved"} •{" "}
 										Total value:{" "}
 										{formatCurrency(
 											summary.storeOrders.reduce(
@@ -227,7 +251,7 @@ export default function CleanupTestDataPage() {
 										)}
 									</p>
 								</div>
-								<span className="text-2xl font-bold text-cta">
+								<span className="text-2xl font-bold text-text-muted">
 									{summary.storeOrders.length}
 								</span>
 							</div>
@@ -235,8 +259,9 @@ export default function CleanupTestDataPage() {
 							{/* Wallet Ledger */}
 							<div className="flex justify-between items-center py-3 border-b border-stroke">
 								<div>
-									<p className="font-medium">Wallet Ledger Entries</p>
+									<p className="font-medium">Wallet Ledger Entries Available (Account-wide)</p>
 									<p className="text-xs text-text-muted mt-1">
+										{options.deleteWalletLedger ? "Will be deleted" : "Currently preserved"} •{" "}
 										Total amount:{" "}
 										{formatCurrency(
 											summary.walletLedger.reduce(
@@ -246,7 +271,7 @@ export default function CleanupTestDataPage() {
 										)}
 									</p>
 								</div>
-								<span className="text-2xl font-bold text-cta">
+								<span className="text-2xl font-bold text-text-muted">
 									{summary.walletLedger.length}
 								</span>
 							</div>
@@ -254,9 +279,9 @@ export default function CleanupTestDataPage() {
 							{/* Wallet Balance */}
 							<div className="flex justify-between items-center py-3">
 								<div>
-									<p className="font-medium">Current Wallet Balance</p>
+									<p className="font-medium">Current Wallet Balance (Account-wide)</p>
 									<p className="text-xs text-text-muted mt-1">
-										Will be reset to ₦0
+										{options.resetWallet ? "Will be reset to ₦0" : "Currently preserved"}
 									</p>
 								</div>
 								<span className="text-2xl font-bold text-alert">
@@ -269,31 +294,72 @@ export default function CleanupTestDataPage() {
 					{/* Event List */}
 					{summary.events.length > 0 && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
-							<h3 className="font-heading font-semibold mb-4">Your Events</h3>
-							<div className="space-y-2 max-h-60 overflow-y-auto">
-								{summary.events.map((event) => (
-									<div
-										key={event.id}
-										className="flex justify-between items-center p-3 rounded-lg bg-bg border border-stroke text-sm"
+							<div className="flex justify-between items-center mb-4">
+								<h3 className="font-heading font-semibold text-lg">
+									Step 2: Choose Target Events
+								</h3>
+								<div className="flex gap-2">
+									<button
+										type="button"
+										onClick={() => setSelectedEventIds(summary.events.map((e) => e.id))}
+										className="text-xs text-accent hover:underline font-medium"
 									>
-										<span className="font-medium">{event.title}</span>
-										<span className="text-text-muted font-mono text-xs">
-											{event.id}
-										</span>
-									</div>
-								))}
+										Select All
+									</button>
+									<span className="text-stroke text-xs">|</span>
+									<button
+										type="button"
+										onClick={() => setSelectedEventIds([])}
+										className="text-xs text-text-muted hover:underline font-medium"
+									>
+										Deselect All
+									</button>
+								</div>
+							</div>
+							<p className="text-xs text-text-muted mb-3">
+								Uncheck events to preserve their orders and attendee tickets. Events themselves are NEVER deleted.
+							</p>
+							<div className="space-y-2 max-h-60 overflow-y-auto">
+								{summary.events.map((event) => {
+									const isSelected = selectedEventIds.includes(event.id);
+									return (
+										<label
+											key={event.id}
+											className="flex justify-between items-center p-3 rounded-lg bg-bg border border-stroke text-sm hover:bg-bg/50 cursor-pointer"
+										>
+											<div className="flex items-center gap-3">
+												<input
+													type="checkbox"
+													checked={isSelected}
+													onChange={(e) => {
+														if (e.target.checked) {
+															setSelectedEventIds([...selectedEventIds, event.id]);
+														} else {
+															setSelectedEventIds(selectedEventIds.filter((id) => id !== event.id));
+														}
+													}}
+													className="w-4 h-4 rounded border-stroke text-accent focus:ring-accent"
+												/>
+												<span className="font-medium">{event.title}</span>
+											</div>
+											<span className="text-text-muted font-mono text-xs">
+												{event.id}
+											</span>
+										</label>
+									);
+								})}
 							</div>
 						</div>
 					)}
 
 					{/* Attendee Tickets Details */}
-					{summary.attendeeTickets.length > 0 && (
+					{filteredTickets.length > 0 && options.deleteAttendeeTickets && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<h3 className="font-heading font-semibold mb-4">
-								Attendee Tickets ({summary.attendeeTickets.length})
+								Attendee Tickets to Delete ({filteredTickets.length})
 							</h3>
 							<div className="space-y-2 max-h-96 overflow-y-auto">
-								{summary.attendeeTickets.map((ticket) => (
+								{filteredTickets.map((ticket) => (
 									<div
 										key={ticket.id}
 										className="p-3 rounded-lg bg-bg border border-stroke text-sm"
@@ -338,13 +404,13 @@ export default function CleanupTestDataPage() {
 					)}
 
 					{/* Orders Details */}
-					{summary.orders.length > 0 && (
+					{filteredOrders.length > 0 && options.deleteOrders && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<h3 className="font-heading font-semibold mb-4">
-								Orders ({summary.orders.length})
+								Orders to Delete ({filteredOrders.length})
 							</h3>
 							<div className="space-y-2 max-h-96 overflow-y-auto">
-								{summary.orders.map((order) => (
+								{filteredOrders.map((order) => (
 									<div
 										key={order.id}
 										className="p-3 rounded-lg bg-bg border border-stroke text-sm"
@@ -394,10 +460,10 @@ export default function CleanupTestDataPage() {
 					)}
 
 					{/* Store Orders Details */}
-					{summary.storeOrders.length > 0 && (
+					{summary.storeOrders.length > 0 && options.deleteStoreOrders && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<h3 className="font-heading font-semibold mb-4">
-								Store Orders ({summary.storeOrders.length})
+								Store Orders to Delete ({summary.storeOrders.length})
 							</h3>
 							<div className="space-y-2 max-h-96 overflow-y-auto">
 								{summary.storeOrders.map((order) => (
@@ -430,10 +496,10 @@ export default function CleanupTestDataPage() {
 					)}
 
 					{/* Wallet Ledger Details */}
-					{summary.walletLedger.length > 0 && (
+					{summary.walletLedger.length > 0 && options.deleteWalletLedger && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<h3 className="font-heading font-semibold mb-4">
-								Wallet Ledger Entries ({summary.walletLedger.length})
+								Wallet Ledger Entries to Delete ({summary.walletLedger.length})
 							</h3>
 							<div className="space-y-2 max-h-96 overflow-y-auto">
 								{summary.walletLedger.map((entry) => (
@@ -473,7 +539,7 @@ export default function CleanupTestDataPage() {
 					{/* Selection Options */}
 					<div className="bg-surface border border-stroke rounded-2xl p-6">
 						<h2 className="font-heading font-semibold text-lg mb-4">
-							Step 2: Select What to Delete
+							Step 3: Select What to Delete
 						</h2>
 
 						<div className="space-y-3">
@@ -492,7 +558,7 @@ export default function CleanupTestDataPage() {
 								<div>
 									<p className="font-medium">Delete Attendee Tickets</p>
 									<p className="text-xs text-text-muted">
-										{summary.attendeeTickets.length} tickets will be deleted
+										Optional. Leave off to keep issued tickets/QRs attached to the event.
 									</p>
 								</div>
 							</label>
@@ -507,13 +573,9 @@ export default function CleanupTestDataPage() {
 									className="w-5 h-5 rounded border-stroke text-accent focus:ring-accent"
 								/>
 								<div>
-									<p className="font-medium">Delete Orders</p>
+									<p className="font-medium">Delete Event Orders</p>
 									<p className="text-xs text-text-muted">
-										{summary.orders.length} orders (
-										{formatCurrency(
-											summary.orders.reduce((sum, o) => sum + o.totalMinor, 0),
-										)}
-										)
+										{filteredOrders.length} orders ({formatCurrency(filteredOrdersTotal)}) for selected events. Events and ticket types stay.
 									</p>
 								</div>
 							</label>
@@ -532,7 +594,7 @@ export default function CleanupTestDataPage() {
 								<div>
 									<p className="font-medium">Delete Store Orders</p>
 									<p className="text-xs text-text-muted">
-										{summary.storeOrders.length} orders (
+										{summary.storeOrders.length} store orders (
 										{formatCurrency(
 											summary.storeOrders.reduce(
 												(sum, o) => sum + o.totalMinor,
@@ -587,13 +649,16 @@ export default function CleanupTestDataPage() {
 								</div>
 							</label>
 						</div>
+						<p className="text-xs text-text-muted mt-4">
+							Not selectable here: events, ticket type setup, merch, moments, event content, and organizer profile data.
+						</p>
 					</div>
 
 					{/* Confirmation */}
 					{step === "preview" && (
 						<div className="bg-surface border border-stroke rounded-2xl p-6">
 							<h2 className="font-heading font-semibold text-lg mb-4">
-								Step 3: Confirm Deletion
+								Step 4: Confirm Deletion
 							</h2>
 							<div className="bg-alert/10 border border-alert/20 rounded-lg p-4 mb-4">
 								<p className="text-alert font-semibold flex items-center gap-2">
@@ -601,8 +666,7 @@ export default function CleanupTestDataPage() {
 									Warning: This action cannot be undone
 								</p>
 								<p className="text-alert/90 text-sm mt-2">
-									Type <strong>DELETE</strong> below to confirm you want to
-									permanently delete the selected data.
+									Type <strong>DELETE</strong> below to confirm you want to run the selected cleanup. Preserved categories will not be touched.
 								</p>
 							</div>
 
@@ -621,6 +685,7 @@ export default function CleanupTestDataPage() {
 									onClick={() => {
 										setStep("idle");
 										setSummary(null);
+										setSelectedEventIds([]);
 										setConfirmText("");
 									}}
 									className="flex-1"
@@ -629,7 +694,7 @@ export default function CleanupTestDataPage() {
 									text="Delete Selected Data"
 									variant="danger"
 									onClick={() => setStep("confirming")}
-									disabled={confirmText !== "DELETE"}
+									disabled={confirmText !== "DELETE" || !canRunCleanup}
 									className="flex-1"
 									leftIcon={<Trash2 className="w-4 h-4" />}
 								/>
@@ -644,14 +709,14 @@ export default function CleanupTestDataPage() {
 								Final Confirmation
 							</h2>
 							<p className="text-text-muted mb-6">
-								Are you absolutely sure? This will permanently delete:
+								Are you absolutely sure? This selected cleanup will:
 							</p>
 							<ul className="list-disc list-inside space-y-2 mb-6 text-sm">
 								{options.deleteAttendeeTickets && (
-									<li>{summary.attendeeTickets.length} attendee tickets</li>
+									<li>{filteredTickets.length} attendee tickets</li>
 								)}
 								{options.deleteOrders && (
-									<li>{summary.orders.length} orders</li>
+									<li>{filteredOrders.length} orders</li>
 								)}
 								{options.deleteStoreOrders && (
 									<li>{summary.storeOrders.length} store orders</li>
@@ -660,6 +725,9 @@ export default function CleanupTestDataPage() {
 									<li>{summary.walletLedger.length} wallet ledger entries</li>
 								)}
 								{options.resetWallet && <li>Reset wallet balance to ₦0</li>}
+								<li className="text-text-muted">
+									Preserve events, ticket types, merch, moments, and other event setup data
+								</li>
 							</ul>
 
 							<div className="flex gap-3">
@@ -670,7 +738,7 @@ export default function CleanupTestDataPage() {
 									className="flex-1"
 								/>
 								<Button
-									text="Yes, Delete Everything"
+									text="Yes, Run Selected Cleanup"
 									variant="danger"
 									onClick={handleExecuteCleanup}
 									className="flex-1"
@@ -733,6 +801,7 @@ export default function CleanupTestDataPage() {
 						onClick={() => {
 							setStep("idle");
 							setSummary(null);
+							setSelectedEventIds([]);
 							setResults(null);
 							setConfirmText("");
 						}}

@@ -22,6 +22,13 @@ import Button from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useRouter, useSearchParams } from "next/navigation";
 import OnboardingChecklist from "@/components/dashboard/OnboardingChecklist";
+import {
+	canUseTemplateForPlan,
+	DEFAULT_FREE_STOREFRONT_TEMPLATE_ID,
+	getSectionsForPlanSave,
+	isSectionLockedForPlan,
+	sanitizeBrandIdentityForPlan,
+} from "@/lib/plans/free-storefront";
 
 export default function SiteCustomizationPage() {
 	const router = useRouter();
@@ -77,10 +84,14 @@ export default function SiteCustomizationPage() {
 		const unsubscribe = watchBrandDoc(user.uid, (brand: any) => {
 			if (brand?.storefrontConfig && templates.length > 0) {
 				const config = brand.storefrontConfig;
+				const effectiveTemplateId =
+					isPro || canUseTemplateForPlan(config.templateId, false)
+						? config.templateId
+						: DEFAULT_FREE_STOREFRONT_TEMPLATE_ID;
 
 				// 1. Sync Active Template
-				if (config.templateId) {
-					setLiveTemplateId(config.templateId);
+				if (effectiveTemplateId) {
+					setLiveTemplateId(effectiveTemplateId);
 
 					// Sync Content Overrides
 					if (config.contentOverrides) {
@@ -93,7 +104,7 @@ export default function SiteCustomizationPage() {
 					// OR if we want to force sync. Choosing to sync "Live" state mostly.
 					if (!editingTemplateId) {
 						if (shouldOpenActiveTemplate) {
-							setEditingTemplateId(config.templateId);
+							setEditingTemplateId(effectiveTemplateId);
 						}
 					}
 
@@ -104,7 +115,7 @@ export default function SiteCustomizationPage() {
 
 					// 2. Sync Sections (Merge config with defaults)
 					const template = templates.find(
-						(t: any) => t.id === config.templateId,
+						(t: any) => t.id === effectiveTemplateId,
 					);
 					if (template) {
 						let mergedSections = [...template.defaultSections];
@@ -133,7 +144,7 @@ export default function SiteCustomizationPage() {
 		});
 
 		return () => unsubscribe();
-	}, [user?.uid, templates, shouldOpenActiveTemplate, editingTemplateId]);
+	}, [user?.uid, templates, shouldOpenActiveTemplate, editingTemplateId, isPro]);
 
 	// Handlers
 	const handleUpgrade = () => {
@@ -143,6 +154,10 @@ export default function SiteCustomizationPage() {
 	const handleApplyTemplate = async (id: string) => {
 		const template = templates.find((t) => t.id === id);
 		if (!template) return;
+		if (!canUseTemplateForPlan(id, isPro)) {
+			handleUpgrade();
+			return;
+		}
 
 		// If editing the currently live template, preserve its state
 		if (id === liveTemplateId) {
@@ -157,10 +172,7 @@ export default function SiteCustomizationPage() {
 		setLiveTemplateId(id); // Optimistic switch
 		setActiveSections(template.defaultSections); // Load defaults for new template
 
-		// Backend Save
-		if (isPro) {
-			await activateTemplate(id);
-		}
+		await activateTemplate(id);
 	};
 
 	const handleChangeTemplate = () => {
@@ -172,25 +184,31 @@ export default function SiteCustomizationPage() {
 	const handleUpdateSections = async (newSections: StorefrontSection[]) => {
 		// Local update
 		setActiveSections(newSections);
-
-		if (isPro) {
-			await saveSections(newSections);
-		}
+		await saveSections(getSectionsForPlanSave(newSections, isPro));
 	};
 
 	const handleToggleSection = async (sectionId: string, enabled: boolean) => {
+		const targetSection = activeSections.find((s) => s.id === sectionId);
+		if (targetSection && isSectionLockedForPlan(targetSection, isPro)) {
+			handleUpgrade();
+			return;
+		}
+
 		const newSections = activeSections.map((s) =>
 			s.id === sectionId ? { ...s, enabled } : s,
 		) as StorefrontSection[];
 
 		setActiveSections(newSections);
-
-		if (isPro) {
-			await saveSections(newSections);
-		}
+		await saveSections(getSectionsForPlanSave(newSections, isPro));
 	};
 
 	const handleSelectSection = (sectionId: string) => {
+		const section = activeSections.find((s) => s.id === sectionId);
+		if (section && isSectionLockedForPlan(section, isPro)) {
+			handleUpgrade();
+			return;
+		}
+
 		if (selectedSectionId === sectionId) {
 			setSelectedSectionId(null); // Deselect
 		} else {
@@ -208,17 +226,32 @@ export default function SiteCustomizationPage() {
 			[sectionId]: updates,
 		}));
 
-		if (isPro && isAutoSaveEnabled) {
+		const section = activeSections.find((s) => s.id === sectionId);
+		if (section && isSectionLockedForPlan(section, isPro)) {
+			handleUpgrade();
+			return;
+		}
+
+		if (isAutoSaveEnabled) {
 			await saveSectionOverrides(sectionId, updates);
 		}
 	};
 
 	const handleManualSave = async () => {
-		if (!selectedSectionId || !isPro) return;
+		if (!selectedSectionId) return;
+		const section = activeSections.find((s) => s.id === selectedSectionId);
+		if (section && isSectionLockedForPlan(section, isPro)) {
+			handleUpgrade();
+			return;
+		}
 		const currentOverrides = sectionOverrides[selectedSectionId];
 		if (currentOverrides) {
 			await saveSectionOverrides(selectedSectionId, currentOverrides);
 		}
+	};
+
+	const handleSaveIdentity = async (identity: BrandIdentity) => {
+		await saveIdentity(sanitizeBrandIdentityForPlan(identity, isPro));
 	};
 
 	// Tabs State - must be declared before any early returns per React hooks rules
@@ -343,7 +376,7 @@ export default function SiteCustomizationPage() {
 										variant="outline"
 										size="sm"
 										onClick={() =>
-											window.open(`https://${username}.labeld.store`, "_blank")
+											window.open(`https://${username}.labeld.app`, "_blank")
 										}
 									>
 										Preview Store
@@ -378,7 +411,7 @@ export default function SiteCustomizationPage() {
 									{/* Using props from original usage, ensuring compatibility */}
 									<BrandIdentityView
 										isPro={isPro}
-										onUpdate={saveIdentity}
+										onUpdate={handleSaveIdentity}
 										onLockedAction={handleUpgrade}
 										isSaving={isSaving}
 										brandProfileLogo={roleDetection?.brandLogoUrl}
@@ -490,7 +523,7 @@ export default function SiteCustomizationPage() {
 				// Identity View
 				<BrandIdentityView
 					isPro={isPro}
-					onUpdate={saveIdentity}
+					onUpdate={handleSaveIdentity}
 					onLockedAction={handleUpgrade}
 					isSaving={isSaving}
 					brandProfileLogo={roleDetection?.brandLogoUrl}

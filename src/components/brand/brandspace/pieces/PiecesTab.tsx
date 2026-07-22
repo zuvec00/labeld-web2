@@ -9,6 +9,10 @@ import {
 	getProductListForBrand,
 	Product,
 } from "@/lib/firebase/queries/product";
+import {
+	formatFulfillmentSummary,
+	getVariantPriceRangeMinor,
+} from "@/lib/models/product";
 import { useStoreOrders } from "@/hooks/useStoreOrders";
 import {
 	Flame,
@@ -520,6 +524,12 @@ function PieceCard({
 	const isLowStock = !isUnlimited && remaining > 0 && remaining < 5; // Threshold 5
 
 	const avgRating = piece.reviewSummary?.avgRating;
+	const priceRange = getVariantPriceRangeMinor(piece);
+	const priceLabel =
+		priceRange.min === priceRange.max
+			? formatWithCommasDouble(priceRange.min / 100)
+			: `${formatWithCommasDouble(priceRange.min / 100)} - ${formatWithCommasDouble(priceRange.max / 100)}`;
+	const fulfillmentLabel = formatFulfillmentSummary(piece.fulfillment);
 
 	return (
 		<div className="group cursor-pointer space-y-3" onClick={onOpen}>
@@ -592,7 +602,7 @@ function PieceCard({
 					<div className="flex items-center gap-2">
 						<div className="text-sm text-text-muted font-bold">
 							{currency ? `${currency} ` : ""}
-							{formatWithCommasDouble(piece.price)}
+							{priceLabel}
 						</div>
 					</div>
 
@@ -625,6 +635,9 @@ function PieceCard({
 						/>
 					</div>
 				</div>
+				{fulfillmentLabel && (
+					<p className="text-xs text-text-muted">{fulfillmentLabel}</p>
+				)}
 			</div>
 		</div>
 	);
