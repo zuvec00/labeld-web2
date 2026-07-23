@@ -51,7 +51,7 @@ export default function Footer() {
 								alt="Labeld Logo"
 								className="w-8 h-8"
 							/>
-							<GradientText text="LABELD STUDIO" className="font-heading text-2xl"/>
+							<GradientText text="LABELD STUDIO" className="font-body text-2xl font-extrabold tracking-[-0.04em]"/>
 						</div>
 						<p className="text-text-muted text-sm font-manrope leading-relaxed">
 							Labeld Studio is the official platform by Labeld for independent
@@ -102,7 +102,7 @@ export default function Footer() {
 
 					{/* Company Links */}
 					<div className="space-y-4">
-						<h3 className="text-lg font-heading font-semibold text-cta">
+						<h3 className="text-sm font-manrope font-semibold tracking-[-0.02em] text-cta">
 							Company
 						</h3>
 						<div className="space-y-2">
@@ -151,7 +151,7 @@ export default function Footer() {
 
 					{/* Support Section */}
 					<div className="space-y-4">
-						<h3 className="text-lg font-heading font-semibold text-cta">
+						<h3 className="text-sm font-manrope font-semibold tracking-[-0.02em] text-cta">
 							Support
 						</h3>
 						<div className="space-y-2">
@@ -172,7 +172,7 @@ export default function Footer() {
 
 					{/* Social Links */}
 					<div className="space-y-4">
-						<h3 className="text-lg font-heading font-semibold text-cta">
+						<h3 className="text-sm font-manrope font-semibold tracking-[-0.02em] text-cta">
 							Follow Us
 						</h3>
 						<div className="flex items-center space-x-4">

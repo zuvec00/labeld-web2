@@ -57,7 +57,7 @@ const Pricing = () => {
 						<p className="mb-4 font-body text-[11px] font-bold uppercase tracking-[0.28em] text-cta">
 							Pricing
 						</p>
-						<h2 className="font-heading text-2xl font-semibold uppercase leading-[1.08] text-foreground sm:text-4xl">
+						<h2 className="!font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl">
 							Simple. Transparent. Fair.
 						</h2>
 					</div>
@@ -89,7 +89,7 @@ const Pricing = () => {
 				{/* Brands Section */}
 				<div className="mb-20">
 					<div className="mb-6 flex flex-col justify-between gap-3 border-t border-border pt-6 md:flex-row md:items-end">
-						<h3 className="font-heading text-xl font-semibold uppercase text-foreground">
+						<h3 className="!font-sans text-xl font-medium leading-[1.08] tracking-[-0.035em] text-foreground">
 							For Brands
 						</h3>
 						<p className="mt-2 text-muted-foreground max-w-2xl text-sm">
@@ -151,7 +151,7 @@ const Pricing = () => {
 				{/* Organizers Section */}
 				<div>
 					<div className="mb-6 flex flex-col justify-between gap-3 border-t border-border pt-6 md:flex-row md:items-end">
-						<h3 className="font-heading text-xl font-semibold uppercase text-foreground">
+						<h3 className="!font-sans text-xl font-medium leading-[1.08] tracking-[-0.035em] text-foreground">
 							For Organizers
 						</h3>
 						<p className="mt-2 text-muted-foreground max-w-2xl text-sm">
@@ -316,12 +316,12 @@ const PlanCard = ({
 					</span>
 				</div>
 			)}
-			<h3 className="font-heading text-sm font-semibold uppercase text-foreground">
+			<h3 className="!font-sans text-sm font-medium leading-[1.08] tracking-[-0.035em] text-foreground">
 				{name}
 			</h3>
 			<div className="mt-4 flex flex-col items-start gap-1">
 				<div className="flex items-baseline gap-1">
-					<span className="font-heading text-3xl font-semibold text-foreground md:text-4xl">
+					<span className="!font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-foreground md:text-4xl">
 						{price}
 					</span>
 					<span className="font-body text-sm text-muted-foreground">
@@ -390,7 +390,7 @@ const PlanCard = ({
 			</ul>
 			<ButtonVite
 				onClick={handleUpgrade}
-				className={`mt-8 w-full font-heading text-xs tracking-wide ${
+				className={`mt-8 w-full font-body text-sm font-bold tracking-[-0.01em] ${
 					popular
 						? `${themeColors.bg} ${themeColors.buttonText} hover:opacity-90`
 						: "bg-background text-foreground border border-border hover:bg-muted"

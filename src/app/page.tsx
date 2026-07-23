@@ -3,10 +3,9 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
 	metadataBase: new URL("https://studio.labeld.app"),
-	title:
-		"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
+	title: "Labeld Studio — Culture OS for Brands, Drops & Events",
 	description:
-		"Build storefronts, launch drops, sell tickets, manage orders, and run your brand or event from one simple dashboard.",
+		"Build storefronts, launch drops, sell tickets, manage orders, and run your brand from one connected Studio.",
 	alternates: {
 		canonical: "https://studio.labeld.app/",
 	},
@@ -22,10 +21,9 @@ export const metadata: Metadata = {
 		},
 	},
 	openGraph: {
-		title:
-			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
+		title: "Labeld Studio — Culture OS for Brands, Drops & Events",
 		description:
-			"Build storefronts, launch drops, sell tickets, manage orders, and run your brand or event from one simple dashboard.",
+			"Build storefronts, launch drops, sell tickets, manage orders, and run your brand from one connected Studio.",
 		type: "website",
 		url: "https://studio.labeld.app/",
 		siteName: "Labeld Studio",
@@ -41,10 +39,9 @@ export const metadata: Metadata = {
 	},
 	twitter: {
 		card: "summary_large_image",
-		title:
-			"Labeld Studio — Unified Platform for Independent Brands & Event Organizers",
+		title: "Labeld Studio — Culture OS for Brands, Drops & Events",
 		description:
-			"Launch your brand site, sell drops, host events, and manage orders from one simple dashboard.",
+			"Launch your brand site, sell drops, host events, and manage orders from one connected Studio.",
 		images: ["/images/onboarding-hero.JPEG"],
 	},
 	keywords: [
