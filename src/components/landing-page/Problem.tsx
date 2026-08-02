@@ -2,42 +2,30 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import {
-	Instagram,
-	MapPin,
-	PackagePlus,
-	RadioTower,
-	ShoppingBag,
-	Ticket,
-} from "lucide-react";
 
-const channels = [
+const productMoments = [
 	{
-		icon: ShoppingBag,
-		title: "Online storefront",
-		description: "A premium brand space for drops, collections, and checkout.",
+		src: "/images/jorts.jpg",
+		title: "Drop",
+		description: "Product pages that let the clothes carry the feeling.",
 	},
 	{
-		icon: Instagram,
-		title: "Social demand",
-		description: "Turn attention from Instagram, TikTok, WhatsApp, and DMs into orders.",
+		src: "/images/event-bg2.jpg",
+		title: "Event",
+		description: "Ticketed moments connected to orders, guests, and check-in.",
 	},
 	{
-		icon: Ticket,
-		title: "Ticketed moments",
-		description: "Sell experiences, manage guests, and scan people in at the door.",
-	},
-	{
-		icon: MapPin,
-		title: "Pop-ups and IRL",
-		description: "Record manual sales and keep inventory and revenue in sync.",
+		src: "/images/flamingo.jpg",
+		title: "Campaign",
+		description: "A place to turn social heat into something ownable.",
 	},
 ];
 
-const productCards = [
-	{ src: "/images/jorts.jpg", label: "Drop product" },
-	{ src: "/images/flamingo.jpg", label: "Campaign image" },
-	{ src: "/images/event-bg2.jpg", label: "Event visual" },
+const channelNotes = [
+	"Online storefront",
+	"Instagram, TikTok, WhatsApp",
+	"Pop-ups and in-person sales",
+	"Events and ticketing",
 ];
 
 const Problem = () => {
@@ -49,105 +37,94 @@ const Problem = () => {
 					whileInView={{ opacity: 1, y: 0 }}
 					viewport={{ once: true, margin: "-80px" }}
 					transition={{ duration: 0.7 }}
-					className="mb-10 grid gap-5 md:grid-cols-[0.95fr_1.05fr] md:items-end"
+					className="mb-12 grid gap-5 md:grid-cols-[1.05fr_0.95fr] md:items-end"
 				>
 					<div>
 						<p className="mb-4 font-body text-[11px] font-bold uppercase tracking-[0.2em] text-cta">
 							Sell everywhere
 						</p>
-						<h2 className="max-w-3xl !font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl">
+						<h2 className="max-w-4xl !font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl">
 							Your brand should move wherever the culture finds you.
 						</h2>
 					</div>
 					<p className="max-w-xl font-body text-sm leading-7 text-text-muted md:justify-self-end md:text-base">
-						Studio connects the messy parts of running a modern brand: online
-						checkout, product drops, social demand, ticketed experiences,
-						pop-ups, payments, and fulfillment.
+						Not a pile of feature boxes. One connected surface for the way
+						independent fashion sells now: storefront, socials, drops, events,
+						pop-ups, payment, and fulfillment.
 					</p>
 				</motion.div>
 
-				<div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr]">
-					<motion.div
-						initial={{ opacity: 0, y: 24 }}
-						whileInView={{ opacity: 1, y: 0 }}
-						viewport={{ once: true }}
-						transition={{ duration: 0.7 }}
-						className="overflow-hidden rounded-[2rem] border border-border bg-bg p-4"
-					>
-						<div className="relative aspect-[16/10] overflow-hidden rounded-[1.45rem] bg-surface">
+				<div className="overflow-hidden rounded-[2rem] border border-border bg-bg p-3 md:p-4">
+					<div className="grid gap-3 lg:grid-cols-[1.18fr_0.82fr]">
+						<motion.div
+							initial={{ opacity: 0, y: 24 }}
+							whileInView={{ opacity: 1, y: 0 }}
+							viewport={{ once: true }}
+							transition={{ duration: 0.7 }}
+							className="relative min-h-[520px] overflow-hidden rounded-[1.6rem] bg-surface"
+						>
 							<Image
 								src="/images/brand-site-light.jpeg"
 								alt="Labeld storefront experience"
 								fill
 								className="object-cover object-top dark:hidden"
-								sizes="(max-width: 1024px) 100vw, 720px"
+								sizes="(max-width: 1024px) 100vw, 760px"
 							/>
 							<Image
 								src="/images/brand-site-dark.jpeg"
 								alt="Labeld storefront experience in dark mode"
 								fill
 								className="hidden object-cover object-top dark:block"
-								sizes="(max-width: 1024px) 100vw, 720px"
+								sizes="(max-width: 1024px) 100vw, 760px"
 							/>
-						</div>
-						<div className="mt-4 grid gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-3">
-							{productCards.map((card) => (
-								<div key={card.label} className="bg-surface p-2">
-									<div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-bg">
+							<div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-bg via-bg/80 to-transparent p-5 pt-24 md:p-7 md:pt-28">
+								<div className="max-w-md rounded-2xl border border-border bg-surface/95 p-4 backdrop-blur">
+									<p className="!font-sans text-lg font-medium leading-[1.08] tracking-[-0.035em] text-text">
+										Launch once. Sell across the whole room.
+									</p>
+									<div className="mt-4 flex flex-wrap gap-2">
+										{channelNotes.map((note) => (
+											<span
+												key={note}
+												className="rounded-full border border-border bg-bg px-3 py-1.5 text-xs text-text-muted"
+											>
+												{note}
+											</span>
+										))}
+									</div>
+								</div>
+							</div>
+						</motion.div>
+
+						<div className="grid gap-3">
+							{productMoments.map((moment, index) => (
+								<motion.article
+									key={moment.title}
+									initial={{ opacity: 0, y: 20 }}
+									whileInView={{ opacity: 1, y: 0 }}
+									viewport={{ once: true, margin: "-60px" }}
+									transition={{ duration: 0.6, delay: index * 0.06 }}
+									className="grid min-h-[164px] overflow-hidden rounded-[1.6rem] border border-border bg-surface sm:grid-cols-[0.9fr_1.1fr] lg:grid-cols-1 xl:grid-cols-[0.9fr_1.1fr]"
+								>
+									<div className="relative min-h-[160px] bg-bg">
 										<Image
-											src={card.src}
-											alt={card.label}
+											src={moment.src}
+											alt={moment.title}
 											fill
 											className="object-cover"
-											sizes="220px"
+											sizes="(max-width: 1024px) 100vw, 320px"
 										/>
 									</div>
-									<p className="px-2 pb-1 pt-3 text-xs font-semibold tracking-[-0.02em] text-text">
-										{card.label}
-									</p>
-								</div>
-							))}
-						</div>
-					</motion.div>
-
-					<div className="grid gap-5">
-						<div className="rounded-[2rem] border border-border bg-bg p-5 md:p-6">
-							<div className="flex items-center gap-3">
-								<div className="flex h-10 w-10 items-center justify-center rounded-full bg-cta/10 text-cta">
-									<RadioTower className="h-5 w-5" />
-								</div>
-								<div>
-									<p className="text-sm font-semibold tracking-[-0.02em] text-text">
-										One launch, many channels
-									</p>
-									<p className="text-xs text-text-muted">
-										Publish once, manage the movement from Studio.
-									</p>
-								</div>
-							</div>
-							<div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-								{channels.map((channel) => (
-									<div key={channel.title} className="rounded-2xl border border-border bg-surface p-4">
-										<channel.icon className="h-4 w-4 text-accent" strokeWidth={1.7} />
-										<h3 className="mt-4 !font-sans text-sm font-medium leading-[1.08] tracking-[-0.035em] text-text">
-											{channel.title}
-										</h3>
-										<p className="mt-2 text-xs leading-5 text-text-muted">
-											{channel.description}
+									<div className="flex flex-col justify-end p-5">
+										<p className="font-body text-[10px] font-bold uppercase tracking-[0.18em] text-cta">
+											{moment.title}
 										</p>
+										<h3 className="mt-3 !font-sans text-xl font-medium leading-[1.08] tracking-[-0.035em] text-text">
+											{moment.description}
+										</h3>
 									</div>
-								))}
-							</div>
-						</div>
-
-						<div className="rounded-[2rem] border border-border bg-foreground p-5 text-bg md:p-6">
-							<PackagePlus className="h-5 w-5 text-accent" />
-							<p className="mt-8 max-w-sm !font-sans text-2xl font-medium leading-[1.08] tracking-[-0.035em]">
-								Drop product, sell ticket, fulfill order, read the room.
-							</p>
-							<p className="mt-4 text-sm leading-6 text-bg/70">
-								That loop is the product. Labeld Studio keeps it tight.
-							</p>
+								</motion.article>
+							))}
 						</div>
 					</div>
 				</div>
