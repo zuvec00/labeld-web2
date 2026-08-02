@@ -62,7 +62,7 @@ const FAQ = () => {
 					transition={{ duration: 0.7 }}
 					className="mb-12 text-center"
 				>
-					<h2 className="font-heading text-3xl font-bold text-foreground sm:text-4xl">
+					<h2 className="!font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl">
 						Questions?
 					</h2>
 				</motion.div>
