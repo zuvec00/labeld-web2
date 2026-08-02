@@ -6,24 +6,18 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
 	ArrowRight,
-	BarChart3,
-	CreditCard,
-	Globe2,
-	PackageCheck,
-	ShoppingBag,
 	Smartphone,
-	Ticket,
 } from "lucide-react";
 
 const appStoreUrl = "https://apps.apple.com/app/id6760316742";
 
 const proofItems = [
-	{ icon: Globe2, label: "Storefronts" },
-	{ icon: ShoppingBag, label: "Drops" },
-	{ icon: Ticket, label: "Tickets" },
-	{ icon: PackageCheck, label: "Orders" },
-	{ icon: BarChart3, label: "Analytics" },
-	{ icon: CreditCard, label: "Payouts" },
+	"Storefronts",
+	"Drops",
+	"Tickets",
+	"Orders",
+	"Analytics",
+	"Payouts",
 ];
 
 const stats = [
@@ -163,14 +157,16 @@ const Hero = () => {
 				</div>
 
 				<div className="mt-10 grid gap-px overflow-hidden rounded-2xl border border-border bg-border md:grid-cols-6">
-					{proofItems.map((item) => (
+					{proofItems.map((item, index) => (
 						<div
-							key={item.label}
-							className="flex items-center gap-3 bg-surface px-4 py-4"
+							key={item}
+							className="flex items-center justify-between gap-3 bg-surface px-4 py-4"
 						>
-							<item.icon className="h-4 w-4 text-cta" strokeWidth={1.7} />
 							<span className="font-body text-sm font-semibold tracking-[-0.02em] text-text">
-								{item.label}
+								{item}
+							</span>
+							<span className="font-body text-[10px] font-bold text-cta">
+								{String(index + 1).padStart(2, "0")}
 							</span>
 						</div>
 					))}
