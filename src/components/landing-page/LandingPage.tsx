@@ -16,10 +16,10 @@ const LandingPage = () => {
 		<main className="min-h-screen bg-bg">
 			<Navbar />
 			<Hero />
+			<Audience />
 			<Problem />
 			<Features />
 			<VisualProof />
-			<Audience />
 			<StudioBrands />
 			<Pricing />
 			<FAQ />

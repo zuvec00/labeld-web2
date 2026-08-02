@@ -17,28 +17,22 @@ const Navbar = () => {
 			<div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
 				<a
 					href="#"
-					className="font-body text-lg font-extrabold tracking-[-0.04em] text-foreground"
+					className="font-heading text-lg font-bold tracking-tight text-foreground"
 				>
 					LABELD
 				</a>
 				<div className="hidden items-center gap-8 md:flex">
 					<a
-						href="#product"
+						href="#audience"
 						className="text-sm text-muted-foreground transition-colors hover:text-foreground"
 					>
-						Product
+						Who It's For
 					</a>
 					<a
-						href="#brands"
+						href="#features"
 						className="text-sm text-muted-foreground transition-colors hover:text-foreground"
 					>
-						Brands
-					</a>
-					<a
-						href="#events"
-						className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-					>
-						Events
+						Features
 					</a>
 					<a
 						href="#pricing"
@@ -55,7 +49,7 @@ const Navbar = () => {
 				</div>
 				<ButtonVite
 					size="sm"
-					className="bg-foreground text-bg hover:bg-foreground/90 font-body text-xs font-bold tracking-[-0.01em]"
+					className="bg-cta text-text hover:bg-cta/90 font-heading text-xs tracking-wide"
 					onClick={() => router.push("/login")}
 				>
 					Start Your Studio

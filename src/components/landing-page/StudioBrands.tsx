@@ -110,7 +110,7 @@ export default function StudioBrands() {
 						<p className="mb-4 font-body text-[11px] font-bold uppercase tracking-[0.28em] text-cta">
 							Brands on Studio
 						</p>
-						<h2 className="!font-sans text-3xl font-medium leading-[1.08] tracking-[-0.035em] text-text sm:text-5xl">
+						<h2 className="font-heading text-2xl font-semibold uppercase leading-[1.08] text-foreground sm:text-4xl">
 							Independent brands already running with Labeld.
 						</h2>
 					</div>
@@ -143,13 +143,13 @@ export default function StudioBrands() {
 												sizes="56px"
 											/>
 										) : (
-											<span className="font-body text-sm font-semibold text-foreground">
+											<span className="font-heading text-sm font-semibold text-foreground">
 												{initials(brand.name)}
 											</span>
 										)}
 									</div>
 									<div className="min-w-0">
-										<h3 className="truncate !font-sans text-sm font-medium leading-[1.08] tracking-[-0.035em] text-foreground transition-colors group-hover:text-cta">
+										<h3 className="truncate font-heading text-sm font-semibold uppercase text-foreground transition-colors group-hover:text-cta">
 											{brand.name}
 										</h3>
 										<p className="mt-1 truncate text-xs text-muted-foreground">
