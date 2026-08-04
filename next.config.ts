@@ -88,6 +88,7 @@ const nextConfig: NextConfig = {
         pathname: '/v0/b/labeld-804d4.firebasestorage.app/o/**',
       },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
+      { protocol: 'https', hostname: 'ik.imagekit.io' },
       {
         protocol: 'https',
         hostname: 'storage.googleapis.com',

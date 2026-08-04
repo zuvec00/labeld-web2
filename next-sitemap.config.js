@@ -14,14 +14,15 @@ module.exports = {
 			'/marketing',
 			'/integrations',
 			'/event-landing-page',
+			'/android-waitlist',
 		]);
 
 		if (!publicPaths.has(path)) return null;
 
 		return {
 			loc: path,
-			changefreq: path === '/' ? 'weekly' : 'monthly',
-			priority: path === '/' ? 1.0 : path === '/pricing' ? 0.8 : 0.6,
+			changefreq: path === '/' || path === '/android-waitlist' ? 'weekly' : 'monthly',
+			priority: path === '/' ? 1.0 : path === '/pricing' ? 0.8 : path === '/android-waitlist' ? 0.7 : 0.6,
 			lastmod: new Date().toISOString(),
 		};
 	},
