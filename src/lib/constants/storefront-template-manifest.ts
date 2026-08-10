@@ -176,9 +176,9 @@ export const STOREFRONT_TEMPLATE_MANIFEST = [
   {
     id: "chassis",
     name: "CHASSIS",
-    description: "A statement storefront built for brands with a following.",
+    description: "The frame your brand runs on, for brands that don't need decoration to make an impression",
     access: "premium",
-    status: "hidden",
+    status: "live",
     isProOnly: false,
     regularPriceMinor: 4000000,
     proPriceMinor: 3200000,
