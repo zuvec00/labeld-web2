@@ -74,7 +74,10 @@ files use the safe `uploadImageCloudinary` wrapper; leave those alone for now.
       (`uploadProfileImage` on mobile still calls `_uploadImageCloudinary` —
       confirm that is intentional)
 
-### [ ] P0-2 · Shipping settings can silently downgrade a Terminal Live config
+### [x] P0-2 · Shipping settings can silently downgrade a Terminal Live config
+
+> Closed by bda20c6, which went further than the read-only stopgap: web now has
+> a full Terminal Live editor (Phase 1 of P2-1).
 
 `ShippingSettings.tsx:21` types `mode` as `"flat_all" | "flat_by_state"`. Mobile
 writes a third value, `'terminal_live'` (`shipping_model.dart:199`).
@@ -84,8 +87,10 @@ unrepresentable state. The stored value survives if untouched, but the natural
 reaction is to pick a radio, which overwrites live carrier rates with a flat fee.
 Mobile's `FallbackStrategy` is not editable on web at all.
 
-- [ ] Add `terminal_live` to the union; render it (read-only is acceptable v1)
-- [ ] Surface the fallback strategy
+- [x] Add `terminal_live` to the union; render it
+- [x] Surface the fallback strategy
+- [x] Pickup address CRUD + default-address validation
+- [x] Default package weight
 
 ---
 
@@ -147,7 +152,30 @@ Worth a compliance check — confirm which one actually purges brand data.
 
 ## P2 — Whole features absent from web
 
-### [ ] P2-1 · Shipping & fulfillment (Terminal Africa) — the largest hole
+### [~] P2-1 · Shipping & fulfillment (Terminal Africa) — the largest hole
+
+Phased. **Phase 1 (settings, strategy, pickup addresses) is done — bda20c6.**
+Remaining phases need Terminal test credentials and a sandbox brand:
+
+- [x] Phase 1 · strategy + settings + pickup addresses
+- [ ] Phase 2 · arrange-shipping pipeline through rate selection
+      (`createPickupAddress` -> `createAddress` -> `createPackaging` ->
+      `createParcel` -> `createShipment` -> `getRates`). Nothing charged, so
+      testable end to end without money moving.
+- [ ] Phase 3 · payment, pickup, save (`initializeTerminalShippingPayment` ->
+      Paystack redirect -> `arrangePickup` -> `saveTerminalShipment`). Mobile
+      uses an in-app webview; web must redirect out and back, so pipeline state
+      has to survive a full navigation. `reconcileTerminalShippingPayment`
+      exists for the paid-but-never-returned case and is currently called by
+      neither web app.
+- [ ] Phase 4 · orders integration + `batchUpdateStoreFulfillmentStatus`
+- [ ] Skip: `registerTerminalAfricaWebhook` / `list` / `reset` — dev tooling
+      behind mobile's developer options, not brand-facing.
+
+Note: the buyer side already works. `getCheckoutShippingRates`,
+`getCheckoutShippingRatesBatch` and `getTransferRates` are live in
+shop.labeld.app, so customers already get live quotes at checkout. What is
+missing is only the brand-side fulfillment console.
 
 16 orphaned callables: `getRates`, `createShipment`, `createParcel`,
 `createPackaging`, `createAddress`, `createPickupAddress`, `validateAddress`,
