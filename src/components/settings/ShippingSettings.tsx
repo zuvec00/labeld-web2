@@ -65,7 +65,7 @@ export default function ShippingSettings() {
 	// nothing to quote from without one. Mirrors the mobile validation.
 	const blockingError =
 		mode === "terminal_live" && !addressesLoading && !defaultPickup
-			? "Set a default pickup address before turning on live rates."
+			? "Add a default pickup address before turning on live rates — couriers quote from it."
 			: null;
 
 	// Helper for dirty checking
@@ -330,6 +330,19 @@ export default function ShippingSettings() {
 		);
 	}
 
+	// The rates editor is reused as the international fallback under Terminal
+	// Live, where the entries are countries rather than Nigerian states.
+	const ratesAreInternational = mode === "terminal_live";
+	const ratesHeading = ratesAreInternational
+		? "International Rates by Destination"
+		: "Shipping Rates by Location";
+	const ratesEmptyLabel = ratesAreInternational
+		? "No destinations added yet."
+		: "No specific rates set yet.";
+	const ratesPlaceholder = ratesAreInternational
+		? "Destination (e.g. United Kingdom)"
+		: "Location (e.g. Lagos)";
+
 	const flatRateEditor = (
 		<div className="max-w-md">
 			<label className="block text-sm font-medium text-text-muted mb-3">
@@ -348,22 +361,20 @@ export default function ShippingSettings() {
 				/>
 			</div>
 			<p className="text-xs text-text-muted/60 mt-3">
-				This amount will be added to checkout for every shipping order.
+				Added at checkout for every delivery order, wherever it is going.
 			</p>
 		</div>
 	);
 
 	const stateRatesEditor = (
 		<div className="space-y-6">
-			<h3 className="text-lg font-medium text-text">
-				Shipping Rates by Location
-			</h3>
+			<h3 className="text-lg font-medium text-text">{ratesHeading}</h3>
 
 			{/* Existing Rates List (Ordered) */}
 			<div className="space-y-2">
 				{stateOrder.length === 0 ? (
 					<div className="text-center py-8 border border-dashed border-stroke/50 rounded-xl">
-						<p className="text-text-muted">No specific rates set yet.</p>
+						<p className="text-text-muted">{ratesEmptyLabel}</p>
 					</div>
 				) : (
 					stateOrder.map((state, index) => {
@@ -461,7 +472,7 @@ export default function ShippingSettings() {
 					type="text"
 					value={newStateName}
 					onChange={(e) => setNewStateName(e.target.value)}
-					placeholder="Location (e.g. Lagos)"
+					placeholder={ratesPlaceholder}
 					className="w-36 md:w-90 bg-surface-neutral/30 border border-stroke/30 rounded-xl px-4 py-3 text-text focus:outline-none focus:border-green-500/50 transition-colors placeholder:text-text-muted/40"
 				/>
 				<div className="relative flex-1">
@@ -527,8 +538,8 @@ export default function ShippingSettings() {
 							Flat Rate Shipping
 						</h3>
 						<p className="text-sm text-text-muted leading-relaxed">
-							Charge the same delivery fee for all locations. Simple and
-							predictable for customers.
+							One fee for every destination. Simple and predictable, wherever
+							the customer is.
 						</p>
 					</button>
 
@@ -556,8 +567,8 @@ export default function ShippingSettings() {
 							Location-based Shipping
 						</h3>
 						<p className="text-sm text-text-muted leading-relaxed">
-							Set different fees by state or region. Charge more for distant
-							locations.
+							Set your own fee per destination. Charge more for the places that
+							cost you more to reach.
 						</p>
 					</button>
 
@@ -585,9 +596,8 @@ export default function ShippingSettings() {
 							Live Carrier Rates
 						</h3>
 						<p className="text-sm text-text-muted leading-relaxed">
-							Quote real courier prices at checkout based on the customer&apos;s
-							address. Falls back to your fixed rates when a route can&apos;t be
-							quoted.
+							Real courier prices at checkout, quoted to the customer&apos;s
+							address. Covers Nigeria — set your own fees for everywhere else.
 						</p>
 					</button>
 				</div>
@@ -605,9 +615,9 @@ export default function ShippingSettings() {
 						<div className="flex items-start gap-3 p-4 rounded-xl bg-green-500/5 border border-green-500/20">
 							<Zap className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
 							<div className="text-sm text-text-muted leading-relaxed">
-								Customers are quoted real courier prices at checkout, based on
-								the distance from your pickup address to theirs. You book the
-								shipment from the order once it is paid.
+								Customers get real courier prices at checkout, quoted from your
+								pickup address to theirs. You book the shipment from the order
+								once it is paid. Live rates cover deliveries within Nigeria.
 							</div>
 						</div>
 
@@ -647,26 +657,28 @@ export default function ShippingSettings() {
 								</span>
 							</div>
 							<p className="text-xs text-text-muted/60">
-								Used to request carrier quotes when an order has no weight of
-								its own. Couriers price by weight, so a realistic value keeps
-								quotes accurate.
+								Used to quote an order whose items have no weight of their own.
+								Couriers price by weight, so a realistic value keeps quotes
+								accurate.
 							</p>
 						</div>
 
 						{/* Fallback rates */}
 						<div className="space-y-6 pt-6 border-t border-stroke/30">
 							<div>
-								<h3 className="text-lg font-medium text-text">Fallback Rates</h3>
+								<h3 className="text-lg font-medium text-text">
+									International Shipping
+								</h3>
 								<p className="text-xs text-text-muted/70 mt-1">
-									Charged when no courier can quote a route — an unusual
-									destination, or a carrier outage. Location rates win where you
-									have set one; otherwise the flat fee applies.
+									Live courier rates cover Nigeria only. Set your own fees here
+									for orders going anywhere else. Leave this blank and customers
+									outside Nigeria cannot check out at all.
 								</p>
 							</div>
 
 							<div className="max-w-md">
 								<label className="block text-sm font-medium text-text-muted mb-3">
-									Fallback Flat Fee
+									Flat International Fee
 								</label>
 								<div className="relative">
 									<span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted">
@@ -680,6 +692,12 @@ export default function ShippingSettings() {
 										placeholder="0.00"
 									/>
 								</div>
+								<p className="text-xs text-text-muted/60 mt-3">
+									Charged for any international order. Add per-destination rates
+									below to replace it — as soon as one exists, it is used
+									instead of this fee, and only the destinations you list can
+									check out.
+								</p>
 							</div>
 
 							{stateRatesEditor}
@@ -776,8 +794,9 @@ export default function ShippingSettings() {
 			{/* Strategy Summary / Footer */}
 			<div className="flex justify-center pt-8 opacity-60">
 				<p className="text-sm text-text-muted text-center max-w-md">
-					Customers can receive orders via {pickupEnabled ? "shipping or " : ""}{" "}
-					shipping. Fees are applied automatically at checkout.
+					Customers can receive orders by{" "}
+					{pickupEnabled ? "delivery or local pickup" : "delivery"}. Fees are
+					applied automatically at checkout.
 				</p>
 			</div>
 
