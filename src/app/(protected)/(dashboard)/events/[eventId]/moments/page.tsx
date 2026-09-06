@@ -15,10 +15,8 @@ import {
 	listMomentsForEvent,
 } from "@/lib/firebase/queries/moment";
 import { uploadFileGetURL } from "@/lib/storage/upload";
-import {
-	uploadImageCloudinary,
-	uploadFileDirectCloudinary,
-} from "@/lib/storage/cloudinary";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { MomentRow } from "@/components/moments/MomentRow";
 import { useUploadStore } from "@/lib/stores/upload";
 
@@ -98,7 +96,7 @@ export default function EventMomentsPage() {
 			if (type === "image") {
 				mediaURL = await uploadImageCloudinary(file, { folder, tags });
 			} else {
-				mediaURL = await uploadFileDirectCloudinary(
+				mediaURL = await uploadFileDirectImageKit(
 					file,
 					{ folder, tags, resourceType: "video" },
 					(progress) => {

@@ -16,10 +16,8 @@ import {
 import { type ProductFulfillmentMethod } from "@/lib/models/product";
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
-import {
-	uploadImageCloudinary,
-	uploadFileDirectCloudinary,
-} from "@/lib/storage/cloudinary";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { useUploadStore } from "@/lib/stores/upload";
 
 /* ----------------------------- Currency source ---------------------------- */
@@ -157,7 +155,7 @@ export default function EditPiecePage() {
 				// Add product ID to tags if available? Not necessary but good practice.
 				if (product?.id) tags.push(product.id);
 
-				const url = await uploadFileDirectCloudinary(
+				const url = await uploadFileDirectImageKit(
 					file,
 					{
 						folder,

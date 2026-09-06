@@ -10,7 +10,7 @@ import { useToast } from "@/app/hooks/use-toast";
 import OptimizedImage from "@/components/ui/OptimizedImage";
 import { useInstagramImportStore } from "@/lib/stores/instagram-import";
 import { addDropProductCF } from "@/lib/firebase/queries/product";
-import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { useUploadStore } from "@/lib/stores/upload";
 
 export default function InstagramReviewPage() {
@@ -60,7 +60,7 @@ export default function InstagramReviewPage() {
           setPublishingStatus(`Uploading main image for ${p.dropName}...`);
           const uploadId = addUpload({ type: "image", fileName: pMod.localFile.name, progress: 0, status: "uploading" });
           try {
-            finalImageUrl = await uploadFileDirectCloudinary(pMod.localFile, { folder: `productImages/${brandId}`, tags: ["product", "instagram-import", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
+            finalImageUrl = await uploadFileDirectImageKit(pMod.localFile, { folder: `productImages/${brandId}`, tags: ["product", "instagram-import", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
             updateUpload(uploadId, { status: "completed", progress: 100 });
             setTimeout(() => removeUpload(uploadId), 2000);
           } catch (err) {
@@ -80,7 +80,7 @@ export default function InstagramReviewPage() {
                    setPublishingStatus(`Uploading gallery ${j+1} for ${p.dropName}...`);
                    const uploadId = addUpload({ type: "image", fileName: file.name, progress: 0, status: "uploading" });
                    try {
-                     const url = await uploadFileDirectCloudinary(file, { folder: `productImages/${brandId}`, tags: ["product", "gallery", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
+                     const url = await uploadFileDirectImageKit(file, { folder: `productImages/${brandId}`, tags: ["product", "gallery", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
                      uploadedGallery.push(url);
                      updateUpload(uploadId, { status: "completed", progress: 100 });
                      setTimeout(() => removeUpload(uploadId), 2000);
@@ -101,7 +101,7 @@ export default function InstagramReviewPage() {
             setPublishingStatus(`Uploading size guide for ${p.dropName}...`);
             const uploadId = addUpload({ type: "image", fileName: pMod.sizeGuideFile.name, progress: 0, status: "uploading" });
             try {
-              finalSizeGuideUrl = await uploadFileDirectCloudinary(pMod.sizeGuideFile, { folder: `productImages/${brandId}`, tags: ["product", "size-guide", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
+              finalSizeGuideUrl = await uploadFileDirectImageKit(pMod.sizeGuideFile, { folder: `productImages/${brandId}`, tags: ["product", "size-guide", brandId], resourceType: "image" }, (progress) => { updateUpload(uploadId, { progress: Math.round(progress) }); });
               updateUpload(uploadId, { status: "completed", progress: 100 });
               setTimeout(() => removeUpload(uploadId), 2000);
             } catch (err) {

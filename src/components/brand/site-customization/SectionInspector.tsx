@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/app/hooks/use-toast";
 import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
-import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { useUploadStore } from "@/lib/stores/upload";
 import UploadImage from "@/components/ui/upload-image";
 import { MultiImagePicker } from "@/components/ui/upload-multiple-image"; // Ensure this matches export
@@ -496,7 +496,7 @@ export default function SectionInspector({
 
 		try {
 			setUploading(true);
-			const url = await uploadFileDirectCloudinary(
+			const url = await uploadFileDirectImageKit(
 				file,
 				{
 					folder: `brandImages/${user.uid}`,
@@ -549,7 +549,7 @@ export default function SectionInspector({
 					const abortController = upload?.cancelController;
 
 					try {
-						const url = await uploadFileDirectCloudinary(
+						const url = await uploadFileDirectImageKit(
 							file,
 							{
 								folder: `brandImages/${user.uid}/social`,

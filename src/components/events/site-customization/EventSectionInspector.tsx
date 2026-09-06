@@ -12,7 +12,7 @@ import { uploadBrandImageWeb } from "@/lib/storage/upload";
 import UploadImage from "@/components/ui/upload-image";
 import { useToast } from "@/app/hooks/use-toast";
 import { useUploadStore } from "@/lib/stores/upload";
-import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 
 // Firebase imports for event fetching
 import { db } from "@/lib/firebase/firebaseConfig";
@@ -204,7 +204,7 @@ export default function EventSectionInspector({
 
 		try {
 			setUploading(true);
-			const url = await uploadFileDirectCloudinary(
+			const url = await uploadFileDirectImageKit(
 				file,
 				{
 					folder: `events/${templateId}`,
@@ -349,7 +349,7 @@ export default function EventSectionInspector({
 
 										setUploading(true);
 										try {
-											const url = await uploadFileDirectCloudinary(
+											const url = await uploadFileDirectImageKit(
 												file,
 												{
 													folder: `events/${templateId}/logos`,
@@ -821,7 +821,7 @@ export default function EventSectionInspector({
 
 					try {
 						setUploading(true);
-						const url = await uploadFileDirectCloudinary(
+						const url = await uploadFileDirectImageKit(
 							file,
 							{
 								folder: `events/${templateId}/menus`,
@@ -1205,7 +1205,7 @@ export default function EventSectionInspector({
 
 					try {
 						// Using direct upload for progress
-						const url = await uploadFileDirectCloudinary(
+						const url = await uploadFileDirectImageKit(
 							file,
 							{
 								folder: `events/${templateId}/gallery`,
@@ -1276,7 +1276,7 @@ export default function EventSectionInspector({
 							const abortController = upload?.cancelController;
 
 							try {
-								const url = await uploadFileDirectCloudinary(
+								const url = await uploadFileDirectImageKit(
 									file,
 									{
 										folder: `events/${templateId}/gallery`,

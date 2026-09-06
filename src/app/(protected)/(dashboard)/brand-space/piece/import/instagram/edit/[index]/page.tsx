@@ -10,7 +10,7 @@ import OptimizedImage from "@/components/ui/OptimizedImage";
 import { formatWithCommasDouble, getCurrencyFromMap } from "@/lib/format";
 import { type Product } from "@/lib/firebase/queries/product";
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
-import { uploadFileDirectCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { useUploadStore } from "@/lib/stores/upload";
 import { useInstagramImportStore } from "@/lib/stores/instagram-import";
 import { type ProductFulfillmentMethod } from "@/lib/models/product";
@@ -149,7 +149,7 @@ export default function InstagramEditPage({ params }: { params: Promise<{ index:
 				const folder = `productImages/${uid}`;
 				const tags = ["product", "instagram-import", type, uid];
 
-				const url = await uploadFileDirectCloudinary(
+				const url = await uploadFileDirectImageKit(
 					file,
 					{
 						folder,

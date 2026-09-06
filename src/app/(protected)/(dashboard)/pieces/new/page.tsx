@@ -9,10 +9,8 @@ import { formatWithCommasDouble } from "@/lib/format";
 
 import { getCollectionListForBrand } from "@/lib/firebase/queries/collection";
 import { uploadFileGetURL } from "@/lib/storage/upload";
-import {
-	uploadImageCloudinary,
-	uploadFileDirectCloudinary,
-} from "@/lib/storage/cloudinary";
+import { uploadImageCloudinary } from "@/lib/storage/cloudinary";
+import { uploadFileDirectImageKit } from "@/lib/storage/imagekit";
 import { fetchBrandById } from "@/lib/firebase/queries/brandspace";
 import { sendNotificationCF } from "@/lib/firebase/callables/users";
 import { addDropProductCF } from "@/lib/firebase/queries/product";
@@ -188,7 +186,7 @@ export default function NewPiecePage() {
 				const folder = `productImages/${uid}`;
 				const tags = ["product", type, uid];
 
-				const url = await uploadFileDirectCloudinary(
+				const url = await uploadFileDirectImageKit(
 					file,
 					{
 						folder,
