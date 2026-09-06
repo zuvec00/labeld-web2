@@ -24,7 +24,11 @@ Status key: `[ ]` open · `[~]` in progress · `[x]` done
 
 ## P0 — Broken or actively losing data
 
-### [ ] P0-1 · Product image upload on web still goes straight to Cloudinary
+### [~] P0-1 · Product image upload on web still goes straight to Cloudinary
+
+> Code fix landed in 6ff7bc1. Item stays open until the production Cloudinary
+> account status is confirmed and an upload is verified against real ImageKit
+> credentials.
 
 **This is almost certainly the "can't upload products on web" complaint.**
 
@@ -64,8 +68,8 @@ files use the safe `uploadImageCloudinary` wrapper; leave those alone for now.
 
 - [ ] Confirm against production: is the Cloudinary account actually disabled or
       just quota-limited? Determines urgency and whether this is the whole story.
-- [ ] Port ImageKit direct upload to web
-- [ ] Repoint the 7 `uploadFileDirectCloudinary` call sites
+- [x] Port ImageKit direct upload to web (`src/lib/storage/imagekit.ts`, 6ff7bc1)
+- [x] Repoint the 7 `uploadFileDirectCloudinary` call sites
 - [ ] Audit remaining web upload paths for other mobile/web provider drift
       (`uploadProfileImage` on mobile still calls `_uploadImageCloudinary` —
       confirm that is intentional)
