@@ -50,7 +50,7 @@ export default function DomainsPage() {
 	const useCustomDomain = roleDetection?.useCustomDomain;
 	const domainStatus = roleDetection?.customDomainStatus || "pending";
 
-	const SERVER_IP = "216.198.79.1";
+	const SERVER_IP = "216.150.1.1";
 
 	useEffect(() => {
 		if (activeRole !== "brand") {
