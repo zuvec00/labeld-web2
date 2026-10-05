@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Apple, ChevronRight } from "lucide-react";
+import { X, Apple } from "lucide-react";
+import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
+import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
-const BANNER_STORAGE_KEY = "labeld-sidebar-app-promo-dismissed";
+const BANNER_STORAGE_KEY = "labeld-sidebar-app-promo-dismissed-v2";
 
 interface AppStoreBannerProps {
 	role?: "brand" | "eventOrganizer" | "all";
@@ -75,16 +77,26 @@ export default function AppStoreBanner({ role = "all" }: AppStoreBannerProps) {
 						{description}
 					</p>
 
-					<a
-						href="https://apps.apple.com/app/id6760316742"
-						target="_blank"
-						rel="noopener noreferrer"
-						className="flex items-center justify-center gap-2 w-full py-2 px-4 rounded-xl bg-text text-bg text-xs font-bold hover:opacity-90 transition-all group/btn"
-					>
-						<Apple className="w-4 h-4 fill-current" />
-						GET IT NOW
-						<ChevronRight className="w-3 h-3 group-hover/btn:translate-x-0.5 transition-transform" />
-					</a>
+					<div className="grid grid-cols-2 gap-2">
+						<a
+							href={STUDIO_IOS_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-text text-bg text-[11px] font-bold hover:opacity-90 transition-all"
+						>
+							<Apple className="w-3.5 h-3.5 fill-current" />
+							APP STORE
+						</a>
+						<a
+							href={STUDIO_ANDROID_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-text text-bg text-[11px] font-bold hover:opacity-90 transition-all"
+						>
+							<GooglePlayIcon className="w-3.5 h-3.5" />
+							GOOGLE PLAY
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>
