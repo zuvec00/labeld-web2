@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Apple } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
 import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
 import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 import { ButtonVite } from "@/components/ui/buttonVite";
@@ -79,7 +79,7 @@ const VisualProof = () => {
 									window.open(STUDIO_IOS_URL, "_blank")
 								}
 							>
-								<Apple className="h-4 w-4" />
+								<AppleIcon className="h-4 w-4" />
 								App Store
 							</ButtonVite>
 							<ButtonVite
