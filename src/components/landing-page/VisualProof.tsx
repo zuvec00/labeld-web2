@@ -2,7 +2,9 @@
 
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { Smartphone } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
+import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
+import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 import { ButtonVite } from "@/components/ui/buttonVite";
 
 const mobileScreens = [
@@ -69,16 +71,28 @@ const VisualProof = () => {
 							actual day-to-day close: drops, orders, events, storefront edits, and
 							audience signals in your hand.
 						</p>
-						<ButtonVite
-							size="lg"
-							className="mt-6 h-11 bg-foreground px-6 font-heading text-xs uppercase tracking-[0.16em] text-bg hover:bg-foreground/90"
-							onClick={() =>
-								window.open("https://apps.apple.com/app/id6760316742", "_blank")
-							}
-						>
-							<Smartphone className="h-4 w-4" />
-							Download Studio App
-						</ButtonVite>
+						<div className="mt-6 flex flex-col gap-3 sm:flex-row">
+							<ButtonVite
+								size="lg"
+								className="h-11 bg-foreground px-6 font-heading text-xs uppercase tracking-[0.16em] text-bg hover:bg-foreground/90"
+								onClick={() =>
+									window.open(STUDIO_IOS_URL, "_blank")
+								}
+							>
+								<AppleIcon className="h-4 w-4" />
+								App Store
+							</ButtonVite>
+							<ButtonVite
+								size="lg"
+								className="h-11 bg-foreground px-6 font-heading text-xs uppercase tracking-[0.16em] text-bg hover:bg-foreground/90"
+								onClick={() =>
+									window.open(STUDIO_ANDROID_URL, "_blank")
+								}
+							>
+								<GooglePlayIcon className="h-4 w-4" />
+								Google Play
+							</ButtonVite>
+						</div>
 					</div>
 				</motion.div>
 

@@ -4,7 +4,10 @@ import { ButtonVite } from "@/components/ui/buttonVite";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Smartphone } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
+import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
+import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
 const productChips = ["Storefronts", "Drops", "Events", "Orders"];
 const proofPoints = [
@@ -71,11 +74,22 @@ const Hero = () => {
 							variant="outline"
 							className="h-12 border-border bg-surface px-7 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
 							onClick={() =>
-								window.open("https://apps.apple.com/app/id6760316742", "_blank")
+								window.open(STUDIO_IOS_URL, "_blank")
 							}
 						>
-							<Smartphone className="h-4 w-4" />
-							Download Studio App
+							<AppleIcon className="h-4 w-4" />
+							App Store
+						</ButtonVite>
+						<ButtonVite
+							size="lg"
+							variant="outline"
+							className="h-12 border-border bg-surface px-7 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
+							onClick={() =>
+								window.open(STUDIO_ANDROID_URL, "_blank")
+							}
+						>
+							<GooglePlayIcon className="h-4 w-4" />
+							Google Play
 						</ButtonVite>
 					</div>
 

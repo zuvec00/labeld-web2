@@ -6,6 +6,7 @@ import Link from "next/link";
 import { GradientText } from "@/components/ui/GradientText";
 import { subscribeToNewsletter } from "@/lib/firebase/queries/newsletter";
 import { useState } from "react";
+import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
 export default function Footer() {
 	const [email, setEmail] = useState("");
@@ -131,20 +132,20 @@ export default function Footer() {
 								Labeld Events
 							</a>
 							<a
-								href="https://apps.apple.com/app/id6760316742"
+								href={STUDIO_IOS_URL}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="block text-text-muted hover:text-cta transition-colors text-sm font-manrope"
 							>
-								Download Labeld Studio
+								Labeld Studio for iOS
 							</a>
 							<a
-								href="https://labeld.app"
+								href={STUDIO_ANDROID_URL}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="block text-text-muted hover:text-cta transition-colors text-sm font-manrope"
 							>
-								Join Android Waitlist
+								Labeld Studio for Android
 							</a>
 						</div>
 					</div>

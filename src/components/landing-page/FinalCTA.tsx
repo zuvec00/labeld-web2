@@ -4,7 +4,10 @@ import { ButtonVite as Button } from "@/components/ui/buttonVite";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import { ArrowRight, Smartphone } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
+import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
+import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
 const FinalCTA = () => {
 	const ref = useRef<HTMLElement>(null);
@@ -62,10 +65,19 @@ const FinalCTA = () => {
 							size="lg"
 							variant="outline"
 							className="flex h-12 items-center gap-2 border-border bg-surface px-8 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
-							onClick={() => window.open("https://apps.apple.com/app/id6760316742", "_blank")}
+							onClick={() => window.open(STUDIO_IOS_URL, "_blank")}
 						>
-							<Smartphone className="h-4 w-4" />
-							Download Studio App
+							<AppleIcon className="h-4 w-4" />
+							App Store
+						</Button>
+						<Button
+							size="lg"
+							variant="outline"
+							className="flex h-12 items-center gap-2 border-border bg-surface px-8 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
+							onClick={() => window.open(STUDIO_ANDROID_URL, "_blank")}
+						>
+							<GooglePlayIcon className="h-4 w-4" />
+							Google Play
 						</Button>
 					</div>
 				</motion.div>
