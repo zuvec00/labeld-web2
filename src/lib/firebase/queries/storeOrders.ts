@@ -40,6 +40,28 @@ export interface StoreOrdersResult {
 // ... (keep existing helper functions: parseStoreOrder, getVendorLineStatuses, getFulfillmentData, getTimelineEvents)
 
 // Parse store order document
+/**
+ * Whether a raw `storeOrders` document is a storefront checkout nobody paid for.
+ *
+ * `prepareStoreCheckout` writes the order document before the shopper reaches
+ * Paystack, so closing the popup, a declined card, or an abandoned tab leaves
+ * it at `status: "pending"` with no payment behind it. Showing those to the
+ * brand made phantom sales look like real unpaid orders.
+ *
+ * Manual sales are excluded on purpose: a brand records those as Unpaid
+ * itself and settles them later by invoice or payment link, so they must stay
+ * visible. The tell is `saleType === "manual_sale"` plus the absence of the
+ * `checkout` block that only `prepareStoreCheckout` writes.
+ */
+function isAbandonedCheckout(data: DocumentData): boolean {
+  return (
+    data.status === "pending" &&
+    data.saleType !== "manual_sale" &&
+    !!data.checkout &&
+    !data.paidAt
+  );
+}
+
 function parseStoreOrder(doc: QueryDocumentSnapshot<DocumentData>): StoreOrderDoc {
   const data = doc.data();
   return {
@@ -275,10 +297,22 @@ export async function getStoreOrders(
     }
 
     const snapshot = await getDocs(q);
-    const docs = snapshot.docs;
-    const hasMore = docs.length > limitCount;
-    const ordersToProcess = hasMore ? docs.slice(0, limitCount) : docs;
-    const lastVisible = ordersToProcess.length > 0 ? ordersToProcess[ordersToProcess.length - 1] : undefined;
+
+    // Paging must be decided on what the server returned, NOT on the filtered
+    // list. Filtering first would let a page made mostly of abandoned
+    // checkouts report hasMore: false and hide the real orders behind it.
+    const rawDocs = snapshot.docs;
+    const hasMore = rawDocs.length > limitCount;
+    const pageDocs = hasMore ? rawDocs.slice(0, limitCount) : rawDocs;
+
+    // Cursor also comes from the raw page, so the next request resumes past
+    // the abandoned checkouts instead of re-reading them.
+    const lastVisible = pageDocs.length > 0 ? pageDocs[pageDocs.length - 1] : undefined;
+
+    // Abandoned checkouts are not real orders — drop them from what is shown.
+    // A page can therefore render fewer than `limitCount` rows.
+    const ordersToProcess = pageDocs.filter((d) => !isAbandonedCheckout(d.data()));
+    const docs = ordersToProcess;
     
     console.log("🔍 Debug - Store orders query results:", { 
       brandId, 
@@ -370,7 +404,9 @@ export function watchStoreOrders(
 
       unsubscribe = onSnapshot(q, async (snapshot) => {
         try {
-          const basicOrders = snapshot.docs.map(parseStoreOrder);
+          const basicOrders = snapshot.docs
+            .filter((d) => !isAbandonedCheckout(d.data()))
+            .map(parseStoreOrder);
           
           // PERFORMANCE OPTIMIZATION: Batch fetch subcollections
           const subcollections = await batchGetSubcollections(
@@ -515,15 +551,22 @@ export async function getStoreOrderCounts(userId: string): Promise<{
         const qBase = query(ordersRef, where("brandId", "==", brandId));
         
         // Run queries in parallel
-        const [totalSnap, pendingSnap, paidSnap, completedSnap] = await Promise.all([
+        const [totalSnap, allPendingSnap, pendingSnap, paidSnap, completedSnap] = await Promise.all([
             getCountFromServer(qBase),
             getCountFromServer(query(qBase, where("status", "==", "pending"))),
+            // Only manual sales count as genuinely unpaid. Bare pending docs
+            // are abandoned storefront checkouts, which are not orders.
+            getCountFromServer(query(qBase, where("status", "==", "pending"), where("saleType", "==", "manual_sale"))),
             getCountFromServer(query(qBase, where("status", "==", "paid"))),
             getCountFromServer(query(qBase, where("status", "==", "completed")))
         ]);
 
         const counts = {
-            total: totalSnap.data().count,
+            // Drop abandoned checkouts from the total so it matches the list.
+            total:
+                totalSnap.data().count -
+                allPendingSnap.data().count +
+                pendingSnap.data().count,
             unpaid: pendingSnap.data().count,
             awaiting_fulfillment: paidSnap.data().count, // Note: This counts ALL paid orders. UI logic might refine this further if needed.
             completed: completedSnap.data().count
