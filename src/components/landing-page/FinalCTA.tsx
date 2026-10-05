@@ -4,7 +4,8 @@ import { ButtonVite as Button } from "@/components/ui/buttonVite";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useRef } from "react";
-import { ArrowRight, Apple } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
 import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
 import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
@@ -66,7 +67,7 @@ const FinalCTA = () => {
 							className="flex h-12 items-center gap-2 border-border bg-surface px-8 font-heading text-xs uppercase tracking-[0.16em] text-foreground hover:bg-bg"
 							onClick={() => window.open(STUDIO_IOS_URL, "_blank")}
 						>
-							<Apple className="h-4 w-4" />
+							<AppleIcon className="h-4 w-4" />
 							App Store
 						</Button>
 						<Button

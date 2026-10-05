@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { X, Apple } from "lucide-react";
+import { X } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
 import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
 import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
@@ -84,7 +85,7 @@ export default function AppStoreBanner({ role = "all" }: AppStoreBannerProps) {
 							rel="noopener noreferrer"
 							className="flex items-center justify-center gap-1.5 py-2 px-2 rounded-xl bg-text text-bg text-[11px] font-bold hover:opacity-90 transition-all"
 						>
-							<Apple className="w-3.5 h-3.5 fill-current" />
+							<AppleIcon className="w-3.5 h-3.5" />
 							APP STORE
 						</a>
 						<a

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Apple, ArrowUpRight, CheckCircle2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2 } from "lucide-react";
 import Footer from "@/components/landing-page/Footer";
+import AppleIcon from "@/components/ui/AppleIcon";
 import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
 import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
@@ -134,7 +135,7 @@ export default function AndroidPage() {
 										target="_blank"
 										className="inline-flex items-center justify-center gap-2 border border-border bg-bg px-5 py-3 font-heading text-xs uppercase tracking-[0.14em] text-foreground transition hover:bg-surface"
 									>
-										<Apple className="h-4 w-4" />
+										<AppleIcon className="h-4 w-4" />
 										App Store
 									</Link>
 								</div>

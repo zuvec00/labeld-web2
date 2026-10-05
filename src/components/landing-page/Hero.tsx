@@ -4,7 +4,8 @@ import { ButtonVite } from "@/components/ui/buttonVite";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight, CheckCircle2, Apple } from "lucide-react";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
+import AppleIcon from "@/components/ui/AppleIcon";
 import GooglePlayIcon from "@/components/ui/GooglePlayIcon";
 import { STUDIO_ANDROID_URL, STUDIO_IOS_URL } from "@/lib/appLinks";
 
@@ -76,7 +77,7 @@ const Hero = () => {
 								window.open(STUDIO_IOS_URL, "_blank")
 							}
 						>
-							<Apple className="h-4 w-4" />
+							<AppleIcon className="h-4 w-4" />
 							App Store
 						</ButtonVite>
 						<ButtonVite
