@@ -2,7 +2,7 @@
 // Server-only flags. Do NOT export anything that leaks secrets.
 // We only expose booleans for gating UI.
 
-export type FeatureKey = 'events' | 'orders' | 'wallet' | 'sales' | 'brandspace' | 'installPrompt';
+export type FeatureKey = 'events' | 'orders' | 'wallet' | 'sales' | 'brandspace' | 'installPrompt' | 'collabs';
 
 export type FeatureConfig = Record<FeatureKey, boolean>;
 
@@ -14,7 +14,8 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     wallet: true, 
     sales: true,
     brandspace: true,
-    installPrompt: true
+    installPrompt: true,
+    collabs: true
   },
   test: { 
     events: true, 
@@ -22,7 +23,8 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     wallet: true, 
     sales: true,
     brandspace: true,
-    installPrompt: true
+    installPrompt: true,
+    collabs: true
   },
   staging: { 
     events: true, 
@@ -30,7 +32,8 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     wallet: true, 
     sales: true,
     brandspace: true,
-    installPrompt: true
+    installPrompt: true,
+    collabs: false
   },
   production: { 
     events: true, 
@@ -38,7 +41,8 @@ const defaults: Record<'development' | 'production' | 'test' | 'staging', Featur
     wallet: true, 
     sales: true,
     brandspace: true,
-    installPrompt: true
+    installPrompt: true,
+    collabs: false
   },
 };
 
@@ -56,6 +60,8 @@ const overrides: Partial<FeatureConfig> = {
   sales: bool(process.env.FEATURE_OVERRIDE_SALES),
   installPrompt: bool(process.env.FEATURE_OVERRIDE_INSTALL_PROMPT),
 //   brandspace: bool(process.env.FEATURE_OVERRIDE_BRANDSPACE),
+  // Only set when the env var exists, so an unset var doesn't force the flag off.
+  ...(process.env.FEATURE_OVERRIDE_COLLABS !== undefined && { collabs: bool(process.env.FEATURE_OVERRIDE_COLLABS) }),
 };
 
 // Optional CI/ops flags for staging/prod enablement (server secrets)
@@ -66,6 +72,7 @@ const serverEnables: Partial<FeatureConfig> = {
   sales: bool(process.env.FEATURE_ENABLE_SALES),
   installPrompt: bool(process.env.FEATURE_ENABLE_INSTALL_PROMPT),
 //   brandspace: bool(process.env.FEATURE_ENABLE_BRANDSPACE),
+  ...(process.env.FEATURE_ENABLE_COLLABS !== undefined && { collabs: bool(process.env.FEATURE_ENABLE_COLLABS) }),
 };
 
 const base = defaults[env];
