@@ -33,6 +33,11 @@ export type Product = {
   brandId: string;
   userId?: string;
 
+  // Brand collab (read-only; stamped by the backend). Collab products are
+  // edited in the Studio app, where partner changes are coordinated.
+  collabId?: string | null;
+  collabLabel?: string | null;
+
   // Basics
   dropName: string;
   description?: string | null;

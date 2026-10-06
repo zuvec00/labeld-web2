@@ -113,6 +113,8 @@ export async function fetchProductById(id: string): Promise<Product | null> {
     brandLogoUrl: d.brandLogoUrl ?? null,
     reviewSummary: d.reviewSummary ?? null,
     fulfillment: d.fulfillment ?? null,
+    collabId: d.collabId ?? null,
+    collabLabel: d.collabLabel ?? null,
   };
 }
 

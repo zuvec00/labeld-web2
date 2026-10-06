@@ -655,6 +655,25 @@ export default function EditPiecePage() {
 		);
 	}
 
+	// Collab products are shared with partner brands; direct web edits are
+	// blocked by Firestore rules, so point the brand to the app.
+	if (product.collabId) {
+		return (
+			<div className="min-h-dvh grid place-items-center px-6">
+				<div className="text-center max-w-sm">
+					<h1 className="font-heading font-semibold text-xl">Collab product</h1>
+					<p className="text-text-muted mt-2">
+						{product.dropName} is part of {product.collabLabel || "a collab"}. Edit it in the Labeld Studio app,
+						where changes are shared with your partner brands.
+					</p>
+					<div className="mt-6">
+						<Button text="Back" onClick={() => router.back()} />
+					</div>
+				</div>
+			</div>
+		);
+	}
+
 	return (
 		<div className="pb-24">
 			<div className="px-4 sm:px-6 pt-6">
