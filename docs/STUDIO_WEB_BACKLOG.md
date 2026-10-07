@@ -152,6 +152,15 @@ Worth a compliance check — confirm which one actually purges brand data.
 
 ## P2 — Whole features absent from web
 
+### [ ] P2-0 · Brand collabs (Pro) — mobile-only for now (added 2026-10-07)
+
+Collabs ship in the Studio mobile app first. Web Studio only shows "edit this
+collab product in the app". Later on web: collabs list, create/invite (Pro
+brands only), workspace (overview, products + suggestions, sales, shipping
+hand-offs, activity), share link. Marketplace display of collab products is
+also deferred (tracked in the consumer app's revamp backlog). Details:
+`Labeld Documents/collabs/COLLABS_V1_TRACKER.md`.
+
 ### [~] P2-1 · Shipping & fulfillment (Terminal Africa) — the largest hole
 
 Phased. **Phase 1 (settings, strategy, pickup addresses) is done — bda20c6.**
