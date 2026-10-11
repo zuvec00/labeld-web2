@@ -60,3 +60,32 @@ export async function attachReferralCodeCF(code: string): Promise<string | null>
 	}
 	return "Could not apply your referral code.";
 }
+
+export type ReferralOffer = {
+	/** The brand signed up with an ambassador's code (hide the free promo). */
+	hasReferral: boolean;
+	/** This checkout will actually take the discount off the first payment. */
+	eligible: boolean;
+	discountPercent: number | null;
+};
+
+/**
+ * Asks the server what the pricing page should show this brand. The discount
+ * only exists when the program is switched on and the brand qualifies, so the
+ * page must never promise it on its own. Returns null on any failure, which
+ * leaves the pricing page exactly as it is without referrals.
+ */
+export async function getReferralOfferCF(isLive: boolean): Promise<ReferralOffer | null> {
+	try {
+		const callable = httpsCallable(getFunctions(getApp()), "getReferralOffer");
+		const { data } = await callable({ isLive });
+		const d = data as Partial<ReferralOffer>;
+		return {
+			hasReferral: d.hasReferral === true,
+			eligible: d.eligible === true,
+			discountPercent: typeof d.discountPercent === "number" ? d.discountPercent : null,
+		};
+	} catch {
+		return null;
+	}
+}
