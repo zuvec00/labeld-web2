@@ -18,6 +18,7 @@ import {
 import { uploadBrandImageWeb } from "@/lib/storage/upload";
 import { uploadBrandImageCloudinary } from "@/lib/storage/cloudinary";
 import { updateUserCF } from "@/lib/firebase/callables/users";
+import { attachReferralCodeCF } from "@/lib/firebase/callables/referrals";
 
 export default function BrandSetupStep2() {
 	const router = useRouter();
@@ -37,6 +38,7 @@ export default function BrandSetupStep2() {
 		instagram,
 		youtube,
 		tiktok,
+		referralCode,
 	} = useBrandOnboard();
 
 	const [loading, setLoading] = useState(false);
@@ -132,6 +134,17 @@ export default function BrandSetupStep2() {
 				youtube: youtube || null,
 				tiktok: tiktok || null,
 			});
+
+			// Lock in the ambassador referral typed at signup, if any. A
+			// failure here must not block the brand from finishing signup.
+			if (referralCode) {
+				const referralError = await attachReferralCodeCF(referralCode);
+				if (referralError) {
+					alert(
+						`Your brand is ready, but we couldn't apply your referral code: ${referralError}`,
+					);
+				}
+			}
 
 			// 4) Update user flags
 			await updateUserCF({

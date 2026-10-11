@@ -6,6 +6,8 @@ import { slugify } from "@/lib/utils";
 import { useUsernameAvailability } from "@/lib/hooks/useUsernameAvailability";
 import { ArrowRight, Check, X, Loader2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
+import { BRAND_CATEGORIES } from "@/lib/constants/brandCategories";
+import ReferralCodeField from "@/components/brand/forms/ReferralCodeField";
 
 interface IdentityStepProps {
 	onNext: () => void;
@@ -13,7 +15,8 @@ interface IdentityStepProps {
 }
 
 export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
-	const { brandName, brandUsername, brandCategory, set } = useBrandOnboard();
+	const { brandName, brandUsername, brandCategory, referralOk, set } =
+		useBrandOnboard();
 
 	// Track whether the user has manually edited the handle
 	const userEditedHandle = useRef(brandUsername.length > 0);
@@ -60,7 +63,8 @@ export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 		brandUsername.trim().length > 0 &&
 		brandCategory !== null &&
 		!usernameError &&
-		isAvailable;
+		isAvailable &&
+		referralOk;
 
 	const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		userEditedHandle.current = true;
@@ -171,33 +175,23 @@ export default function IdentityStep({ onNext, onBack }: IdentityStepProps) {
 							<option value="" disabled>
 								Pick what fits your brand the most
 							</option>
-							<option value="Afrofusion">Afrofusion</option>
-							<option value="Alt / Grunge">Alt / Grunge</option>
-							<option value="Athleisure">Athleisure</option>
-							<option value="Casual Basics">Casual Basics</option>
-							<option value="Custom / Made-to-Order">
-								Custom / Made-to-Order
-							</option>
-							<option value="Genderless / Androgynous">
-								Genderless / Androgynous
-							</option>
-							<option value="Luxury / Designer-Inspired">
-								Luxury / Designer-Inspired
-							</option>
-							<option value="Minimal Street">Minimal Street</option>
-							<option value="Retro / Y2K">Retro / Y2K</option>
-							<option value="Skatewear">Skatewear</option>
-							<option value="Streetwear">Streetwear</option>
-							<option value="Sustainable / Eco-Conscious">
-								Sustainable / Eco-Conscious
-							</option>
-							<option value="Techwear / Futuristic">
-								Techwear / Futuristic
-							</option>
-							<option value="Thrift / Vintage">Thrift / Vintage</option>
-							<option value="Other">Other</option>
+							{Object.entries(BRAND_CATEGORIES).map(([group, types]) => (
+								<optgroup
+									key={group}
+									label={group === "core" ? "Core Fashion" : "Extended Categories"}
+								>
+									{types.map((t) => (
+										<option key={t} value={t}>
+											{t}
+										</option>
+									))}
+								</optgroup>
+							))}
 						</select>
 					</div>
+
+					{/* Referral code (optional) */}
+					<ReferralCodeField variant="underline" />
 				</div>
 			</div>
 
