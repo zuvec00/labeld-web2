@@ -514,7 +514,9 @@ export default function AuthForm({
 					</div>
 
 					{/* Social buttons */}
-					<div className="grid grid-cols-2 gap-3">
+					<div
+						className={`grid gap-3 ${isIOS ? "grid-cols-2" : "grid-cols-1"}`}
+					>
 						<IconButton
 							text={googleLoading ? "Signing in..." : "Google"}
 							iconSrc="/icons/google.svg"
