@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import HelpMenu from "@/components/dashboard/HelpMenu";
 import NotificationBell from "@/components/dashboard/NotificationBell";
+import StoreSetupBadge from "@/components/dashboard/StoreSetupBadge";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -231,6 +232,9 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 							</span>
 							<Eye className="w-4 h-4 text-text-muted group-hover:text-accent transition-colors" />
 						</button>
+					)}
+					{activeRole === "brand" && (
+						<StoreSetupBadge className="hidden sm:inline-flex" />
 					)}
 
 					<div className="h-8 w-[1px] bg-stroke hidden sm:block"></div>
