@@ -17,10 +17,19 @@ import {
 } from "@/hooks/useBrandSpace";
 import Link from "next/link";
 import Image from "next/image";
+import DataState from "@/components/ui/DataState";
+import EmptyState from "@/components/ui/EmptyState";
+import { SkeletonGrid, SkeletonRows } from "@/components/ui/skeleton";
 
 interface MomentumSectionProps {
 	data: BrandSpaceData | null;
+	/** Whole-section skeleton (e.g. no data object yet). */
 	loading?: boolean;
+	/** Per-column loading so a slow query never shows a false empty state. */
+	contentLoading?: boolean;
+	catalogLoading?: boolean;
+	error?: string | null;
+	onRetry?: () => void;
 }
 
 // Content performance tag types
@@ -153,6 +162,10 @@ function CatalogCard({ item }: { item: CatalogItem }) {
 export default function MomentumSection({
 	data,
 	loading = false,
+	contentLoading = false,
+	catalogLoading = false,
+	error = null,
+	onRetry,
 }: MomentumSectionProps) {
 	if (loading || !data) {
 		return (
@@ -218,24 +231,27 @@ export default function MomentumSection({
 						</Link>
 					</div>
 
-					{recentContent.length > 0 ? (
+					<DataState
+						loading={contentLoading}
+						error={error}
+						onRetry={onRetry}
+						errorTitle="Couldn't load posts"
+						isEmpty={recentContent.length === 0}
+						skeleton={<SkeletonGrid count={6} />}
+						empty={
+							<EmptyState
+								icon={FileText}
+								title="No posts yet"
+								action={{ label: "Create your first post →", href: "/radar" }}
+							/>
+						}
+					>
 						<div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
 							{recentContent.slice(0, 6).map((content) => (
 								<ContentCard key={content.id} content={content} />
 							))}
 						</div>
-					) : (
-						<div className="p-8 rounded-xl border border-dashed border-stroke text-center">
-							<FileText className="w-8 h-8 text-text-muted mx-auto mb-2" />
-							<p className="text-sm text-text-muted">No posts yet</p>
-							<Link
-								href="/radar"
-								className="inline-block mt-2 text-xs text-cta hover:text-cta/80"
-							>
-								Create your first post →
-							</Link>
-						</div>
-					)}
+					</DataState>
 				</div>
 
 				{/* Catalog Snapshot */}
@@ -251,24 +267,27 @@ export default function MomentumSection({
 						</Link>
 					</div>
 
-					{catalogItems.length > 0 ? (
+					<DataState
+						loading={catalogLoading}
+						error={error}
+						onRetry={onRetry}
+						errorTitle="Couldn't load products"
+						isEmpty={catalogItems.length === 0}
+						skeleton={<SkeletonRows count={4} />}
+						empty={
+							<EmptyState
+								icon={Package}
+								title="No pieces yet"
+								action={{ label: "Add your first piece →", href: "/pieces" }}
+							/>
+						}
+					>
 						<div className="space-y-3">
 							{catalogItems.slice(0, 4).map((item) => (
 								<CatalogCard key={item.id} item={item} />
 							))}
 						</div>
-					) : (
-						<div className="p-8 rounded-xl border border-dashed border-stroke text-center">
-							<Package className="w-8 h-8 text-text-muted mx-auto mb-2" />
-							<p className="text-sm text-text-muted">No pieces yet</p>
-							<Link
-								href="/pieces"
-								className="inline-block mt-2 text-xs text-cta hover:text-cta/80"
-							>
-								Add your first piece →
-							</Link>
-						</div>
-					)}
+					</DataState>
 				</div>
 			</div>
 		</div>

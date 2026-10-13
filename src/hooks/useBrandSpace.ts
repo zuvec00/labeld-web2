@@ -120,6 +120,7 @@ export function useBrandSpace(filters: BrandSpaceFilters) {
     content: false
   });
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -143,18 +144,23 @@ export function useBrandSpace(filters: BrandSpaceFilters) {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    abortControllerRef.current = new AbortController();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    // A newer run (range change / refresh) aborts this controller; stale
+    // runs must not touch state or they would clear the new run's loading flags.
+    const isStale = () => controller.signal.aborted;
 
     const fetchBrandSpaceData = async () => {
       try {
         setLoading(true);
         setError(null);
+        // Every section is loading until its own fetch resolves
         setLoadingProgress({
-          kpis: false,
-          engagement: false,
-          reactions: false,
-          catalog: false,
-          content: false
+          kpis: true,
+          engagement: true,
+          reactions: true,
+          catalog: true,
+          content: true
         });
 
         const brandId = user.uid;
@@ -193,58 +199,70 @@ export function useBrandSpace(filters: BrandSpaceFilters) {
         setData(initialData);
 
         // 1. Load KPIs first (most critical)
-        setLoadingProgress(prev => ({ ...prev, kpis: true }));
         const kpisData = await fetchKPIsData(brandId, dateRange);
+        if (isStale()) return;
         setData(prev => prev ? { ...prev, kpis: kpisData.kpis, heatLog: kpisData.heatLog } : null);
         setLoadingProgress(prev => ({ ...prev, kpis: false }));
 
-        // 2. Load engagement data in parallel with catalog
-        const [engagementData, catalogData] = await Promise.all([
-          fetchEngagementData(brandId, dateRange),
-          fetchCatalogData(brandId)
+        // 2. Engagement and catalog in parallel; each section is marked
+        //    loaded as soon as its own data lands.
+        await Promise.all([
+          fetchEngagementData(brandId, dateRange).then(engagementData => {
+            if (isStale()) return;
+            setData(prev => prev ? { ...prev, engagement: engagementData } : null);
+            setLoadingProgress(prev => ({ ...prev, engagement: false }));
+          }),
+          fetchCatalogData(brandId).then(catalogData => {
+            if (isStale()) return;
+            setData(prev => prev ? { ...prev, catalogItems: catalogData } : null);
+            setLoadingProgress(prev => ({ ...prev, catalog: false }));
+          })
         ]);
 
-        setLoadingProgress(prev => ({ ...prev, engagement: true }));
-        setData(prev => prev ? { ...prev, engagement: engagementData } : null);
-        setLoadingProgress(prev => ({ ...prev, engagement: false }));
-
-        setLoadingProgress(prev => ({ ...prev, catalog: true }));
-        setData(prev => prev ? { ...prev, catalogItems: catalogData } : null);
-        setLoadingProgress(prev => ({ ...prev, catalog: false }));
-
-        // 3. Load reactions and content in parallel
-        const [reactionsData, contentData] = await Promise.all([
-          fetchReactionsData(brandId, dateRange),
-          fetchContentData(brandId)
+        // 3. Reactions and content in parallel
+        await Promise.all([
+          fetchReactionsData(brandId, dateRange).then(reactionsData => {
+            if (isStale()) return;
+            setData(prev => prev ? { ...prev, reactions: reactionsData } : null);
+            setLoadingProgress(prev => ({ ...prev, reactions: false }));
+          }),
+          fetchContentData(brandId).then(contentData => {
+            if (isStale()) return;
+            setData(prev => prev ? { ...prev, recentContent: contentData } : null);
+            setLoadingProgress(prev => ({ ...prev, content: false }));
+          })
         ]);
-
-        setLoadingProgress(prev => ({ ...prev, reactions: true }));
-        setData(prev => prev ? { ...prev, reactions: reactionsData } : null);
-        setLoadingProgress(prev => ({ ...prev, reactions: false }));
-
-        setLoadingProgress(prev => ({ ...prev, content: true }));
-        setData(prev => prev ? { ...prev, recentContent: contentData } : null);
-        setLoadingProgress(prev => ({ ...prev, content: false }));
 
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
           return; // Request was cancelled
         }
+        if (isStale()) return;
         console.error("Error fetching BrandSpace data:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch data");
       } finally {
-        setLoading(false);
+        if (!isStale()) {
+          setLoading(false);
+          setLoadingProgress({
+            kpis: false,
+            engagement: false,
+            reactions: false,
+            catalog: false,
+            content: false
+          });
+        }
       }
     };
 
     fetchBrandSpaceData();
-  }, [user, dateRange]);
+  }, [user, dateRange, refreshKey]);
 
   const refresh = () => {
     if (user) {
-      setData(null);
+      // Drop cached sections so a manual refresh/retry really refetches
+      cache.clear();
       setError(null);
-      setLoading(true);
+      setRefreshKey(k => k + 1);
     }
   };
 

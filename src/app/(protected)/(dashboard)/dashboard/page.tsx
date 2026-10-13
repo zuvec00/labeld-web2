@@ -302,7 +302,10 @@ export default function DashboardPage() {
 					{/* Section B: Momentum & Content - Is your audience reacting? */}
 					<MomentumSection
 						data={brandData}
-						loading={loadingProgress.content || loadingProgress.catalog}
+						contentLoading={loadingProgress.content}
+						catalogLoading={loadingProgress.catalog}
+						error={error}
+						onRetry={refreshBrand}
 					/>
 				</>
 			)}
