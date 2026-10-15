@@ -1,5 +1,7 @@
 # Studio Web — Parity & Correctness Backlog
 
+> **Superseded 2026-10-15 by `STUDIO_WEB_PARITY_AUDIT.md`.** That file is the single source of truth and holds the build tracker (section 7). This file is kept for history; several items here are stale (see its section 6).
+
 Tracking what `studio.labeld.app` is behind on relative to Studio Mobile and the
 backend. Audited 2026-09-06 off `main` (`1f864ca`).
 
