@@ -571,6 +571,12 @@ Status: Phase 0 ☐ · Phase 1 ☐ · Phase 2 ☐ · Phase 3 ☐ · Phase 4 ☐ 
 - [ ] B-4 Retire the payout-schedule selector (`PayoutSettings`, `PayoutScheduleSelector`, `PayoutFeeCalculator`)
 - [ ] O-2 Invoices, receipts, payment links (incl. free-plan limit upsell)
 - [ ] M-4 Billing: retry, cancel, resume, cancel-Pro save flow, payment history
+- [ ] M-4 Free Pro trial on web (added 2026-10-18 from the Pro free trial project; mobile and backend are built, see `Labeld Documents/Engineering/pro-trial-tracker.md`). Backend callables to use: `getTrialStatus`, `startProTrial` (no card, 14 days, only brands the server says are eligible):
+  - Billing page (`BillingSettings.tsx`): "Free trial" badge, end date and days left, a "Keep Pro" button, and no cancel or resume for a trial brand (the status badge only knows active, past_due and cancelled today). `useDashboardContext.ts` should expose `isTrial`
+  - Pricing page (`pricing/page.tsx`): a trial brand must still be able to upgrade (do not show it as "already Pro"); show a "Try Pro free for N days" card to eligible brands; keep the First 100 Brands promo banner working
+  - Dashboard (H-1): the trial offer and countdown cards, and the "Try Pro free" wording on the upgrade banner (mobile Home and More already do this)
+  - Plan gates need no change: web checks `brandSubscriptionTier === "pro"`, and a trial brand is Pro until it ends
+  - Optional: the one-time plan choice after web onboarding (mobile shows it at `/pricing?first=1`)
 - [ ] M-3 Studio credits page + purchase (`BrandCredits`, usage docs)
 - [ ] [Bk] Resolve `extractExpenseFromReceipt` (not in backend source)
 - [ ] ⛳ Gate: withdraw in Paystack test mode end to end; invoice PDF matches mobile's
