@@ -15,6 +15,7 @@ import {
 } from "@/lib/firebase/callables/shipping";
 import { AlertCircle } from "lucide-react";
 import { formatFulfillmentSummary } from "@/lib/models/product";
+import { hasPendingCustomerCourierBooking } from "@/lib/orders/courierBooking";
 
 interface StoreOrderDetailDrawerProps {
 	order: StoreOrderWithVendorStatus | null;
@@ -134,11 +135,14 @@ export default function StoreOrderDetailDrawer({
 		return `ST-${id.slice(-6)}`;
 	};
 
+	// Customer paid for a courier at checkout but nothing is booked yet.
+	const courierLocked = order ? hasPendingCustomerCourierBooking(order) : false;
+
 	const handleUpdateFulfillmentStatus = async (
 		lineKey: string,
 		status: string,
 	) => {
-		if (!order) return;
+		if (!order || courierLocked) return;
 
 		// Add this line to the updating set
 		setUpdatingLines((prev) => new Set(prev).add(lineKey));
@@ -386,6 +390,17 @@ export default function StoreOrderDetailDrawer({
 							<h3 className="text-lg font-medium text-text mb-3">
 								Fulfillment Management
 							</h3>
+							{courierLocked && (
+								<div className="mb-4 flex items-start gap-2 rounded-lg border border-edit/30 bg-edit/10 p-3 text-sm text-text">
+									<AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0 text-edit" />
+									<p>
+										The customer paid for a courier at checkout, but it
+										hasn&apos;t been booked yet. Book it in the Labeld Studio
+										mobile app first. Marking this order fulfilled here would
+										close it without the parcel ever being dispatched.
+									</p>
+								</div>
+							)}
 							{fulfillmentLines.length > 0 ? (
 								<div className="space-y-4">
 									{fulfillmentLines.map((line, index) => (
@@ -419,7 +434,14 @@ export default function StoreOrderDetailDrawer({
 																	e.target.value,
 																)
 															}
-															disabled={updatingLines.has(line.lineKey)}
+															disabled={
+																courierLocked || updatingLines.has(line.lineKey)
+															}
+															title={
+																courierLocked
+																	? "Book the courier in the Labeld Studio mobile app first"
+																	: undefined
+															}
 															className="text-xs border border-stroke rounded px-2 py-1 bg-bg text-text disabled:opacity-50 disabled:cursor-not-allowed"
 														>
 															<option value="unfulfilled">Unfulfilled</option>

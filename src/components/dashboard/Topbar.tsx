@@ -16,6 +16,7 @@ import ThemeToggle from "@/components/ui/ThemeToggle";
 import { useNetworkStatus } from "@/hooks/useNetworkStatus";
 import HelpMenu from "@/components/dashboard/HelpMenu";
 import NotificationBell from "@/components/dashboard/NotificationBell";
+import { getPreferredStorefrontUrl } from "@/lib/brand/storefrontUrl";
 
 interface TopbarProps {
 	onMenuClick?: () => void;
@@ -29,7 +30,7 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 	const [loading, setLoading] = useState(true);
 
 	// Onboarding status for View Store logic
-	const { isComplete } = useBrandOnboardingStatus();
+	const { canViewStore: isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
 	const networkStatus = useNetworkStatus();
 
@@ -86,17 +87,8 @@ export default function Topbar({ onMenuClick }: TopbarProps) {
 		if (activeRole !== "brand") return;
 
 		if (isComplete) {
-			const username = roleDetection?.brandUsername;
-			const slug = roleDetection?.brandSlug || username; // prefer slug for domain
-			const isPro = roleDetection?.brandSubscriptionTier === "pro";
-
-			if (isPro && slug) {
-				// Pro Plan: https://brandslug.labeld.app
-				window.open(`https://${slug}.labeld.app`, "_blank");
-			} else if (!isPro && username) {
-				// Free Plan: https://shop.labeld.app/username
-				window.open(`https://shop.labeld.app/${username}`, "_blank");
-			}
+			const url = getPreferredStorefrontUrl(roleDetection);
+			if (url) window.open(url, "_blank");
 		} else {
 			setShowMaintenance(true);
 		}

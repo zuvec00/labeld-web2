@@ -10,6 +10,8 @@ import {
   serverTimestamp,
   getDocs,
   getDoc,
+  where,
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 
@@ -145,6 +147,66 @@ export async function createCustomerGroup(
 
 export async function deleteCustomerGroup(brandId: string, groupId: string): Promise<void> {
   await deleteDoc(doc(db, "brands", brandId, "custom_segments", groupId));
+}
+
+export interface CustomerOrderSummary {
+  id: string;
+  status: string;
+  totalMinor: number;
+  itemCount: number;
+  createdAt: Date | null;
+}
+
+const digitsOnly = (v: unknown) => String(v ?? "").replace(/\D/g, "");
+
+/**
+ * A customer's purchase history. Orders carry no reliable customer index, so
+ * (like the mobile profile) we match by customerId first, then deliverTo
+ * email or phone, over the brand's most recent orders.
+ */
+export async function getCustomerOrders(
+  brandId: string,
+  customer: Pick<Customer, "id" | "email" | "phoneNumber">
+): Promise<CustomerOrderSummary[]> {
+  const snap = await getDocs(
+    query(
+      collection(db, "storeOrders"),
+      where("brandId", "==", brandId),
+      orderBy("createdAt", "desc"),
+      limit(500)
+    )
+  );
+
+  const email = customer.email?.trim().toLowerCase() || null;
+  const phone = digitsOnly(customer.phoneNumber) || null;
+
+  return snap.docs
+    .map((d) => ({ id: d.id, data: d.data() as Record<string, any> }))
+    .filter(({ data }) => {
+      // Unpaid storefront checkouts are not real orders
+      if (
+        data.status === "pending" &&
+        data.saleType !== "manual_sale" &&
+        !!data.checkout &&
+        !data.paidAt
+      ) {
+        return false;
+      }
+      if (data.customerId === customer.id) return true;
+      const to = data.deliverTo ?? {};
+      if (email && String(to.email ?? "").trim().toLowerCase() === email) return true;
+      const orderPhone = digitsOnly(to.phoneNumber ?? to.phone);
+      return !!phone && orderPhone === phone;
+    })
+    .map(({ id, data }) => ({
+      id,
+      status: String(data.status ?? "pending"),
+      totalMinor: Number(data.amount?.totalMinor ?? 0),
+      itemCount: Array.isArray(data.lineItems)
+        ? data.lineItems.reduce((n: number, li: any) => n + Number(li?.qty ?? 1), 0)
+        : 0,
+      createdAt: toDate(data.createdAt),
+    }));
 }
 
 export async function getAllCustomers(brandId: string): Promise<Customer[]> {

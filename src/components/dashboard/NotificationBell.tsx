@@ -1,64 +1,86 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import {
-	collection,
-	query,
-	where,
-	orderBy,
-	limit,
-	getDocs,
-} from "firebase/firestore";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
+import { useAuth } from "@/lib/auth/AuthContext";
 import { Announcement } from "@/types/announcement";
 import { Bell } from "lucide-react";
 
+const FEED_LIMIT = 10;
+
+function createdAtMs(item: Announcement): number {
+	const c: any = item.createdAt;
+	if (c?.toMillis) return c.toMillis();
+	if (c?.seconds) return c.seconds * 1000;
+	return 0;
+}
+
 export default function NotificationBell() {
+	const { user } = useAuth();
 	const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 	const [isOpen, setIsOpen] = useState(false);
 	const [unreadCount, setUnreadCount] = useState(0);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		const fetchAnnouncements = async () => {
-			try {
-				const q = query(
-					collection(db, "announcements"),
-					where("isActive", "==", true),
-					orderBy("createdAt", "desc"),
-					limit(5),
+		const fetchFeed = async () => {
+			// The feed is the brand's own notifications merged with global
+			// announcements, newest first (same as the mobile bell). Sorted
+			// client-side so neither query needs a composite index.
+			const load = async (path: string[]) => {
+				const snapshot = await getDocs(
+					query(
+						collection(db, path[0], ...path.slice(1)),
+						where("isActive", "==", true),
+					),
 				);
-				const snapshot = await getDocs(q);
-				const data = snapshot.docs.map((doc) => ({
-					id: doc.id,
-					...doc.data(),
+				return snapshot.docs.map((d) => ({
+					id: d.id,
+					...d.data(),
 				})) as Announcement[];
+			};
 
-				setAnnouncements(data);
+			// allSettled: a failure in one source must not blank the other.
+			const [mine, global] = await Promise.allSettled([
+				user?.uid
+					? load(["users", user.uid, "notifications"])
+					: Promise.resolve([] as Announcement[]),
+				load(["announcements"]),
+			]);
+			if (mine.status === "rejected") {
+				console.error("Error fetching user notifications:", mine.reason);
+			}
+			if (global.status === "rejected") {
+				console.error("Error fetching announcements:", global.reason);
+			}
 
-				// Calculate unread count
-				if (data.length > 0) {
+			const data = [
+				...(mine.status === "fulfilled" ? mine.value : []),
+				...(global.status === "fulfilled" ? global.value : []),
+			]
+				.sort((a, b) => createdAtMs(b) - createdAtMs(a))
+				.slice(0, FEED_LIMIT);
+
+			setAnnouncements(data);
+
+			// Calculate unread count
+			if (data.length > 0) {
+				let lastRead = 0;
+				try {
 					const lastReadStr = localStorage.getItem("lastReadAnnouncementAt");
-					const lastRead = lastReadStr ? parseInt(lastReadStr, 10) : 0;
-
-					const count = data.filter((item) => {
-						const timestamp = item.createdAt?.toMillis
-							? item.createdAt.toMillis()
-							: item.createdAt?.seconds
-								? item.createdAt.seconds * 1000
-								: Date.now();
-						return timestamp > lastRead;
-					}).length;
-
-					setUnreadCount(count);
+					lastRead = lastReadStr ? parseInt(lastReadStr, 10) : 0;
+				} catch {
+					// storage unavailable: treat everything as unread
 				}
-			} catch (error) {
-				console.error("Error fetching announcements:", error);
+				setUnreadCount(data.filter((item) => createdAtMs(item) > lastRead).length);
+			} else {
+				setUnreadCount(0);
 			}
 		};
 
-		fetchAnnouncements();
-	}, []);
+		fetchFeed();
+	}, [user?.uid]);
 
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
@@ -77,7 +99,11 @@ export default function NotificationBell() {
 		setIsOpen(!isOpen);
 		if (!isOpen && unreadCount > 0) {
 			setUnreadCount(0);
-			localStorage.setItem("lastReadAnnouncementAt", Date.now().toString());
+			try {
+				localStorage.setItem("lastReadAnnouncementAt", Date.now().toString());
+			} catch {
+				// storage unavailable: unread badge will reappear next load
+			}
 		}
 	};
 

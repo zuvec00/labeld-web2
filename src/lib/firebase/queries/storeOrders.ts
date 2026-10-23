@@ -87,6 +87,8 @@ function parseStoreOrder(doc: QueryDocumentSnapshot<DocumentData>): StoreOrderDo
     providerRef: data.providerRef || undefined,
     deliverTo: data.deliverTo || undefined,
     shipping: data.shipping || undefined,
+    terminalShipmentId: data.terminalShipmentId ?? null,
+    fulfillmentStatus: data.fulfillmentStatus ?? null,
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
     paidAt: data.paidAt,

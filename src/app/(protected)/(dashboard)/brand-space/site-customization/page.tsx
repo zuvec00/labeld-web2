@@ -29,6 +29,10 @@ import {
 	isSectionLockedForPlan,
 	sanitizeBrandIdentityForPlan,
 } from "@/lib/plans/free-storefront";
+import { getThemeAccess } from "@/lib/plans/theme-access";
+import { getPreferredStorefrontUrl } from "@/lib/brand/storefrontUrl";
+import { getStorefrontThemeEntitlements } from "@/lib/firebase/callables/siteCustomization";
+import { toast } from "@/app/hooks/use-toast";
 
 export default function SiteCustomizationPage() {
 	const router = useRouter();
@@ -39,6 +43,10 @@ export default function SiteCustomizationPage() {
 	// State for templates
 	const [templates, setTemplates] = useState<Template[]>(AVAILABLE_TEMPLATES);
 	const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+	// Premium themes this brand owns (empty until the callable resolves)
+	const [entitledThemeIds, setEntitledThemeIds] = useState<Set<string>>(
+		new Set(),
+	);
 
 	// Active Editor State
 	const [editingTemplateId, setEditingTemplateId] = useState<string | null>(
@@ -146,15 +154,43 @@ export default function SiteCustomizationPage() {
 		return () => unsubscribe();
 	}, [user?.uid, templates, shouldOpenActiveTemplate, editingTemplateId, isPro]);
 
+	// Load which premium themes the brand owns
+	useEffect(() => {
+		if (!user?.uid) return;
+		let cancelled = false;
+		getStorefrontThemeEntitlements(user.uid).then((ids) => {
+			if (!cancelled) setEntitledThemeIds(ids);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [user?.uid]);
+
 	// Handlers
 	const handleUpgrade = () => {
 		setIsUpgradeModalOpen(true);
 	};
 
+	// Theme checkout isn't on web yet (parity task B-7b). Until it is, say so
+	// instead of letting the brand activate a theme the server will reject.
+	const handlePurchaseTheme = (template: Template) => {
+		toast({
+			title: `${template.name} is a premium theme`,
+			description:
+				"Buying themes isn't available on web yet. You can get it in the Labeld Studio mobile app, then it will unlock here.",
+			duration: 6000,
+		});
+	};
+
 	const handleApplyTemplate = async (id: string) => {
 		const template = templates.find((t) => t.id === id);
 		if (!template) return;
-		if (!canUseTemplateForPlan(id, isPro)) {
+		const access = getThemeAccess(template, isPro, entitledThemeIds);
+		if (access === "needs_purchase") {
+			handlePurchaseTheme(template);
+			return;
+		}
+		if (access === "needs_pro") {
 			handleUpgrade();
 			return;
 		}
@@ -314,6 +350,7 @@ export default function SiteCustomizationPage() {
 						<section>
 							<StorefrontStatus
 								username={username}
+								storefrontUrl={getPreferredStorefrontUrl(roleDetection)}
 								brandName={brandName}
 								isPro={isPro}
 							/>
@@ -326,9 +363,11 @@ export default function SiteCustomizationPage() {
 							<TemplateGallery
 								templates={templates}
 								isPro={isPro}
+								entitledThemeIds={entitledThemeIds}
 								activeTemplateId={liveTemplateId}
 								onApply={handleApplyTemplate}
 								onUpgrade={handleUpgrade}
+								onPurchase={handlePurchaseTheme}
 							/>
 						</section>
 
@@ -375,9 +414,10 @@ export default function SiteCustomizationPage() {
 									<Button
 										variant="outline"
 										size="sm"
-										onClick={() =>
-											window.open(`https://${username}.labeld.app`, "_blank")
-										}
+										onClick={() => {
+											const url = getPreferredStorefrontUrl(roleDetection);
+											if (url) window.open(url, "_blank");
+										}}
 									>
 										Preview Store
 									</Button>

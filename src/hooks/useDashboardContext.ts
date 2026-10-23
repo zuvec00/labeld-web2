@@ -14,6 +14,10 @@ interface RoleDetectionResult {
   hasEvents: boolean;
   brandName?: string;
   phoneNumber?: string | null;
+  /** users/{uid}.phoneNumber. Mobile reads the phone from here, web historically from the brand doc. */
+  userPhoneNumber?: string | null;
+  /** True once a storefront template has been activated (brand.storefrontConfig.activatedAt). */
+  storefrontActivated?: boolean;
   organizerName?: string;
   organizerLogoUrl?: string;
   eventSubscriptionTier?: "free" | "pro";
@@ -124,7 +128,8 @@ export function useDashboardContext(): UseDashboardContextReturn {
 
            updateDetectionState((prev) => ({
                ...prev,
-               acquisitionSurvey
+               acquisitionSurvey,
+               userPhoneNumber: userData?.phoneNumber ?? null,
            }));
        });
        
@@ -196,6 +201,9 @@ export function useDashboardContext(): UseDashboardContextReturn {
                customDomain: hasBrandProfile ? snap.data().customDomain : undefined,
                useCustomDomain: hasBrandProfile ? snap.data().useCustomDomain : undefined,
                customDomainStatus: hasBrandProfile ? snap.data().customDomainStatus : undefined,
+               storefrontActivated: hasBrandProfile
+                   ? snap.data().storefrontConfig?.activatedAt != null
+                   : undefined,
            }));
        });
        
