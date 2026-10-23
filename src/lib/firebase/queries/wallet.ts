@@ -1,4 +1,5 @@
 // lib/firebase/queries/wallet.ts
+import { isWithdrawalEntry } from "@/lib/wallet/withdrawals";
 import { 
   doc, 
   getDoc, 
@@ -171,7 +172,10 @@ export function watchWalletLedgerEntries(
 /**
  * Computes earnings by source from ledger entries
  */
-export function computeEarningsBySource(entries: WalletLedgerEntry[]): EarningsBySource {
+export function computeEarningsBySource(allEntries: WalletLedgerEntry[]): EarningsBySource {
+  // A withdrawal's hold row moves money out of the wallet. It is not an earning
+  // and must not be counted as earnings "on hold".
+  const entries = allEntries.filter((e) => !isWithdrawalEntry(e));
   const result: EarningsBySource = {
     event: { eligibleMinor: 0, onHoldMinor: 0 },
     store: { eligibleMinor: 0, onHoldMinor: 0 },

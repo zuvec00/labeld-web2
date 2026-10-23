@@ -70,6 +70,8 @@ function parseStoreOrder(doc: QueryDocumentSnapshot<DocumentData>): StoreOrderDo
     buyerUserId: data.buyerUserId || null,
     status: data.status || "pending",
     lineItems: data.lineItems || [],
+    saleType: data.saleType ?? null,
+    orderNumber: Number.isFinite(Number(data.orderNumber)) ? Number(data.orderNumber) : null,
     amount: {
       currency: data.amount?.currency || "NGN",
       itemsSubtotalMinor: data.amount?.itemsSubtotalMinor || 0,

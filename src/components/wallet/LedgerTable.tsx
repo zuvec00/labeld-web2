@@ -5,6 +5,7 @@ import { WalletLedgerEntry, LedgerType, LedgerSource } from "@/types/wallet";
 import { formatCurrency, formatDate } from "@/lib/wallet/mock";
 import Card from "@/components/dashboard/Card";
 import { Button } from "@/components/ui/button";
+import { withdrawalBadge } from "@/lib/wallet/withdrawals";
 
 interface LedgerTableProps {
 	entries: WalletLedgerEntry[];
@@ -162,7 +163,9 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 
 		const csvData = sortedEntries.map((entry) => [
 			formatDate(entry.createdAt),
-			getTypeLabel(entry.type),
+			entry.withdrawalStatus
+				? `Withdrawal (${withdrawalBadge(entry.withdrawalStatus).label})`
+				: getTypeLabel(entry.type),
 			getSourceLabel(entry.source),
 			getRelevantId(entry),
 			`${entry.type.startsWith("debit") ? "-" : "+"}${(
@@ -347,11 +350,15 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 											</td>
 											<td className="py-3 px-2">
 												<span
-													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getTypeColor(
-														entry.type
-													)}`}
+													className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+														entry.withdrawalStatus
+															? withdrawalBadge(entry.withdrawalStatus).className
+															: getTypeColor(entry.type)
+													}`}
 												>
-													{getTypeLabel(entry.type)}
+													{entry.withdrawalStatus
+														? `Withdrawal · ${withdrawalBadge(entry.withdrawalStatus).label}`
+														: getTypeLabel(entry.type)}
 												</span>
 											</td>
 											<td className="py-3 px-2 text-sm text-text">
@@ -365,6 +372,12 @@ export default function LedgerTable({ entries, filters }: LedgerTableProps) {
 													entry.type.startsWith("debit")
 														? "text-alert"
 														: "text-accent"
+												} ${
+													// A reversed or cancelled withdrawal never left the wallet
+													entry.withdrawalStatus === "reversed" ||
+													entry.withdrawalStatus === "cancelled"
+														? "line-through opacity-60"
+														: ""
 												}`}
 											>
 												{entry.type.startsWith("debit") ? "-" : "+"}
