@@ -1,6 +1,6 @@
 // hooks/useBankAccount.ts
 import { useState, useCallback } from "react";
-import { doc, updateDoc, setDoc } from "firebase/firestore";
+import { doc, updateDoc, setDoc, deleteField } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { useAuth } from "@/lib/auth/AuthContext";
 import {
@@ -28,6 +28,7 @@ export interface UseBankAccountReturn {
     bankName: string
   ) => Promise<BankAccountData>;
   saveBankAccount: (bankData: BankAccountData) => Promise<void>;
+  removeBankAccount: () => Promise<void>;
   clearError: () => void;
 }
 
@@ -120,6 +121,27 @@ export function useBankAccount(): UseBankAccountReturn {
     [user?.uid]
   );
 
+  /** Same as mobile `deleteBankAccount`: drops wallet.payout.bank on the user doc. */
+  const removeBankAccount = useCallback(async () => {
+    if (!user?.uid) {
+      throw new Error("User not authenticated");
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      await updateDoc(doc(db, "users", user.uid), {
+        "wallet.payout.bank": deleteField(),
+      });
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to remove bank account";
+      setError(errorMessage);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
+  }, [user?.uid]);
+
   const clearError = useCallback(() => {
     setError(null);
   }, []);
@@ -131,6 +153,7 @@ export function useBankAccount(): UseBankAccountReturn {
     fetchBanks,
     verifyAccount,
     saveBankAccount,
+    removeBankAccount,
     clearError,
   };
 }

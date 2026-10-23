@@ -257,7 +257,7 @@ export default function AddBankAccountDialog({
 	);
 }
 
-function DialogFrame({
+export function DialogFrame({
 	title,
 	children,
 	onClose,
