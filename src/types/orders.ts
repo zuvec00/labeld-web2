@@ -98,6 +98,10 @@ export interface StoreOrderDoc {
   buyerUserId?: string | null;
   status: OrderStatus;
   lineItems: ProductLineItem[];
+  /** "manual_sale" for orders the brand recorded themselves. */
+  saleType?: string | null;
+  /** Sequential order number assigned by the backend (shown as "#1042"). */
+  orderNumber?: number | null;
   amount: {
     currency: Currency;
     itemsSubtotalMinor: number;
