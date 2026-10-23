@@ -35,7 +35,7 @@ function LockSection({
 
 export default function BrandSetupStep1() {
 	const router = useRouter();
-	const { brandName, brandUsername, brandCategory, logoFile } =
+	const { brandName, brandUsername, brandCategory, logoFile, referralOk } =
 		useBrandOnboard();
 
 	// same username rule as Flutter
@@ -49,7 +49,10 @@ export default function BrandSetupStep1() {
 
 	// unlock right form only when identity valid
 	const identityValid =
-		brandName.trim().length > 0 && usernameValid && !!brandCategory;
+		brandName.trim().length > 0 &&
+		usernameValid &&
+		!!brandCategory &&
+		referralOk;
 
 	// next enabled when identity valid + logo chosen (mirrors Flutter)
 	const canGoNext = identityValid && !!logoFile;

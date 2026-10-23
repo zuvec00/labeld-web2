@@ -20,6 +20,10 @@ import Topbar from "@/components/dashboard/Topbar";
 import { useRouter } from "next/navigation";
 import UpgradeConfirmModal from "@/components/pricing/UpgradeConfirmModal";
 import SubscriptionTermsModal from "@/components/pricing/SubscriptionTermsModal";
+import {
+	getReferralOfferCF,
+	type ReferralOffer,
+} from "@/lib/firebase/callables/referrals";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app, db } from "@/lib/firebase/firebaseConfig"; // Ensure app is initialized
 import { doc, getDoc, onSnapshot } from "firebase/firestore";
@@ -110,6 +114,18 @@ const BILLING_OPTIONS: {
 		weight: 12,
 	},
 ];
+
+// Plain-naira prices, used only to show a referred brand's discounted first payment.
+const PRICE_NAIRA: Record<BillingCycle, number> = {
+	monthly: 5000,
+	quarterly: 13500,
+	biannual: 26500,
+	annual: 50000,
+};
+const formatNaira = (n: number) => `₦${n.toLocaleString("en-NG")}`;
+/** First-payment price after a whole-number percentage discount (matches the server's maths). */
+const discountedNaira = (cycle: BillingCycle, percent: number) =>
+	PRICE_NAIRA[cycle] - Math.round((PRICE_NAIRA[cycle] * percent) / 100);
 
 // --- Promo Logic Hook ---
 function usePromoStatus() {
@@ -207,6 +223,27 @@ export default function PublicPricingPage() {
 	} | null>(null);
 	const [entityName, setEntityName] = React.useState("yourbrand"); // brandName or organizerName
 
+	// Ambassador referral offer. Asked of the server so the page never promises a
+	// discount the checkout won't give; stays null (= today's page) if unavailable.
+	const [referralOffer, setReferralOffer] = React.useState<ReferralOffer | null>(null);
+	React.useEffect(() => {
+		if (!user || pricingMode !== "brand") {
+			setReferralOffer(null);
+			return;
+		}
+		let cancelled = false;
+		getReferralOfferCF(shouldUseLiveSubscriptionPayments()).then((offer) => {
+			if (!cancelled) setReferralOffer(offer);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [user, pricingMode]);
+	const referralDiscount =
+		referralOffer?.eligible && referralOffer.discountPercent
+			? referralOffer.discountPercent
+			: null;
+
 	// Promo State
 	const promoStatus = usePromoStatus();
 	const [claimingPromo, setClaimingPromo] = React.useState(false);
@@ -260,6 +297,7 @@ export default function PublicPricingPage() {
 		user &&
 		subscription?.tier === "free" &&
 		!subscription?.hasClaimedPromo &&
+		!referralOffer?.hasReferral && // a referred brand takes the referral discount, not the free promo
 		pricingMode === "brand"; // Promo only for brands
 
 	// Should show sticky banner? (Only if eligible and hasn't closed it)
@@ -378,6 +416,12 @@ export default function PublicPricingPage() {
 				billingCycle={billing}
 				priceDisplay={selectedOption.price}
 				periodDisplay={selectedOption.period}
+				firstPaymentDisplay={
+					referralDiscount
+						? formatNaira(discountedNaira(billing, referralDiscount))
+						: undefined
+				}
+				discountPercent={referralDiscount ?? undefined}
 				// @ts-ignore - Anticipating prop addition or ignoring for now
 				mode={pricingMode}
 			/>
@@ -697,6 +741,17 @@ export default function PublicPricingPage() {
 											{selectedOption.period}
 										</span>
 									</div>
+									{referralDiscount && (
+										<div className="mt-2 inline-flex flex-col gap-0.5 rounded-lg bg-accent/10 px-3 py-2 text-sm">
+											<span className="font-semibold text-text">
+												{referralDiscount}% off your first payment:{" "}
+												{formatNaira(discountedNaira(billing, referralDiscount))}
+											</span>
+											<span className="text-text-muted">
+												Then {selectedOption.price} {selectedOption.period}
+											</span>
+										</div>
+									)}
 									{selectedOption.originalPrice && (
 										<div className="flex items-center gap-2 mt-1">
 											<span className="text-sm text-text-muted line-through decoration-text-muted/50">

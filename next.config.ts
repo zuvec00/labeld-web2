@@ -7,6 +7,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        // Lets the Studio app open staff invite links (iOS reads this file
+        // without an extension, so it needs an explicit JSON type).
+        source: "/.well-known/apple-app-site-association",
+        headers: [
+          { key: "Content-Type", value: "application/json" },
+          { key: "Cache-Control", value: "public, max-age=3600" },
+        ],
+      },
+      {
         // Cache static assets for 1 year
         source: "/_next/static/:path*",
         headers: [

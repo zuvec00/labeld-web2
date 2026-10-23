@@ -2,42 +2,8 @@
 
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
 import { useMemo } from "react";
-
-const BRAND_TYPES = {
-	core: [
-		"Streetwear",
-		"Minimal Street",
-		"Luxury / Designer-Inspired",
-		"Techwear / Futuristic",
-		"Retro / Y2K",
-		"Skatewear",
-		"Alt / Grunge",
-		"Athleisure",
-		"Genderless / Androgynous",
-		"Sustainable / Eco-Conscious",
-		"Custom / Made-to-Order",
-		"Thrift / Vintage",
-		"Afrofusion",
-	],
-	extended: [
-		"Beauty / Skincare",
-		"Makeup",
-		"Haircare",
-		"Fragrance",
-		"Accessories",
-		"Footwear",
-		"Jewelry",
-		"Bags & Leather Goods",
-		"Wellness",
-		"Home & Living",
-		"Lifestyle Goods",
-		"Art & Design",
-		"Creative Studio",
-		"Dropshipping",
-		"Print-on-Demand",
-		"Other",
-	],
-};
+import { BRAND_CATEGORIES as BRAND_TYPES } from "@/lib/constants/brandCategories";
+import ReferralCodeField from "./ReferralCodeField";
 
 export default function BrandIdentityForm() {
 	const { brandName, brandUsername, brandCategory, phoneNumber, set } =
@@ -127,6 +93,11 @@ export default function BrandIdentityForm() {
 						</optgroup>
 					))}
 				</select>
+			</div>
+
+			{/* Referral code (optional) */}
+			<div className="mt-4">
+				<ReferralCodeField />
 			</div>
 		</div>
 	);

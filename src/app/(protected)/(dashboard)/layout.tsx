@@ -12,6 +12,9 @@ import AcquisitionSurveyModal from "@/components/modals/AcquisitionSurveyModal";
 import { TutorialProvider } from "@/components/tutorial/TutorialProvider";
 import TourOverlay from "@/components/tutorial/TourOverlay";
 import ThemeSelectionModal from "@/components/modals/ThemeSelectionModal";
+import { useStaffOnlyAccess } from "@/hooks/useStaffOnlyAccess";
+import StaffUseAppNotice from "@/components/staff/StaffUseAppNotice";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function DashboardLayout({
 	children,
@@ -19,8 +22,19 @@ export default function DashboardLayout({
 	children: React.ReactNode;
 }) {
 	const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-	const { activeRole, roleDetection } = useDashboardContext();
+	const { activeRole, roleDetection, loading } = useDashboardContext();
 	const [showSurvey, setShowSurvey] = useState(false);
+
+	// Staff work in the Studio app. Someone with no brand or organizer of their
+	// own who works for a brand sees "use the app" instead of onboarding.
+	const hasOwnWorkspace =
+		!roleDetection ||
+		roleDetection.hasBrandProfile ||
+		roleDetection.hasEventOrganizerProfile ||
+		roleDetection.hasPieces ||
+		roleDetection.hasEvents;
+	const needsStaffCheck = !loading && !hasOwnWorkspace;
+	const staffAccess = useStaffOnlyAccess(needsStaffCheck);
 
 	useEffect(() => {
 		// Only show for brands
@@ -34,6 +48,17 @@ export default function DashboardLayout({
 			return () => clearTimeout(timer);
 		}
 	}, [activeRole, roleDetection]);
+
+	if (needsStaffCheck && staffAccess.checking) {
+		return (
+			<div className="min-h-dvh bg-bg flex items-center justify-center">
+				<Spinner size="lg" />
+			</div>
+		);
+	}
+	if (needsStaffCheck && staffAccess.isStaffOnly) {
+		return <StaffUseAppNotice brands={staffAccess.brands} />;
+	}
 
 	return (
 		<TutorialProvider>

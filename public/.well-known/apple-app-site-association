@@ -1,0 +1,12 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["339D6VRLC5.com.labeld.labeldStudio"],
+        "components": [
+          { "/": "/invite/staff/*", "comment": "Staff invites open in the Studio app" }
+        ]
+      }
+    ]
+  }
+}

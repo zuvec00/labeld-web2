@@ -17,6 +17,8 @@ export type BrandOnboardState = {
   brandUsername: string; // @handle rules applied in UI
   phoneNumber: string;   // NEW
   brandCategory: string | null;
+  referralCode: string;  // optional ambassador code, attached after the brand is created
+  referralOk: boolean;   // true when empty or verified; false while a typed code is unchecked/invalid
 
   // Step 2: Visuals
   logoFile: File | null;  // local file before upload
@@ -47,6 +49,8 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
   brandUsername: "",
   phoneNumber: "",
   brandCategory: null,
+  referralCode: "",
+  referralOk: true,
   logoFile: null,
   coverFile: null,
   instagram: "",
@@ -68,6 +72,8 @@ export const useBrandOnboard = create<BrandOnboardState>((set) => ({
       brandUsername: "",
       phoneNumber: "",
       brandCategory: null,
+      referralCode: "",
+      referralOk: true,
       logoFile: null,
       coverFile: null,
       instagram: "",

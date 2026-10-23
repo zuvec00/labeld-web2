@@ -17,6 +17,9 @@ interface UpgradeConfirmModalProps {
 	billingCycle: BillingCycle;
 	priceDisplay: string; // "₦50,000"
 	periodDisplay: string; // "/ year"
+	/** Set only for a referred brand: what the first payment costs after the discount. */
+	firstPaymentDisplay?: string;
+	discountPercent?: number;
 	mode?: "brand" | "organizer";
 }
 
@@ -26,6 +29,8 @@ export default function UpgradeConfirmModal({
 	billingCycle,
 	priceDisplay,
 	periodDisplay,
+	firstPaymentDisplay,
+	discountPercent,
 	mode = "brand",
 }: UpgradeConfirmModalProps) {
 	const [status, setStatus] = useState<
@@ -144,18 +149,35 @@ export default function UpgradeConfirmModal({
 								<div className="border-t border-stroke pt-3 flex justify-between items-baseline">
 									<span className="font-medium text-text">Total</span>
 									<span className="text-xl font-bold font-heading text-text">
-										{priceDisplay}{" "}
+										{firstPaymentDisplay ?? priceDisplay}{" "}
 										<span className="text-sm font-sans font-normal text-text-muted">
-											{periodDisplay}
+											{firstPaymentDisplay ? "today" : periodDisplay}
 										</span>
 									</span>
 								</div>
+								{firstPaymentDisplay && (
+									<p className="text-xs text-text-muted">
+										{discountPercent}% referral discount on your first payment.
+										Then {priceDisplay} {periodDisplay}.
+									</p>
+								)}
 							</div>
 
 							<p className="text-xs text-text-muted text-center leading-relaxed px-4">
-								By confirming, you agree to be charged{" "}
-								<strong>{priceDisplay}</strong>{" "}
-								{periodDisplay.replace("/", "per ")}.
+								{firstPaymentDisplay ? (
+									<>
+										By confirming, you agree to be charged{" "}
+										<strong>{firstPaymentDisplay}</strong> today, then{" "}
+										<strong>{priceDisplay}</strong>{" "}
+										{periodDisplay.replace("/", "per ")}.
+									</>
+								) : (
+									<>
+										By confirming, you agree to be charged{" "}
+										<strong>{priceDisplay}</strong>{" "}
+										{periodDisplay.replace("/", "per ")}.
+									</>
+								)}
 							</p>
 
 							<div className="pt-2">

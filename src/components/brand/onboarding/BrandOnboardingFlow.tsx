@@ -17,6 +17,7 @@ import AuthForm from "@/app/marketing/auth/AuthFom";
 import { validateUsername } from "@/lib/validation/username";
 import { updateUserCF } from "@/lib/firebase/callables/users";
 import { addBrandCF } from "@/lib/firebase/callables/brand";
+import { attachReferralCodeCF } from "@/lib/firebase/callables/referrals";
 import { uploadProfileImageCloudinary } from "@/lib/storage/cloudinary";
 import { uploadBrandImageCloudinary } from "@/lib/storage/cloudinary";
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
@@ -233,10 +234,12 @@ export default function BrandOnboardingFlow({
 
 	const canProceedFromStep2 = useMemo(() => {
 		if (skipBrandSetup) return true;
-		const { brandName, brandUsername, brandCategory, logoFile } = brandData;
+		const { brandName, brandUsername, brandCategory, logoFile, referralOk } =
+			brandData;
 		const { ok } = validateUsername(brandUsername);
 		return (
 			ok &&
+			referralOk &&
 			brandName.trim().length > 0 &&
 			// phoneNumber.trim().length > 0 && // Ignored for now
 			brandCategory &&
@@ -405,6 +408,20 @@ export default function BrandOnboardingFlow({
 					youtube: brandData.youtube || null,
 					tiktok: brandData.tiktok || null,
 				});
+
+				// Lock in the ambassador referral typed at signup, if any. A
+				// failure here must not block the brand from finishing signup.
+				if (brandData.referralCode) {
+					setLoadingMessage("Applying your referral code...");
+					const referralError = await attachReferralCodeCF(
+						brandData.referralCode,
+					);
+					if (referralError) {
+						alert(
+							`Your brand is ready, but we couldn't apply your referral code: ${referralError}`,
+						);
+					}
+				}
 			}
 
 			setLoadingMessage("Done! Redirecting...");

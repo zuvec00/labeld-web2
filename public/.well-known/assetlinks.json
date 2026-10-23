@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.labeld.labeld_studio",
+      "sha256_cert_fingerprints": [
+        "0B:39:CA:AC:4A:5E:92:EA:D7:A9:C3:67:95:A1:6E:87:76:09:F2:2F:A4:12:6B:93:C4:68:51:CD:3B:B7:38:7F",
+        "D0:89:5F:91:17:E0:6D:52:16:B4:92:29:B6:9B:3B:BB:A1:B7:09:9D:D6:A6:A7:C7:2A:4E:F3:E2:B8:88:D7:D7"
+      ]
+    }
+  }
+]

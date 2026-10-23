@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth/AuthContext";
 import { useBrandOnboard } from "@/lib/stores/brandOnboard";
 import { updateUserCF } from "@/lib/firebase/callables/users";
 import { addBrandCF } from "@/lib/firebase/callables/brand";
+import { attachReferralCodeCF } from "@/lib/firebase/callables/referrals";
 import { uploadBrandImageCloudinary } from "@/lib/storage/cloudinary";
 import IntentStep from "./steps/IntentStep";
 import ProfileStep from "./steps/ProfileStep";
@@ -152,6 +153,20 @@ export default function OnboardingFlow() {
 					xHandle: brandData.xHandle || null,
 					pinterest: brandData.pinterest || null,
 				});
+
+				// Lock in the ambassador referral typed at signup, if any. A
+				// failure here must not block the brand from finishing signup.
+				if (brandData.referralCode) {
+					setLoadingMessage("Applying your referral code...");
+					const referralError = await attachReferralCodeCF(
+						brandData.referralCode,
+					);
+					if (referralError) {
+						alert(
+							`Your brand is ready, but we couldn't apply your referral code: ${referralError}`,
+						);
+					}
+				}
 
 				// Register public slug
 				try {
