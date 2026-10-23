@@ -20,6 +20,33 @@ export const activateStorefrontTemplate = async (
 	return result.data;
 };
 
+// 1b. Premium theme entitlements (themes this brand has bought or been granted)
+export const getStorefrontThemeEntitlements = async (
+	brandId: string
+): Promise<Set<string>> => {
+	try {
+		const callable = httpsCallable<
+			{ brandId: string },
+			{ entitlements?: { themeId?: string; id?: string; status?: string }[] }
+		>(functions, "getStorefrontThemeEntitlements");
+		const { data } = await callable({ brandId });
+		// Same rule as mobile: only these statuses count as owned.
+		return new Set(
+			(data.entitlements ?? [])
+				.filter((e) =>
+					["active", "owned", "manual"].includes(
+						String(e.status ?? "").toLowerCase()
+					)
+				)
+				.map((e) => String(e.themeId ?? e.id ?? ""))
+				.filter(Boolean)
+		);
+	} catch {
+		// Fail closed: treat as owning nothing rather than unlocking premium.
+		return new Set();
+	}
+};
+
 // 2. Update Section Controls
 interface UpdateSectionsPayload {
 	brandId: string;

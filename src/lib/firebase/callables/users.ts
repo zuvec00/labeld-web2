@@ -104,3 +104,25 @@ export async function sendNotificationCF(args: {
   const callable = httpsCallable(fx(), "sendNotification");
   await callable(args);
 }
+
+/** ----------------------- deleteUserAccountAndData -----------------------
+ * Permanently deletes the user's data AND their Auth user server-side (same
+ * callable mobile uses). Do not use `deleteAuthenticatedUser`: it only removes
+ * the Auth record and leaves brand data behind.
+ *
+ * Throws if the backend reports partial failure, so the caller never signs the
+ * user out of an account that is only half deleted.
+ */
+export async function deleteUserAccountAndData(userId: string): Promise<void> {
+  const res = await httpsCallable<
+    { userId: string },
+    { success?: boolean; errors?: string[] }
+  >(fx(), "deleteUserAccountAndData")({ userId });
+
+  if (res.data?.success !== true) {
+    const errors = res.data?.errors ?? [];
+    throw new Error(
+      `Account deletion failed${errors.length ? `: ${errors.join(", ")}` : ""}`,
+    );
+  }
+}

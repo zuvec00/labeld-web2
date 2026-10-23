@@ -16,11 +16,13 @@ import {
 	Settings2,
 } from "lucide-react";
 import BrandStoreToggle from "@/components/dashboard/BrandStoreToggle";
+import { getPreferredStorefrontUrl } from "@/lib/brand/storefrontUrl";
 
 /* --- Header --- */
 export default function BrandHeader({
 	brandName,
 	username,
+	storefrontUrl,
 	bio,
 	heat,
 	followers,
@@ -35,6 +37,8 @@ export default function BrandHeader({
 }: {
 	brandName: string;
 	username: string;
+	/** Canonical public store URL (custom domain or slug host). */
+	storefrontUrl?: string | null;
 	bio?: string | null;
 	heat: number;
 	followers: number;
@@ -53,10 +57,13 @@ export default function BrandHeader({
 	const [showMenu, setShowMenu] = useState(false);
 
 	// Onboarding Check
-	const { isComplete } = useBrandOnboardingStatus();
+	const { canViewStore: isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
 
-	const brandWebsiteUrl = `https://shop.labeld.app/${username}`;
+	// Canonical store address; falls back to the slug host if the caller has no
+	// brand record (see lib/brand/storefrontUrl).
+	const brandWebsiteUrl =
+		storefrontUrl ?? getPreferredStorefrontUrl({ username }) ?? "";
 
 	const handleCopyLink = async () => {
 		try {
