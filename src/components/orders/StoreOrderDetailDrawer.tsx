@@ -15,6 +15,7 @@ import {
 } from "@/lib/firebase/callables/shipping";
 import { AlertCircle } from "lucide-react";
 import { formatFulfillmentSummary } from "@/lib/models/product";
+import OrderDocumentActions from "./OrderDocumentActions";
 
 interface StoreOrderDetailDrawerProps {
 	order: StoreOrderWithVendorStatus | null;
@@ -257,6 +258,9 @@ export default function StoreOrderDetailDrawer({
 								</div>
 							</div>
 						</div>
+
+						{/* Invoice / receipt / payment link */}
+						<OrderDocumentActions order={order} />
 
 						{/* Customer Information */}
 						<div className="bg-surface rounded-lg p-4">

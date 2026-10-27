@@ -59,7 +59,19 @@ export interface WalletLedgerEntry {
 
   createdAt: number; // millis
   createdBy: "system";
+
+  /**
+   * Set only on a collapsed withdrawal line (see lib/wallet/withdrawals.ts).
+   * Never present on raw ledger rows from Firestore.
+   */
+  withdrawalStatus?: WithdrawalLineStatus;
 }
+
+export type WithdrawalLineStatus =
+  | "pending"
+  | "successful"
+  | "reversed"
+  | "cancelled";
 
 // For display purposes, we'll compute these from the ledger entries
 export interface EarningsBySource {

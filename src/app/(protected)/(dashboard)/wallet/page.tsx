@@ -1,6 +1,6 @@
 "use client";
 // src/app/(protected)/(dashboard)/wallet/page.tsx
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LedgerType, LedgerSource } from "@/types/wallet";
 import BalanceHeader from "@/components/wallet/BalanceHeader";
 import EarningsOverview from "@/components/wallet/EarningsOverview";
@@ -13,11 +13,18 @@ import BankAccountBanner from "@/components/wallet/BankAccountBanner";
 import TestStorePayoutPanel from "@/components/wallet/TestStorePayoutPanel";
 import { useWallet } from "@/hooks/useWallet";
 import { usePayouts } from "@/hooks/usePayouts";
+import { collapseWithdrawals } from "@/lib/wallet/withdrawals";
 import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
 
 export default function WalletPage() {
 	const { user, loading, walletData, error } = useWallet();
 	const { payouts } = usePayouts(walletData?.entries || []);
+	// One "Withdrawal" line with a status instead of its raw hold/payout/release
+	// rows, same as the mobile wallet
+	const ledgerEntries = useMemo(
+		() => collapseWithdrawals(walletData?.entries || []),
+		[walletData?.entries],
+	);
 
 	// Filter state
 	const [filters, setFilters] = useState<{
@@ -107,7 +114,7 @@ export default function WalletPage() {
 			<FiltersBar onFiltersChange={setFilters} />
 
 			{/* Transaction History */}
-			<LedgerTable entries={walletData.entries} filters={filters} />
+			<LedgerTable entries={ledgerEntries} filters={filters} />
 
 			{/* Payouts */}
 			<PayoutsTable payouts={payouts} walletSummary={displaySummary} />
