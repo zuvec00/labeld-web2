@@ -6,6 +6,7 @@ import {
 } from "@/lib/firebase/queries/brandspace";
 import { UserModel } from "@/lib/models/user";
 import { BrandModel } from "@/lib/models/brand";
+import { getPreferredStorefrontUrl } from "@/lib/brand/storefrontUrl";
 import { getProductListForBrand } from "@/lib/firebase/queries/product";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -89,6 +90,7 @@ export function BrandSpaceView({ uid }: { uid: string }) {
 				data-tour="brand-header"
 				brandName={brand.brandName}
 				username={brand.username}
+				storefrontUrl={getPreferredStorefrontUrl({ ...brand, uid })}
 				bio={brand.bio}
 				heat={heat}
 				followers={followers}

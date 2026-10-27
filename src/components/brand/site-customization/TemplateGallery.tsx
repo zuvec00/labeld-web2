@@ -4,28 +4,59 @@ import React, { useState } from "react";
 import TemplateCard from "@/components/brand/site-customization/TemplateCard";
 import TemplatePreviewModal from "@/components/brand/site-customization/TemplatePreviewModal";
 import { Template } from "@/lib/models/site-customization";
+import {
+	getThemeAccess,
+	getThemePriceMinor,
+	isThemeListed,
+} from "@/lib/plans/theme-access";
 import { Layout } from "lucide-react"; // Fallback icon
 
 interface TemplateGalleryProps {
 	templates: Template[];
 	isPro: boolean;
+	/** Premium theme ids this brand owns. */
+	entitledThemeIds: Set<string>;
 	activeTemplateId?: string | null;
 	onApply: (templateId: string) => void;
 	onUpgrade: () => void;
+	onPurchase: (template: Template) => void;
 }
 
 export default function TemplateGallery({
-	templates,
+	templates: allTemplates,
 	isPro,
+	entitledThemeIds,
 	activeTemplateId,
 	onApply,
 	onUpgrade,
+	onPurchase,
 }: TemplateGalleryProps) {
 	// State for preview modal
 	const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
+	// Same rule as mobile: unreleased themes stay hidden unless already owned.
+	const templates = (allTemplates ?? []).filter((t) =>
+		isThemeListed(t, entitledThemeIds),
+	);
+	const included = templates.filter((t) => t.access !== "premium");
+	const premium = templates.filter((t) => t.access === "premium");
+
+	const renderCard = (template: Template) => (
+		<TemplateCard
+			key={template.id}
+			template={template}
+			isActive={activeTemplateId === template.id}
+			access={getThemeAccess(template, isPro, entitledThemeIds)}
+			priceMinor={getThemePriceMinor(template, isPro)}
+			onPreview={setPreviewTemplate}
+			onUpgrade={onUpgrade}
+			onPurchase={onPurchase}
+			onActivate={onApply}
+		/>
+	);
+
 	// Empty State Helper
-	if (!templates || templates.length === 0) {
+	if (templates.length === 0) {
 		return (
 			<div className="py-24 text-center border border-dashed border-stroke rounded-2xl bg-surface/5">
 				<div className="w-12 h-12 bg-stroke/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -58,32 +89,39 @@ export default function TemplateGallery({
 				</div>
 			</div>
 
-			{/* Template Grid */}
+			{/* Included templates */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-				{templates.map((template) => {
-					// Active Logic:
-					const isActive = activeTemplateId === template.id;
-
-					return (
-						<TemplateCard
-							key={template.id}
-							template={template}
-							isActive={isActive}
-							isProUser={isPro}
-							onPreview={setPreviewTemplate}
-							onUpgrade={onUpgrade}
-							onActivate={onApply}
-						/>
-					);
-				})}
+				{included.map(renderCard)}
 			</div>
+
+			{/* Premium templates: bought separately */}
+			{premium.length > 0 && (
+				<div className="space-y-4">
+					<div>
+						<h4 className="font-heading font-semibold text-lg text-text">
+							Premium themes
+						</h4>
+						<p className="text-text-muted text-sm">
+							One-time purchase. Requires an active Pro plan.
+						</p>
+					</div>
+					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+						{premium.map(renderCard)}
+					</div>
+				</div>
+			)}
 
 			{/* Preview Modal */}
 			<TemplatePreviewModal
 				isOpen={!!previewTemplate}
 				onClose={() => setPreviewTemplate(null)}
 				template={previewTemplate!}
-				isPro={isPro}
+				access={
+					previewTemplate
+						? getThemeAccess(previewTemplate, isPro, entitledThemeIds)
+						: "available"
+				}
+				priceMinor={previewTemplate ? getThemePriceMinor(previewTemplate, isPro) : null}
 				isActive={previewTemplate?.id === activeTemplateId}
 				onApply={(id) => {
 					onApply(id);
@@ -92,6 +130,10 @@ export default function TemplateGallery({
 				onUpgrade={() => {
 					setPreviewTemplate(null);
 					onUpgrade();
+				}}
+				onPurchase={(t) => {
+					setPreviewTemplate(null);
+					onPurchase(t);
 				}}
 			/>
 		</div>

@@ -4,6 +4,8 @@ import React, { useEffect } from "react";
 import { X, Check, Lock, Smartphone, Monitor } from "lucide-react";
 import Button from "@/components/ui/button";
 import { Template } from "@/lib/models/site-customization";
+import type { ThemeAccess } from "@/lib/plans/theme-access";
+import { formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 // Placeholder imports for section components (will be created next)
@@ -19,20 +21,24 @@ interface TemplatePreviewModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	template: Template;
-	isPro: boolean;
+	access: ThemeAccess;
+	priceMinor?: number | null;
 	isActive: boolean;
 	onApply: (templateId: string) => void;
 	onUpgrade: () => void;
+	onPurchase: (template: Template) => void;
 }
 
 export default function TemplatePreviewModal({
 	isOpen,
 	onClose,
 	template,
-	isPro,
+	access,
+	priceMinor,
 	isActive,
 	onApply,
 	onUpgrade,
+	onPurchase,
 }: TemplatePreviewModalProps) {
 	// Focus trap and body scroll lock
 	useEffect(() => {
@@ -76,7 +82,19 @@ export default function TemplatePreviewModal({
 
 				{/* Right: Actions */}
 				<div className="flex items-center gap-2 md:gap-3">
-					{!isPro && template.isProOnly ? (
+					{access === "needs_purchase" ? (
+						<Button
+							text={
+								priceMinor
+									? `Get this theme · ${formatNaira(priceMinor)}`
+									: "Get this theme"
+							}
+							variant="cta"
+							leftIcon={<Lock className="w-4 h-4" />}
+							onClick={() => onPurchase(template)}
+							className="text-xs md:text-sm h-8 md:h-9 px-3 md:px-4"
+						/>
+					) : access === "needs_pro" ? (
 						<>
 							<div className="hidden md:block">
 								<Button

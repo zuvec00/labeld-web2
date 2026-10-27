@@ -9,11 +9,8 @@ import LedgerTable from "@/components/wallet/LedgerTable";
 import PayoutsTable from "@/components/wallet/PayoutsTable";
 import HelpPanel from "@/components/wallet/HelpPanel";
 import BankAccountBanner from "@/components/wallet/BankAccountBanner";
-// import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
-import TestStorePayoutPanel from "@/components/wallet/TestStorePayoutPanel";
 import { useWallet } from "@/hooks/useWallet";
 import { usePayouts } from "@/hooks/usePayouts";
-import TestPayoutPanel from "@/components/wallet/TestPayoutPanel";
 
 export default function WalletPage() {
 	const { user, loading, walletData, error } = useWallet();
@@ -86,10 +83,6 @@ export default function WalletPage() {
 
 	return (
 		<div className="space-y-8">
-			{/* Test Payout Panels - Comment out when going live */}
-			{/* <TestPayoutPanel />  */}
-			{/* <TestStorePayoutPanel /> */}
-
 			{/* Header Summary */}
 
 			<BalanceHeader summary={displaySummary} />
