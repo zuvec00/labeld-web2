@@ -128,8 +128,12 @@ export interface StoreOrderDoc {
     method: "delivery" | "pickup";
     /** "terminal_live" when the customer picked and paid for a courier at checkout. */
     mode?: string;
+    /** "terminal" (default) or "shipbubble": which courier partner the customer chose. */
+    provider?: string;
     /** Present for customer-selected courier orders (rate + address snapshots). */
     terminal?: Record<string, unknown>;
+    /** Present for customer-selected Shipbubble orders. */
+    shipbubble?: Record<string, unknown>;
     address?: {
       name?: string;
       phone?: string;
@@ -142,6 +146,8 @@ export interface StoreOrderDoc {
   };
   /** Set once a courier shipment has been booked. Never cleared on cancel. */
   terminalShipmentId?: string | null;
+  /** Set once a Shipbubble shipment has been booked. */
+  shipbubbleOrderId?: string | null;
   /** Order-level fulfilment status written by the backend ("cancelled" after a cancelled booking). */
   fulfillmentStatus?: string | null;
   createdAt: any; // Firestore Timestamp

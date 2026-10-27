@@ -9,17 +9,33 @@ import type { StoreOrderDoc } from "@/types/orders";
  * shipping money never moved. A cancelled shipment is excluded on purpose, so
  * the brand has a manual way out instead of being trapped.
  *
- * Mirrors `_hasPendingCustomerCourierBooking` in the mobile order details
- * screen. Remove the UI lock this drives once web can book couriers (S-2).
+ * Covers both couriers (Terminal and Shipbubble). Mirrors
+ * `_hasPendingCustomerCourierBooking` in the mobile order details screen.
+ * Remove the UI lock this drives once web can book couriers (S-2).
  */
 export function hasPendingCustomerCourierBooking(
-	order: Pick<StoreOrderDoc, "shipping" | "terminalShipmentId" | "fulfillmentStatus">,
+	order: Pick<
+		StoreOrderDoc,
+		"shipping" | "terminalShipmentId" | "shipbubbleOrderId" | "fulfillmentStatus"
+	>,
 ): boolean {
+	const cancelled =
+		(order.fulfillmentStatus ?? "").trim().toLowerCase() === "cancelled";
+	if (order.shipping?.mode !== "terminal_live") return false;
+
+	// Shipbubble checkout: pending until a Shipbubble order id is saved.
+	if (
+		order.shipping.provider === "shipbubble" &&
+		order.shipping.shipbubble &&
+		typeof order.shipping.shipbubble === "object"
+	) {
+		return !order.shipbubbleOrderId?.trim() && !cancelled;
+	}
+
 	return (
-		order.shipping?.mode === "terminal_live" &&
 		!!order.shipping.terminal &&
 		typeof order.shipping.terminal === "object" &&
 		!order.terminalShipmentId &&
-		(order.fulfillmentStatus ?? "").trim().toLowerCase() !== "cancelled"
+		!cancelled
 	);
 }
