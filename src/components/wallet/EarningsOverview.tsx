@@ -6,6 +6,7 @@ import {
 	WalletSummary,
 } from "@/types/wallet";
 import { formatCurrency } from "@/lib/wallet/mock";
+import { isWithdrawalEntry } from "@/lib/wallet/withdrawals";
 import Card from "@/components/dashboard/Card";
 
 interface EarningsOverviewProps {
@@ -105,7 +106,10 @@ export default function EarningsOverview({
 		return result;
 	};
 
-	const periodEarnings = calculateEarningsFromEntries(filteredEntries);
+	// Withdrawal rows move money out; they are not earnings or earnings on hold
+	const periodEarnings = calculateEarningsFromEntries(
+		filteredEntries.filter((e) => !isWithdrawalEntry(e))
+	);
 
 	return (
 		<Card title="Earnings Overview">

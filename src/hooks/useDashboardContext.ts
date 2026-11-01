@@ -23,6 +23,12 @@ interface RoleDetectionResult {
   brandSubscriptionStatus?: "active" | "expired" | "past_due" | "cancelled";
   brandBillingCycle?: "monthly" | "quarterly" | "biannual" | "annual";
   brandSubscriptionEndsAt?: Date;
+  /** Renewal is cancelled; Pro stays active until brandSubscriptionEndsAt. */
+  brandCancelAtPeriodEnd?: boolean;
+  /** On the free Pro trial (Pro, but nothing has been paid). Written by the backend only. */
+  brandIsTrial?: boolean;
+  /** When the free trial ended; used to tell "trial lapsed" from "payment failed". */
+  brandTrialEndedAt?: Date;
   brandUsername?: string;
   brandSlug?: string;
   brandLogoUrl?: string;
@@ -193,6 +199,14 @@ export function useDashboardContext(): UseDashboardContextReturn {
                brandSubscriptionStatus,
                brandBillingCycle,
                brandSubscriptionEndsAt,
+               brandCancelAtPeriodEnd: hasBrandProfile
+                   ? snap.data().subscriptionCancelAtPeriodEnd === true
+                   : undefined,
+               brandIsTrial: hasBrandProfile ? snap.data().isTrial === true : undefined,
+               brandTrialEndedAt:
+                   hasBrandProfile && typeof snap.data().trialEndedAt?.toDate === 'function'
+                       ? snap.data().trialEndedAt.toDate()
+                       : undefined,
                customDomain: hasBrandProfile ? snap.data().customDomain : undefined,
                useCustomDomain: hasBrandProfile ? snap.data().useCustomDomain : undefined,
                customDomainStatus: hasBrandProfile ? snap.data().customDomainStatus : undefined,

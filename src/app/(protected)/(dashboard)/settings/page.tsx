@@ -55,8 +55,8 @@ export default function SettingsPage() {
 		},
 		{
 			id: "payout" as const,
-			title: "Payout Settings",
-			description: "Configure how quickly you receive your earnings",
+			title: "Bank & Payouts",
+			description: "Manage the bank account your withdrawals are sent to",
 			icon: DollarSign,
 			available: true,
 		},

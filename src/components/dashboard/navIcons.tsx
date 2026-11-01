@@ -32,6 +32,7 @@ import {
 	UserRound,
 	UsersRound,
 	Megaphone,
+	Sparkles,
 } from "lucide-react";
 
 export const getNavIcon = (iconName: string) => {
@@ -52,6 +53,8 @@ export const getNavIcon = (iconName: string) => {
 			return <ShoppingBag {...iconProps} />;
 		case "Wallet":
 			return <Wallet {...iconProps} />;
+		case "Credits":
+			return <Sparkles {...iconProps} />;
 		case "Events":
 			return <Ticket {...iconProps} />;
 		case "Settings":

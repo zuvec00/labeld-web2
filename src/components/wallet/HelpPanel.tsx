@@ -43,7 +43,7 @@ export default function HelpPanel() {
 								Payout Processing
 							</h4>
 							<p className="text-xs text-text-muted">
-								Payouts are processed after eligibility is confirmed and all
+								Only your eligible balance can be withdrawn. Earnings become eligible once confirmed and all
 								requirements are met.
 							</p>
 						</div>
@@ -56,7 +56,7 @@ export default function HelpPanel() {
 								Processing Time
 							</h4>
 							<p className="text-xs text-text-muted">
-								Withdrawal requests typically take 1-3 business days to process.
+								Request a withdrawal anytime and the funds go straight to your bank. Bank transfers may take 1-3 business days to reflect.
 							</p>
 						</div>
 					</div>
@@ -68,7 +68,7 @@ export default function HelpPanel() {
 								Minimum Withdrawal
 							</h4>
 							<p className="text-xs text-text-muted">
-								Minimum withdrawal amount is ₦1,000 from your eligible balance.
+								Minimum withdrawal is ₦1,000 from your eligible balance, with a flat ₦100 fee. Only one withdrawal can be open at a time.
 							</p>
 						</div>
 					</div>

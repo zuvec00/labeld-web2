@@ -54,6 +54,7 @@ export const NAV_SECTIONS: { title?: string; items: NavItem[] }[] = [
 		items: [
 			{ label: "Orders", href: "/orders", feature: "orders", icon: getNavIcon("Orders") },
 			{ label: "Wallet", href: "/wallet", feature: "wallet", icon: getNavIcon("Wallet") },
+			{ label: "Studio Credits", href: "/studio-credits", icon: getNavIcon("Credits"), roles: ["brand"] },
 		],
 	},
 	{
