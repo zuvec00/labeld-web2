@@ -6,21 +6,24 @@ import MaintenanceModal from "@/components/modals/MaintenanceModal";
 
 interface StorefrontStatusProps {
 	username: string;
+	/** Canonical public URL (custom domain or slug host); see lib/brand/storefrontUrl. */
+	storefrontUrl?: string | null;
 	brandName: string;
 	isPro: boolean;
 }
 
 export default function StorefrontStatus({
 	username,
+	storefrontUrl,
 	brandName,
 	isPro,
 }: StorefrontStatusProps) {
 	// Onboarding Check
-	const { isComplete } = useBrandOnboardingStatus();
+	const { canViewStore: isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
 
-	const shopUrl = `https://${username}.labeld.app`;
-	const displayUrl = `${username}.labeld.app`;
+	const shopUrl = storefrontUrl ?? `https://${username}.labeld.app`;
+	const displayUrl = shopUrl.replace(/^https?:\/\//, "");
 
 	const handleVisitStore = () => {
 		if (isComplete) {

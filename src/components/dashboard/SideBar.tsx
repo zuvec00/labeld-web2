@@ -11,6 +11,7 @@ import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { useBrandOnboardingStatus } from "@/hooks/useBrandOnboardingStatus";
 import MaintenanceModal from "@/components/modals/MaintenanceModal";
 import DashboardContextSwitch from "@/components/dashboard/DashboardContextSwitch";
+import { getPreferredStorefrontUrl } from "@/lib/brand/storefrontUrl";
 import { Eye } from "lucide-react";
 import AppStoreBanner from "@/components/dashboard/AppStoreBanner";
 
@@ -31,7 +32,7 @@ export default function Sidebar({
 		canSwitchRoles,
 		loading: contextLoading,
 	} = useDashboardContext();
-	const { isComplete } = useBrandOnboardingStatus();
+	const { canViewStore: isComplete } = useBrandOnboardingStatus();
 	const [showMaintenance, setShowMaintenance] = useState(false);
 
 	// Local state for sidebar filtering mode: "brand" | "eventOrganizer" | "all"
@@ -60,15 +61,7 @@ export default function Sidebar({
 			let url = "";
 
 			if (activeRole === "brand") {
-				const username = roleDetection?.brandUsername;
-				const slug = roleDetection?.brandSlug || username;
-				const isPro = roleDetection?.brandSubscriptionTier === "pro";
-
-				if (slug) {
-					url = isPro
-						? `https://${slug}.labeld.app`
-						: `https://shop.labeld.app/${slug}`;
-				}
+				url = getPreferredStorefrontUrl(roleDetection) ?? "";
 			} else if (activeRole === "eventOrganizer") {
 				const username = roleDetection?.organizerName; // Assuming name is usable, or we need a slug
 				const slug =

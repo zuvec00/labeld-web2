@@ -19,6 +19,8 @@ import {
 	getEmailVerificationStatus,
 } from "@/lib/features/account/security/email-change";
 import { useToast } from "@/app/hooks/use-toast";
+import { useRouter } from "next/navigation";
+import { deleteUserAccountAndData } from "@/lib/firebase/callables/users";
 
 interface PasswordModalProps {
 	isOpen: boolean;
@@ -152,10 +154,78 @@ function ProviderReauthModal({
 	);
 }
 
+interface DeleteConfirmProps {
+	isOpen: boolean;
+	onClose: () => void;
+	onConfirm: () => void;
+	loading: boolean;
+}
+
+function DeleteAccountModal({
+	isOpen,
+	onClose,
+	onConfirm,
+	loading,
+}: DeleteConfirmProps) {
+	const [typed, setTyped] = useState("");
+
+	if (!isOpen) return null;
+
+	return (
+		<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+			<div className="bg-surface rounded-2xl p-6 w-full max-w-md">
+				<h3 className="text-lg font-heading font-semibold text-red-600 mb-2">
+					Delete account?
+				</h3>
+				<p className="text-text-muted text-sm mb-4">
+					This permanently deletes your account and all associated data. This
+					action cannot be undone.
+				</p>
+				<TextLabel label="Type DELETE to confirm" isRequired />
+				<Input
+					value={typed}
+					onChange={(e) => setTyped(e.target.value)}
+					placeholder="DELETE"
+					disabled={loading}
+				/>
+				<div className="flex gap-3 pt-4">
+					<Button
+						type="button"
+						text="Cancel"
+						variant="secondary"
+						onClick={() => {
+							setTyped("");
+							onClose();
+						}}
+						disabled={loading}
+						className="flex-1"
+					/>
+					<button
+						type="button"
+						onClick={onConfirm}
+						disabled={loading || typed.trim() !== "DELETE"}
+						className="flex-1 rounded-2xl px-4 py-3 font-semibold bg-red-600 text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{loading ? "Deleting..." : "Delete my account"}
+					</button>
+				</div>
+			</div>
+		</div>
+	);
+}
+
 export default function AccountSecurity() {
-	const { user } = useAuth();
+	const { user, signOutApp } = useAuth();
 	const { toast } = useToast();
 	const auth = getAuth();
+	const router = useRouter();
+
+	// What the open re-auth modal is unlocking
+	const [reauthPurpose, setReauthPurpose] = useState<"email" | "delete">(
+		"email",
+	);
+	const [showDeleteModal, setShowDeleteModal] = useState(false);
+	const [deleting, setDeleting] = useState(false);
 
 	// Email change state
 	const [newEmail, setNewEmail] = useState("");
@@ -256,6 +326,7 @@ export default function AccountSecurity() {
 			});
 			setNewEmail("");
 		} else if (result.error?.includes("requires-recent-login")) {
+			setReauthPurpose("email");
 			setPendingEmail(newEmail.trim());
 			if (hasPasswordCredential(user)) {
 				setShowPasswordModal(true);
@@ -283,6 +354,48 @@ export default function AccountSecurity() {
 		setEmailLoading(false);
 	};
 
+	// Delete flow: confirm -> re-authenticate -> delete. Re-auth is required up
+	// front so we never begin a destructive server-side delete on a stale login.
+	const startAccountDeletion = () => {
+		setShowDeleteModal(false);
+		setReauthPurpose("delete");
+		if (hasPasswordCredential(user)) {
+			setShowPasswordModal(true);
+		} else if (getFederatedProviders(user).length > 0) {
+			setShowProviderModal(true);
+		} else {
+			toast({
+				title: "Unable to verify identity",
+				description: "Please contact support to delete your account.",
+				variant: "destructive",
+			});
+		}
+	};
+
+	const executeAccountDeletion = async () => {
+		setDeleting(true);
+		try {
+			await deleteUserAccountAndData(user.uid);
+			toast({
+				title: "Account deleted",
+				description: "Your account and data have been permanently removed.",
+				duration: 6000,
+			});
+			// The backend already removed the Auth user; this clears local state.
+			await signOutApp().catch(() => {});
+			router.replace("/");
+		} catch (err: any) {
+			toast({
+				title: "Couldn't delete account",
+				description:
+					err?.message || "Something went wrong. Please try again.",
+				variant: "destructive",
+				duration: 8000,
+			});
+			setDeleting(false);
+		}
+	};
+
 	const handlePasswordReauth = async (password: string) => {
 		setReauthLoading(true);
 
@@ -290,6 +403,13 @@ export default function AccountSecurity() {
 			user,
 			currentPassword: password,
 		});
+
+		if (result.success && reauthPurpose === "delete") {
+			setShowPasswordModal(false);
+			setReauthLoading(false);
+			await executeAccountDeletion();
+			return;
+		}
 
 		if (result.success) {
 			setShowPasswordModal(false);
@@ -336,6 +456,13 @@ export default function AccountSecurity() {
 		setReauthLoading(true);
 
 		const result = await reauthWithProvider({ auth, providerId });
+
+		if (result.success && reauthPurpose === "delete") {
+			setShowProviderModal(false);
+			setReauthLoading(false);
+			await executeAccountDeletion();
+			return;
+		}
 
 		if (result.success) {
 			setShowProviderModal(false);
@@ -544,7 +671,38 @@ export default function AccountSecurity() {
 						</p>
 					)}
 				</div>
+
+				{/* Divider */}
+				<div className="border-t border-stroke" />
+
+				{/* Danger Zone */}
+				<div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 space-y-3">
+					<div>
+						<h3 className="text-lg font-medium text-red-600 mb-1">
+							Delete Account
+						</h3>
+						<p className="text-text-muted text-sm">
+							Once you delete your account, there is no going back. All your
+							data is permanently removed. Please be certain.
+						</p>
+					</div>
+					<button
+						type="button"
+						onClick={() => setShowDeleteModal(true)}
+						disabled={deleting}
+						className="rounded-2xl px-4 py-3 font-semibold bg-red-600 text-white transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{deleting ? "Deleting..." : "Delete my account"}
+					</button>
+				</div>
 			</div>
+
+			<DeleteAccountModal
+				isOpen={showDeleteModal}
+				onClose={() => setShowDeleteModal(false)}
+				onConfirm={startAccountDeletion}
+				loading={deleting}
+			/>
 
 			{/* Reauth Modals */}
 			<PasswordModal

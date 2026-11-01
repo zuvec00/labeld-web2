@@ -4,14 +4,13 @@ import { useState } from "react";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { useAuth } from "@/lib/auth/AuthContext";
-import { useDashboardContext } from "@/hooks/useDashboardContext";
 import { Loader2, Lightbulb, CheckCircle2 } from "lucide-react";
 import Button from "@/components/ui/button";
 
 export default function FeatureRequests() {
 	const { user } = useAuth();
-	const { activeRole, roleDetection } = useDashboardContext();
 
+	const [category, setCategory] = useState<"feature" | "bug">("feature");
 	const [title, setTitle] = useState("");
 	const [description, setDescription] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
@@ -33,19 +32,31 @@ export default function FeatureRequests() {
 		setError(null);
 
 		try {
-			await addDoc(collection(db, "feature_requests"), {
-				userId: user.uid,
-				brandId: activeRole === "brand" ? user.uid : null,
-				organizerId: activeRole === "eventOrganizer" ? user.uid : null,
+			// Same document shape the mobile app writes (see
+			// FeatureRequestModel.createMap), so posts show up on its board.
+			await addDoc(collection(db, "feedbackPosts"), {
 				title: title.trim(),
 				description: description.trim(),
-				status: "Under Review",
+				category,
+				status: "open",
+				authorBrandId: user.uid,
+				authorUid: user.uid,
+				authorName: user.displayName ?? null,
+				authorAvatarUrl: user.photoURL ?? null,
+				upvoteCount: 0,
+				commentCount: 0,
 				createdAt: serverTimestamp(),
+				updatedAt: serverTimestamp(),
+				statusUpdatedAt: null,
+				statusUpdatedBy: null,
+				closedReason: null,
+				attachments: [],
 			});
 
 			setIsSuccess(true);
 			setTitle("");
 			setDescription("");
+			setCategory("feature");
 
 			// Reset success state after a few seconds
 			setTimeout(() => {
@@ -92,6 +103,29 @@ export default function FeatureRequests() {
 					</div>
 				) : (
 					<form onSubmit={handleSubmit} className="space-y-6">
+						<div className="grid grid-cols-2 rounded-xl border border-stroke p-1 bg-bg/50">
+							{(
+								[
+									{ value: "feature", label: "Feature" },
+									{ value: "bug", label: "Bug" },
+								] as const
+							).map((opt) => (
+								<button
+									key={opt.value}
+									type="button"
+									onClick={() => setCategory(opt.value)}
+									disabled={isSubmitting}
+									className={`rounded-lg py-2 text-sm font-medium transition ${
+										category === opt.value
+											? "bg-accent text-white"
+											: "text-text-muted hover:text-text"
+									}`}
+								>
+									{opt.label}
+								</button>
+							))}
+						</div>
+
 						<div className="space-y-2">
 							<label
 								htmlFor="title"

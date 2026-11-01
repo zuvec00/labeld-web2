@@ -7,7 +7,12 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/firebaseConfig";
 import { useAuth } from "@/lib/auth/AuthContext";
 
-export type OnboardingStepId = "bank" | "profile" | "shipping" | "product";
+export type OnboardingStepId =
+	| "bank"
+	| "profile"
+	| "shipping"
+	| "product"
+	| "website";
 
 export interface OnboardingStep {
 	id: OnboardingStepId;
@@ -22,7 +27,14 @@ export interface OnboardingStep {
 export interface BrandOnboardingStatus {
 	steps: OnboardingStep[];
 	percentage: number;
+	/** Every checklist step is done (drives the checklist card and progress). */
 	isComplete: boolean;
+	/**
+	 * The store is ready to be shared: everything except the website step.
+	 * "View store" gates on this, so adding the website step to the checklist
+	 * doesn't suddenly lock brands out of opening a store they already run.
+	 */
+	canViewStore: boolean;
 	loading: boolean;
 }
 
@@ -56,6 +68,7 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 			steps: [],
 			percentage: 0,
 			isComplete: false,
+			canViewStore: false,
 			loading: true,
 		};
 	}
@@ -68,7 +81,11 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 	// 2. Profile / Brand Details (Name + Phone)
     // We check if brandName exists (basics) and user has phoneNumber
     const hasBrandDoc = !!brand?.brandName;
-	const isProfileComplete = !!(hasBrandDoc && brand?.phoneNumber);
+	// Phone is saved on both brands/{uid} and users/{uid} by the web profile
+	// editor, but mobile only writes/reads the user doc. Accept either so a brand
+	// set up on one platform isn't shown as incomplete on the other.
+	const hasPhone = !!(brand?.phoneNumber?.trim() || brand?.userPhoneNumber?.trim());
+	const isProfileComplete = hasBrandDoc && hasPhone;
 
 	// 3. Shipping
 	const isShippingComplete = shippingConfigured;
@@ -112,13 +129,24 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 			cta: "Add Product",
 			href: hasBrandDoc ? "/pieces/new" : "/brand-space/setup", // Redirect to setup if no brand doc
 		},
+		{
+			id: "website",
+			title: "Set up your website",
+			description: "Activate and customize your branded storefront.",
+			isComplete: !!brand?.storefrontActivated,
+			cta: "Set Up Website",
+			href: "/brand-space/site-customization",
+		},
 	];
 
 	const completedCount = steps.filter((s) => s.isComplete).length;
     // Cap at 100
 	const percentage = Math.round((completedCount / steps.length) * 100);
 	const isComplete = completedCount === steps.length;
-    
+	const canViewStore = steps
+		.filter((s) => s.id !== "website")
+		.every((s) => s.isComplete);
+
     // Global loading state
 	const loading = walletLoading || brandSpaceLoading || shippingLoading;
 
@@ -126,6 +154,7 @@ export function useBrandOnboardingStatus(): BrandOnboardingStatus {
 		steps,
 		percentage,
 		isComplete,
+		canViewStore,
 		loading,
 	};
 }

@@ -7,6 +7,7 @@ import {
 	CreditCard,
 	Truck,
 	Shirt,
+	LayoutTemplate,
 	ArrowRight,
 	Play,
 } from "lucide-react"; // Icons for steps
@@ -46,6 +47,7 @@ export default function OnboardingChecklist() {
 		profile: Store,
 		shipping: Truck,
 		product: Shirt,
+		website: LayoutTemplate,
 	};
 
 	// Time estimates map
@@ -54,6 +56,7 @@ export default function OnboardingChecklist() {
 		profile: "2 min",
 		shipping: "5 min",
 		product: "3 min",
+		website: "3 min",
 	};
 
 	// Filter for incomplete steps only

@@ -101,6 +101,13 @@ export interface Template {
   thumbnailUrl?: string;
   previewImage?: string;
   isProOnly: boolean;
+  /** "premium" themes are bought separately on top of Pro; "included" ship with the plan. */
+  access?: "included" | "premium";
+  /** Only "live" themes are listed, unless the brand already owns the theme. */
+  status?: "live" | "hidden" | string;
+  /** One-time purchase price in minor units (premium themes only). */
+  regularPriceMinor?: number;
+  proPriceMinor?: number;
   defaultSections: StorefrontSection[]; // The default configuration for this template
   tags?: string[]; // e.g. "Story-first", "Minimal"
   templateRole?: "essential" | "editorial" | "commerce"; // For recommendations/categorization

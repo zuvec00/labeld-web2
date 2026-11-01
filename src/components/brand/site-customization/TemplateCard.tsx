@@ -5,27 +5,33 @@ import Image from "next/image";
 import { Lock, Check } from "lucide-react";
 import Button from "@/components/ui/button";
 import { Template } from "@/lib/models/site-customization";
+import type { ThemeAccess } from "@/lib/plans/theme-access";
+import { formatNaira } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 interface TemplateCardProps {
 	template: Template;
 	isActive: boolean;
-	isProUser: boolean;
+	access: ThemeAccess;
+	/** Display price for premium themes the brand does not own yet. */
+	priceMinor?: number | null;
 	onPreview: (template: Template) => void;
 	onUpgrade: () => void;
+	onPurchase: (template: Template) => void;
 	onActivate: (templateId: string) => void;
 }
 
 export default function TemplateCard({
 	template,
 	isActive,
-	isProUser,
+	access,
+	priceMinor,
 	onPreview,
 	onUpgrade,
+	onPurchase,
 	onActivate,
 }: TemplateCardProps) {
-	// Logic: Locked if user is NOT pro AND template is Pro Only
-	const isLocked = !isProUser && template.isProOnly;
+	const isLocked = access !== "available";
 
 	return (
 		<div
@@ -65,7 +71,12 @@ export default function TemplateCard({
 
 				{/* Locked Overlay */}
 				{isLocked && (
-					<div className="absolute top-2 right-2 z-10">
+					<div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+						{template.access === "premium" && (
+							<span className="text-[10px] uppercase font-bold px-2.5 py-1 rounded-full bg-surface border border-stroke text-text shadow-sm">
+								Premium
+							</span>
+						)}
 						<div className="w-8 h-8 rounded-full bg-surface shadow-sm flex items-center justify-center border border-stroke">
 							<Lock className="w-4 h-4 text-text-muted" />
 						</div>
@@ -120,7 +131,15 @@ export default function TemplateCard({
 					/>
 
 					{/* Action Button Logic */}
-					{isLocked ? (
+					{access === "needs_purchase" ? (
+						<Button
+							text={priceMinor ? `Get · ${formatNaira(priceMinor)}` : "Get theme"}
+							variant="outline"
+							leftIcon={<Lock className="w-3 h-3" />}
+							className="w-full text-xs h-9"
+							onClick={() => onPurchase(template)}
+						/>
+					) : access === "needs_pro" ? (
 						<Button
 							text="Upgrade"
 							variant="outline" // Calm upgrade
